@@ -3,6 +3,11 @@ uuid = "e3e8a769-591b-4840-946e-301c93ad313e"
 authors = ["G Jake Gebbie <ggebbie@whoi.edu>"]
 version = "1.0.0-DEV"
 
+[deps]
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+
 [compat]
 julia = "1.10"
 
