@@ -4,9 +4,10 @@ authors = ["G Jake Gebbie <ggebbie@whoi.edu>"]
 version = "1.0.0-DEV"
 
 [deps]
+DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 julia = "1.10"
