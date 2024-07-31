@@ -9,7 +9,7 @@ using Unitful
 # using Plots
 using Test
 
-#include("config_units.jl")
+include(srcdir("config_units.jl"))
 
 @testset "OceanGreensFunctionMethods.jl" begin
 
@@ -39,12 +39,6 @@ using Test
 
     @testset "pedagogical tracer box model" begin
 
-        ENV["UNITFUL_FANCY_EXPONENTS"] = true
-        yr = u"yr" # more-readable shorthand for u macro
-        Sv = u"Sv" # shorthand for units of sverdrups
-        m = u"m"
-        km = u"km"
-
         @dim MeridionalLocation "meridional location"
         @dim VerticalLocation "vertical location"
 
@@ -68,6 +62,10 @@ using Test
         Fv_diffusion = vertical_diffusion(Fv_exchange, model_dims) # volume fluxes
 
         Fv = Fv_abyssal .+ Fv_intermediate .+ Fv_diffusion
+
+        C = ones(model_dims)
+
+        J = tracer_flux(Fv[1],C)
 
         
     end

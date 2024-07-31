@@ -1,4 +1,19 @@
 # follows the design of Tom Haine's pedagaogical box model
+
+kg = u"kg"
+m  = u"m"
+yr = u"yr"
+Tg = u"Tg"
+s  = u"s"
+
+struct VolumeFlux{T,N} where T <: Number where N 
+    poleward::DimArray{T,N}
+    equatorward::DimArray{T,N}
+    up::DimArray{T,N}
+    down::DimArray{T,N}
+    dims::Tuple
+end
+
 function abyssal_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -65,3 +80,6 @@ function vertical_diffusion(Fv_exchange,model_dims)
     return Fv_poleward, Fv_equatorward, Fv_up, Fv_down
 end
 
+tracer_flux(Fv, C; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
+
+#end

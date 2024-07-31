@@ -13,10 +13,21 @@ export width
 export abyssal_overturning
 export intermediate_overturning
 export vertical_diffusion
+export tracer_flux
+export projectdir, datadir, srcdir
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 
-include("config_units.jl")
+projectdir() = dirname(Base.active_project())
+projectdir(args...) = joinpath(projectdir(), args...)
+
+datadir() = joinpath(projectdir(),"data")
+datadir(args...) = joinpath(datadir(), args...)
+
+srcdir() = joinpath(projectdir(),"src")
+srcdir(args...) = joinpath(srcdir(), args...)
+
+#include("config_units.jl")
 
 include("tracer_inverse_gaussian.jl")
 
