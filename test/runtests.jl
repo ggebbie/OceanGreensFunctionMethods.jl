@@ -22,12 +22,17 @@ using Test
 
         G = TracerInverseGaussian(Γ, Δ)
 
-        # should be identical to this Inverse Gaussian
-        G2 = InverseGaussian(mean(G),shape(G))
+        # the Inverse Gaussian distribution in typical statistical toolboxes
+        # has different input arguments
+        μ = Γ # the same, but different notation
+        λ = shape(G) # the shape parameter is the second argument 
+        
+        G2 = InverseGaussian(μ, λ)
 
+        # both Inverse Gaussians should be the same
         @test isequal(shape(G),shape(G2))
         @test !isequal(params(G),params(G2))
-        @test isequal(partype(G), partype(G2))
+        @test isequal(partype(G), partype(G2)) # parameter type
         @test isequal(mean(G), mean(G2))
         @test isequal(var(G), var(G2))
     end
@@ -49,9 +54,22 @@ using Test
         Ny = length(meridional_locs); Nz = length(vertical_locs)
         
         V_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
-        V = DimArray(fill(V_uniform, Ny, Nz),
-            (MeridionalLocation(meridional_locs),VerticalLocation(vertical_locs)))
 
+        model_dims = (MeridionalLocation(meridional_locs),VerticalLocation(vertical_locs))
+        V = DimArray(fill(V_uniform, Ny, Nz), model_dims)
+
+        Ψ_abyssal = 20Sv
+        Fv_abyssal = abyssal_overturning(Ψ_abyssal, model_dims) # volume fluxes
+
+        Ψ_intermediate = 10Sv
+        Fv_intermediate = intermediate_overturning(Ψ_intermediate, model_dims) # volume fluxes
+
+        Fv_exchange = 5Sv
+        Fv_diffusion = vertical_diffusion(Fv_exchange, model_dims) # volume fluxes
+
+        Fv = Fv_abyssal .+ Fv_intermediate .+ Fv_diffusion
+
+        
     end
     
 end
