@@ -6,13 +6,18 @@ yr = u"yr"
 Tg = u"Tg"
 s  = u"s"
 
-struct VolumeFlux{T,N} where T <: Number where N 
+struct Fluxes{T,N} 
     poleward::DimArray{T,N}
     equatorward::DimArray{T,N}
     up::DimArray{T,N}
     down::DimArray{T,N}
-    dims::Tuple
 end
+
++(F1::Fluxes, F2::Fluxes) = Fluxes(
+    F1.poleward .+ F2.poleward,
+    F1.equatorward .+ F2.equatorward,
+    F1.up .+ F2.up,
+    F1.down .+ F2.down)
 
 function abyssal_overturning(Ψ,model_dims)
 
@@ -37,7 +42,7 @@ function abyssal_overturning(Ψ,model_dims)
     Fv_down[At("High latitudes"),At(:Thermocline)] = Ψ 
     Fv_down[At("High latitudes"),At(:Deep)] = Ψ 
 
-    return Fv_poleward, Fv_equatorward, Fv_up, Fv_down
+    return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
 function intermediate_overturning(Ψ,model_dims)
@@ -52,15 +57,15 @@ function intermediate_overturning(Ψ,model_dims)
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
     Fv_poleward[At("Mid-latitudes"),At(:Abyssal)] = Ψ 
-    Fv_poleward[At("High latitudes"),At(:Abyssal)] = Ψ 
+    Fv_poleward[At("Low latitudes"),At(:Abyssal)] = Ψ 
 
-    Fv_equatorward[At("Low latitudes"),At(:Deep)] = Ψ 
+    Fv_equatorward[At("High latitudes"),At(:Deep)] = Ψ 
     Fv_equatorward[At("Mid-latitudes"),At(:Deep)] = Ψ 
 
     Fv_up[At("High latitudes"),At(:Abyssal)] = Ψ 
     Fv_down[At("Low latitudes"),At(:Deep)] = Ψ 
 
-    return Fv_poleward, Fv_equatorward, Fv_up, Fv_down
+    return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
 function vertical_diffusion(Fv_exchange,model_dims)
@@ -77,9 +82,40 @@ function vertical_diffusion(Fv_exchange,model_dims)
     Fv_up[:,At([:Abyssal,:Deep])] .= Fv_exchange 
     Fv_down[:,At([:Thermocline,:Deep])] .= Fv_exchange 
 
-    return Fv_poleward, Fv_equatorward, Fv_up, Fv_down
+    return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
-tracer_flux(Fv, C; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
+tracer_flux(Fv::DimArray, C::DimArray; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
 
-#end
+function tracer_flux(Fv::Fluxes, C::DimArray; ρ = 1035kg/m^3)
+return Fluxes(
+    tracer_flux( Fv.poleward, C, ρ=ρ),
+    tracer_flux( Fv.equatorward, C, ρ=ρ),
+    tracer_flux( Fv.up, C, ρ=ρ),
+    tracer_flux( Fv.down, C, ρ=ρ))
+
+end
+
+function tracer_flux_convergence(J::Fluxes)
+
+    # all the fluxes leaving a box
+    deldotJ = -( J.poleward + J.equatorward + J.up + J.down)
+
+    #poleward flux entering
+    deldotJ[At(["Mid-latitudes","High latitudes"]),:] .+=
+        J.poleward[At(["Low latitudes","Mid-latitudes"]),:]
+
+    #equatorward flux entering
+    deldotJ[At(["Low latitudes","Mid-latitudes"]),:] .+=
+        J.equatorward[At(["Mid-latitudes","High latitudes"]),:]
+
+    # upward flux entering
+    deldotJ[:,At([:Thermocline,:Deep])] .+=
+        J.up[:,At([:Deep,:Abyssal])]
+
+    # downward flux entering
+    deldotJ[:,At([:Deep,:Abyssal])] .+=
+        J.down[:,At([:Thermocline,:Deep])]
+
+    return deldotJ 
+end

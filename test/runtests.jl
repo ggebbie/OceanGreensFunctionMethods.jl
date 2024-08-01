@@ -61,13 +61,26 @@ include(srcdir("config_units.jl"))
         Fv_exchange = 5Sv
         Fv_diffusion = vertical_diffusion(Fv_exchange, model_dims) # volume fluxes
 
-        Fv = Fv_abyssal .+ Fv_intermediate .+ Fv_diffusion
+        Fv = Fv_abyssal + Fv_intermediate + Fv_diffusion
 
         C = ones(model_dims)
 
-        J = tracer_flux(Fv[1],C)
+        J = tracer_flux(Fv,C)
+        deldotJ = tracer_flux_convergence(J)
+        sum(abs.(deldotJ)) # 0.0 for mass conservation
 
+        J_diffusion = tracer_flux(Fv_diffusion,C)
+        deldotJ_diffusion = tracer_flux_convergence(J_diffusion)
+        sum(abs.(deldotJ_diffusion)) # 0.0 for mass conservation
+
+        J_abyssal = tracer_flux(Fv_abyssal,C)
+        deldotJ_abyssal = tracer_flux_convergence(J_abyssal)
+        sum(abs.(deldotJ_abyssal)) # 0.0 for mass conservation
         
-    end
+        J_intermediate = tracer_flux(Fv_intermediate,C)
+        deldotJ_intermediate = tracer_flux_convergence(J_intermediate)
+        sum(abs.(deldotJ_intermediate)) # 0.0 for mass conservation
+        
+   end
     
 end
