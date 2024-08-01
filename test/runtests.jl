@@ -66,19 +66,19 @@ include(srcdir("config_units.jl"))
         C = ones(model_dims)
 
         J = tracer_flux(Fv,C)
-        deldotJ = tracer_flux_convergence(J)
+        deldotJ = convergence(J)
         sum(abs.(deldotJ)) # 0.0 for mass conservation
 
         J_diffusion = tracer_flux(Fv_diffusion,C)
-        deldotJ_diffusion = tracer_flux_convergence(J_diffusion)
+        deldotJ_diffusion = convergence(J_diffusion)
         sum(abs.(deldotJ_diffusion)) # 0.0 for mass conservation
 
         J_abyssal = tracer_flux(Fv_abyssal,C)
-        deldotJ_abyssal = tracer_flux_convergence(J_abyssal)
+        deldotJ_abyssal = convergence(J_abyssal)
         sum(abs.(deldotJ_abyssal)) # 0.0 for mass conservation
         
         J_intermediate = tracer_flux(Fv_intermediate,C)
-        deldotJ_intermediate = tracer_flux_convergence(J_intermediate)
+        deldotJ_intermediate = convergence(J_intermediate)
         sum(abs.(deldotJ_intermediate)) # 0.0 for mass conservation
         
    end

@@ -87,16 +87,15 @@ end
 
 tracer_flux(Fv::DimArray, C::DimArray; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
 
-function tracer_flux(Fv::Fluxes, C::DimArray; ρ = 1035kg/m^3)
-return Fluxes(
-    tracer_flux( Fv.poleward, C, ρ=ρ),
-    tracer_flux( Fv.equatorward, C, ρ=ρ),
-    tracer_flux( Fv.up, C, ρ=ρ),
-    tracer_flux( Fv.down, C, ρ=ρ))
+tracer_flux(Fv::Fluxes, C::DimArray; ρ = 1035kg/m^3) =
+    Fluxes(
+        tracer_flux( Fv.poleward, C, ρ=ρ),
+        tracer_flux( Fv.equatorward, C, ρ=ρ),
+        tracer_flux( Fv.up, C, ρ=ρ),
+        tracer_flux( Fv.down, C, ρ=ρ)
+    )
 
-end
-
-function tracer_flux_convergence(J::Fluxes)
+function convergence(J::Fluxes)
 
     # all the fluxes leaving a box
     deldotJ = -( J.poleward + J.equatorward + J.up + J.down)
@@ -119,3 +118,5 @@ function tracer_flux_convergence(J::Fluxes)
 
     return deldotJ 
 end
+
+
