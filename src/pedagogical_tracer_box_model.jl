@@ -19,6 +19,8 @@ end
     F1.up .+ F2.up,
     F1.down .+ F2.down)
 
+dims(F::Fluxes) = dims(F.poleward)
+    
 function abyssal_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -119,4 +121,18 @@ function convergence(J::Fluxes)
     return deldotJ 
 end
 
+mass_convergence(Fv) = convergence(tracer_flux(Fv,ones(dims(Fv))))
 
+#boundary_flux(Fv::DimArray, C::DimArray; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
+
+function boundary_flux(Fb::DimArray,Cb::DimArray,C::DimArray)
+
+    Ci = C[DimSelectors(Cb)] .- Cb # relevant interior tracer difference from boundary value
+    C[At(["High latitudes","Mid-latitudes"]),At(:Thermocline)]
+    for cb in eachindex(Cb)
+        ΔC = cb - C
+    end
+    
+
+    J = zeros(dims(C))
+end

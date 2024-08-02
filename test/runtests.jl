@@ -2,7 +2,7 @@ using Revise
 using OceanGreensFunctionMethods
 using Distributions
 using DimensionalData
-using DimensionalData: @dim
+using DimensionalData: @dim, DimArrayOrStack
 using Unitful
 # using OrdinaryDiffEq, ModelingToolkit, MethodOfLines, DomadinSets, Unitful
 # using DrWatson
@@ -67,20 +67,49 @@ include(srcdir("config_units.jl"))
 
         J = tracer_flux(Fv,C)
         deldotJ = convergence(J)
-        sum(abs.(deldotJ)) # 0.0 for mass conservation
+        deldotFm = mass_convergence(Fv)
 
-        J_diffusion = tracer_flux(Fv_diffusion,C)
-        deldotJ_diffusion = convergence(J_diffusion)
-        sum(abs.(deldotJ_diffusion)) # 0.0 for mass conservation
+        @test all(isapprox.(
+            mass_convergence(Fv),
+            0.0Tg/s,
+            atol=1e-8Tg/s)
+        ) # check mass conservation
+        
+        @test all(isapprox.(
+            mass_convergence(Fv_diffusion),
+            0.0Tg/s,
+            atol=1e-8Tg/s)
+        ) # check mass conservation
 
+        @test all(isapprox.(
+            mass_convergence(Fv_abyssal),
+            0.0Tg/s,
+            atol=1e-8Tg/s)
+        ) # check mass conservation
+
+        @test all(isapprox.(
+            mass_convergence(Fv_intermediate),
+            0.0Tg/s,
+            atol=1e-8Tg/s)
+        ) # check mass conservation
+
+        # other interesting functions
         J_abyssal = tracer_flux(Fv_abyssal,C)
         deldotJ_abyssal = convergence(J_abyssal)
-        sum(abs.(deldotJ_abyssal)) # 0.0 for mass conservation
         
         J_intermediate = tracer_flux(Fv_intermediate,C)
         deldotJ_intermediate = convergence(J_intermediate)
-        sum(abs.(deldotJ_intermediate)) # 0.0 for mass conservation
-        
+
+        # boundary exchange
+        meridional_boundary = ["High latitudes", "Mid-latitudes"]
+        vertical_boundary = [:Thermocline]
+#        boundary_dims = (MeridionalLocation(meridional_boundary), VerticalLocation(vertical_boundary))
+        boundary_dims = (MeridionalLocation(meridional_boundary))
+        Fb = DimArray([10Sv 5Sv;], boundary_dims) # boundary flux
+        Cb = DimArray(ones(size(boundary_dims)), boundary_dims) # boundary flux
+
+        J_boundary = boundary_flux(Fb,Cb,C)
+
    end
     
 end
