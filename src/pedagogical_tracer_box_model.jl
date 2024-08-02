@@ -20,7 +20,10 @@ end
     F1.down .+ F2.down)
 
 dims(F::Fluxes) = dims(F.poleward)
-    
+
+meridional_names() = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
+vertical_names() = ["1 Thermocline", "2 Deep", "3 Abyssal"]
+
 function abyssal_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -32,17 +35,17 @@ function abyssal_overturning(Ψ,model_dims)
 
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
-    Fv_poleward[At("Low latitudes"),At(:Thermocline)] = Ψ 
-    Fv_poleward[At("Mid-latitudes"),At(:Thermocline)] = Ψ 
+    Fv_poleward[At("3 Low latitudes"),At("1 Thermocline")] = Ψ 
+    Fv_poleward[At("2 Mid-latitudes"),At("1 Thermocline")] = Ψ 
 
-    Fv_equatorward[At("Mid-latitudes"),At(:Abyssal)] = Ψ 
-    Fv_equatorward[At("High latitudes"),At(:Abyssal)] = Ψ 
+    Fv_equatorward[At("2 Mid-latitudes"),At("3 Abyssal")] = Ψ 
+    Fv_equatorward[At("1 High latitudes"),At("3 Abyssal")] = Ψ 
 
-    Fv_up[At("Low latitudes"),At(:Abyssal)] = Ψ 
-    Fv_up[At("Low latitudes"),At(:Deep)] = Ψ 
+    Fv_up[At("3 Low latitudes"),At("3 Abyssal")] = Ψ 
+    Fv_up[At("3 Low latitudes"),At("2 Deep")] = Ψ 
 
-    Fv_down[At("High latitudes"),At(:Thermocline)] = Ψ 
-    Fv_down[At("High latitudes"),At(:Deep)] = Ψ 
+    Fv_down[At("1 High latitudes"),At("1 Thermocline")] = Ψ 
+    Fv_down[At("1 High latitudes"),At("2 Deep")] = Ψ 
 
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
@@ -58,14 +61,14 @@ function intermediate_overturning(Ψ,model_dims)
 
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
-    Fv_poleward[At("Mid-latitudes"),At(:Abyssal)] = Ψ 
-    Fv_poleward[At("Low latitudes"),At(:Abyssal)] = Ψ 
+    Fv_poleward[At("2 Mid-latitudes"),At("3 Abyssal")] = Ψ 
+    Fv_poleward[At("3 Low latitudes"),At("3 Abyssal")] = Ψ 
 
-    Fv_equatorward[At("High latitudes"),At(:Deep)] = Ψ 
-    Fv_equatorward[At("Mid-latitudes"),At(:Deep)] = Ψ 
+    Fv_equatorward[At("1 High latitudes"),At("2 Deep")] = Ψ 
+    Fv_equatorward[At("2 Mid-latitudes"),At("2 Deep")] = Ψ 
 
-    Fv_up[At("High latitudes"),At(:Abyssal)] = Ψ 
-    Fv_down[At("Low latitudes"),At(:Deep)] = Ψ 
+    Fv_up[At("1 High latitudes"),At("3 Abyssal")] = Ψ 
+    Fv_down[At("3 Low latitudes"),At("2 Deep")] = Ψ 
 
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
@@ -81,8 +84,8 @@ function vertical_diffusion(Fv_exchange,model_dims)
 
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
-    Fv_up[:,At([:Abyssal,:Deep])] .= Fv_exchange 
-    Fv_down[:,At([:Thermocline,:Deep])] .= Fv_exchange 
+    Fv_up[:,At(["3 Abyssal","2 Deep"])] .= Fv_exchange 
+    Fv_down[:,At(["1 Thermocline","2 Deep"])] .= Fv_exchange 
 
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
@@ -103,20 +106,20 @@ function convergence(J::Fluxes)
     deldotJ = -( J.poleward + J.equatorward + J.up + J.down)
 
     #poleward flux entering
-    deldotJ[At(["Mid-latitudes","High latitudes"]),:] .+=
-        J.poleward[At(["Low latitudes","Mid-latitudes"]),:]
+    deldotJ[At(["2 Mid-latitudes","1 High latitudes"]),:] .+=
+        J.poleward[At(["3 Low latitudes","2 Mid-latitudes"]),:]
 
     #equatorward flux entering
-    deldotJ[At(["Low latitudes","Mid-latitudes"]),:] .+=
-        J.equatorward[At(["Mid-latitudes","High latitudes"]),:]
+    deldotJ[At(["3 Low latitudes","2 Mid-latitudes"]),:] .+=
+        J.equatorward[At(["2 Mid-latitudes","1 High latitudes"]),:]
 
     # upward flux entering
-    deldotJ[:,At([:Thermocline,:Deep])] .+=
-        J.up[:,At([:Deep,:Abyssal])]
+    deldotJ[:,At(["1 Thermocline","2 Deep"])] .+=
+        J.up[:,At(["2 Deep","3 Abyssal"])]
 
     # downward flux entering
-    deldotJ[:,At([:Deep,:Abyssal])] .+=
-        J.down[:,At([:Thermocline,:Deep])]
+    deldotJ[:,At(["2 Deep","3 Abyssal"])] .+=
+        J.down[:,At(["1 Thermocline","2 Deep"])]
 
     return deldotJ 
 end
@@ -126,13 +129,11 @@ mass_convergence(Fv) = convergence(tracer_flux(Fv,ones(dims(Fv))))
 #boundary_flux(Fv::DimArray, C::DimArray; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
 
 function boundary_flux(Fb::DimArray,Cb::DimArray,C::DimArray)
+    ΔC = Cb - C[DimSelectors(Cb)] # relevant interior tracer difference from boundary value
+    Jb = tracer_flux(Fb, ΔC)
+end
 
-    Ci = C[DimSelectors(Cb)] .- Cb # relevant interior tracer difference from boundary value
-    C[At(["High latitudes","Mid-latitudes"]),At(:Thermocline)]
-    for cb in eachindex(Cb)
-        ΔC = cb - C
-    end
-    
-
-    J = zeros(dims(C))
+function apply_boundary_flux(Fb::DimArray,Cb::DimArray,C::DimArray)
+    Jb = 0.0 * similar(C)
+    Jb[DimSelectors(Cb)] += boundary_flux(Fb,Cb,C)
 end

@@ -2,7 +2,7 @@ using Revise
 using OceanGreensFunctionMethods
 using Distributions
 using DimensionalData
-using DimensionalData: @dim, DimArrayOrStack
+using DimensionalData: @dim
 using Unitful
 # using OrdinaryDiffEq, ModelingToolkit, MethodOfLines, DomadinSets, Unitful
 # using DrWatson
@@ -39,18 +39,19 @@ include(srcdir("config_units.jl"))
 
     @testset "pedagogical tracer box model" begin
 
-        @dim MeridionalLocation "meridional location"
-        @dim VerticalLocation "vertical location"
+        @dim Meridional "meridional location"
+        @dim Vertical "vertical location"
 
         # define grid
-        meridional_locs = ["High latitudes", "Mid-latitudes", "Low latitudes"]
-        vertical_locs = [:Thermocline, :Deep, :Abyssal]
+        meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
+        vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
         Ny = length(meridional_locs); Nz = length(vertical_locs)
         
         V_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
 
-        model_dims = (MeridionalLocation(meridional_locs),VerticalLocation(vertical_locs))
+        model_dims = (Meridional(meridional_locs),Vertical(vertical_locs))
         V = DimArray(fill(V_uniform, Ny, Nz), model_dims)
+#        V = DimArray(ones(model_dims), model_dims)
 
         Ψ_abyssal = 20Sv
         Fv_abyssal = abyssal_overturning(Ψ_abyssal, model_dims) # volume fluxes
@@ -100,16 +101,51 @@ include(srcdir("config_units.jl"))
         J_intermediate = tracer_flux(Fv_intermediate,C)
         deldotJ_intermediate = convergence(J_intermediate)
 
-        # boundary exchange
-        meridional_boundary = ["High latitudes", "Mid-latitudes"]
-        vertical_boundary = [:Thermocline]
-#        boundary_dims = (MeridionalLocation(meridional_boundary), VerticalLocation(vertical_boundary))
-        boundary_dims = (MeridionalLocation(meridional_boundary))
-        Fb = DimArray([10Sv 5Sv;], boundary_dims) # boundary flux
+        # boundary exchange: define the locations affected by boundary fluxes
+        meridional_boundary = ["1 High latitudes", "2 Mid-latitudes"]
+        vertical_boundary = ["1 Thermocline"]
+        boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
+
+        #boundary_dims = (MeridionalLocation(meridional_boundary))
+        Fb = DimArray(hcat([10Sv, 5Sv]), boundary_dims) # boundary flux
         Cb = DimArray(ones(size(boundary_dims)), boundary_dims) # boundary flux
 
-        J_boundary = boundary_flux(Fb,Cb,C)
+        C0 = zeros(model_dims)
+        Jb = boundary_flux(Fb,Cb,C0)
 
+        # Jt = 0.0 * similar(J_abyssal.poleward)
+        # Jt[DimSelectors(Cb)] .+= boundary_flux(Fb,Cb,C0)
+
+        # for i in DimSelectors(Cb)
+        #     Jt[i] += Jb[i]
+        # end
+        
+        # for ds in DimSelectors.(dims(Cb))
+        #     for s in ds
+        #         println(s)
+        #         println(Cb[s])
+        #     end
+        # end
+        # for ds in DimSelectors(Cb)
+        #     println(ds)
+        #     println(Cb[ds])
+        #     Cb[ds] += 1.0
+        #     println(Cb[ds])
+        # end
+
+        # da = Cb
+        # for d in dims(da)
+        #     for l in d
+        #         println(d)
+        #         rebuild(d, At(l))
+        #         println(d)
+        #         Cb[d]
+        #     end
+        # end
+
+        
+        
+        # Jtotal = apply_boundary_flux(Fb,Cb,C0)
    end
     
 end

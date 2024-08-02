@@ -10,5 +10,7 @@ const m = u"m"
 const yr = u"yr"
 const Sv = u"sverdrup"
 const km = u"km"
+const Tg = u"Tg"
+const s  = u"s"
 
 ENV["UNITFUL_FANCY_EXPONENTS"] = true
