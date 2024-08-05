@@ -111,41 +111,8 @@ include(srcdir("config_units.jl"))
         Cb = DimArray(ones(size(boundary_dims)), boundary_dims) # boundary flux
 
         C0 = zeros(model_dims)
-        Jb = boundary_flux(Fb,Cb,C0)
-
-        # Jt = 0.0 * similar(J_abyssal.poleward)
-        # Jt[DimSelectors(Cb)] .+= boundary_flux(Fb,Cb,C0)
-
-        # for i in DimSelectors(Cb)
-        #     Jt[i] += Jb[i]
-        # end
-        
-        # for ds in DimSelectors.(dims(Cb))
-        #     for s in ds
-        #         println(s)
-        #         println(Cb[s])
-        #     end
-        # end
-        # for ds in DimSelectors(Cb)
-        #     println(ds)
-        #     println(Cb[ds])
-        #     Cb[ds] += 1.0
-        #     println(Cb[ds])
-        # end
-
-        # da = Cb
-        # for d in dims(da)
-        #     for l in d
-        #         println(d)
-        #         rebuild(d, At(l))
-        #         println(d)
-        #         Cb[d]
-        #     end
-        # end
-
-        
-        
-        # Jtotal = apply_boundary_flux(Fb,Cb,C0)
+        Jb_local = boundary_flux(Fb,Cb,C0)
+        Jb = global_boundary_flux(Fb,Cb,C0)
    end
     
 end

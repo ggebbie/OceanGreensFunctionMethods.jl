@@ -130,10 +130,12 @@ mass_convergence(Fv) = convergence(tracer_flux(Fv,ones(dims(Fv))))
 
 function boundary_flux(Fb::DimArray,Cb::DimArray,C::DimArray)
     ΔC = Cb - C[DimSelectors(Cb)] # relevant interior tracer difference from boundary value
-    Jb = tracer_flux(Fb, ΔC)
+    return Jb = tracer_flux(Fb, ΔC)
 end
 
-function apply_boundary_flux(Fb::DimArray,Cb::DimArray,C::DimArray)
-    Jb = 0.0 * similar(C)
-    Jb[DimSelectors(Cb)] += boundary_flux(Fb,Cb,C)
+function global_boundary_flux(Fb::DimArray,Cb::DimArray,C::DimArray)
+    Jlocal = boundary_flux(Fb,Cb,C)
+    Jb = unit(first(Jlocal)) * zeros(dims(C)) # pre-allocate
+    Jb[DimSelectors(Cb)] += Jlocal # transfer J at boundary locations onto global grid
+    return Jb
 end

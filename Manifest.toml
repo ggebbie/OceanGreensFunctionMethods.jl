@@ -125,9 +125,9 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
 [[deps.DimensionalData]]
 deps = ["Adapt", "ArrayInterface", "ConstructionBase", "DataAPI", "Dates", "Extents", "Interfaces", "IntervalSets", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "PrecompileTools", "Random", "RecipesBase", "SparseArrays", "Statistics", "TableTraits", "Tables"]
-git-tree-sha1 = "0e98f99281b580f69dd845430c80950d9f456f72"
+git-tree-sha1 = "28e9ec1d806ed97e5e9e131a372f0fd12e0458ad"
 uuid = "0703355e-b756-11e9-17c0-8b28908087d0"
-version = "0.27.5"
+version = "0.27.6"
 
     [deps.DimensionalData.extensions]
     DimensionalDataCategoricalArraysExt = "CategoricalArrays"
