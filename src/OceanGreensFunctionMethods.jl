@@ -16,10 +16,13 @@ export width
 export abyssal_overturning
 export intermediate_overturning
 export vertical_diffusion
-export tracer_flux, convergence, mass_convergence
+export advective_diffusive_flux
+export convergence, mass_convergence
+export tracer_tendency
 export projectdir, datadir, srcdir
 export meridional_names, vertical_names
-export boundary_flux, global_boundary_flux
+export boundary_flux, local_boundary_flux
+export linear_probe
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export # re-export from Base

@@ -2,7 +2,7 @@
 
 julia_version = "1.10.4"
 manifest_format = "2.0"
-project_hash = "99c84b4978ab6888edab3a6e5a359c951c542750"
+project_hash = "a3c18133a25dd981ab2f0b1915913d15caf4d2e8"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -322,6 +322,14 @@ version = "1.2.0"
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2023.1.10"
 
+[[deps.MultipliableDimArrays]]
+deps = ["DimensionalData", "LinearAlgebra", "Revise", "Unitful", "UnitfulLinearAlgebra"]
+git-tree-sha1 = "7700ed215ff4408fbcb517d443f04514600565ba"
+repo-rev = "main"
+repo-url = "https://github.com/ggebbie/MultipliableDimArrays.jl"
+uuid = "3e2a59ee-8dc2-49ed-b08b-35477f91d0a4"
+version = "0.1.0"
+
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
 git-tree-sha1 = "0877504529a3e5c3343c6f8b4c0381e57e4387e4"
@@ -549,6 +557,19 @@ version = "1.21.0"
     [deps.Unitful.weakdeps]
     ConstructionBase = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
     InverseFunctions = "3587e190-3f89-42d0-90ee-14403ec27112"
+
+[[deps.UnitfulLinearAlgebra]]
+deps = ["DimensionalData", "LinearAlgebra", "Statistics", "Unitful"]
+git-tree-sha1 = "a4ad21ef6b5b406c24c380dad92c793bb4f8d809"
+uuid = "c14bd059-d406-4571-8f61-9bd20e53c30b"
+version = "0.3.7"
+
+    [deps.UnitfulLinearAlgebra.extensions]
+    UnitfulLinearAlgebraLatexifyExt = ["Latexify", "UnitfulLatexify"]
+
+    [deps.UnitfulLinearAlgebra.weakdeps]
+    Latexify = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
+    UnitfulLatexify = "45397f5d-5981-4c77-b2b3-fc36d6e9b728"
 
 [[deps.Zlib_jll]]
 deps = ["Libdl"]
