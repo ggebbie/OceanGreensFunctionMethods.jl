@@ -205,7 +205,6 @@ function eigen(A::DimArray{<:DimArray})
     vectors = MultipliableDimArray(F.vectors,
             model_dims, eigen_dims)    
 
-    println("return vals")
     return μ, vectors
     # ideally, would return an Eigen factorization, in spirit like:
     #    return Eigen(QuantityArray(F.values, dimension(A)), F.vectors)
@@ -219,7 +218,7 @@ function uniform(A::DimArray{<:DimArray})
     return allequal(ulist)
 end
 
-maximum_timescale(μ) = -1/real.(μ)[end]
+maximum_timescale(μ) = -1/real(last(last(μ)))
 
 # ustrip inidicates upstream problem with left divide and units
 # can be simplified with upstream fix

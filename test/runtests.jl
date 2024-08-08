@@ -11,7 +11,8 @@ using LinearAlgebra
 # using Plots
 using Test
 
-include(srcdir("config_units.jl"))
+#include(srcdir("config_units.jl"))
+include("../src/config_units.jl")
 
 @testset "OceanGreensFunctionMethods.jl" begin
 
@@ -152,13 +153,6 @@ include(srcdir("config_units.jl"))
                 Tmax = maximum_timescale(μ)
 
                 # water-mass fractions
-
-
-                tmp = μ_matrix \ (V \ ustrip.(B))
-                tmp = μ_matrix \ (V \ B)
-
-                a = - real.(V * tmp)
-
                 a = watermass_fraction(μ, V, B)
                 Matrix(a)
                 @test all(isapprox.(1.0,sum(a)))                
