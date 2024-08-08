@@ -136,32 +136,40 @@ include(srcdir("config_units.jl"))
                 A =  linear_probe(tracer_tendency, Crand, f, Fv, Fb, Vol)
 
                 # view matrix in usual mathematical form
-                MultipliableDimArrays.Matrix(A)
+                Matrix(A)
 
                 # probe for B (boundary matrix)
                 dCdt_boundary = tracer_tendency(f, Crand, Fb, Vol)
                 B =  linear_probe(tracer_tendency, f, Crand, Fb, Vol)
-                MultipliableDimArrays.Matrix(B)
+                Matrix(B)
+
+                mass(Vol)
 
                 # Find eigenvalues of A. 
                 # destructuring via iteration
                 μ, V = eigen(A)
 
-                @dim Eigenmode "eigenmode"
-                eigen_dims = Eigenmode(1:length(Vol))
-
-                Vgood = MultipliableDimArray(V,
-            model_dims, eigen_dims)    
-
-                mass(Vol)
-
                 Tmax = maximum_timescale(μ)
 
                 # water-mass fractions
 
+                μ_matrix = DiagonalDimArray(μ,dims(μ))
+
+                tmp = μ_matrix \ (V \ ustrip.(B))
+                tmp = μ_matrix \ (V \ B)
+
+                a = real.(V * tmp)
+                Matrix(real.(a))
+                real.(V*(V\ustrip.(B))) # get rid of small complex parts
+                
             end
         end
         
    end
     
 end
+
+
+
+
+

@@ -195,10 +195,12 @@ function eigen(A::DimArray{<:DimArray})
     uniform(A) ? uA = unit(first(first(A))) : error("No eigendecomposition for a non-uniform matrix")
     A_matrix = MultipliableDimArrays.Matrix(A)
     F = eigen(ustrip.(A_matrix))
-    values = uA * F.values
 
     eigen_dims = Eigenmode(1:size(A_matrix,2))
     model_dims = dims(A)
+
+    values = MultipliableDimArray(uA * F.values, eigen_dims)
+
     vectors = MultipliableDimArray(F.vectors,
             model_dims, eigen_dims)    
 
