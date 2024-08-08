@@ -147,7 +147,17 @@ include(srcdir("config_units.jl"))
                 # destructuring via iteration
                 μ, V = eigen(A)
 
+                @dim Eigenmode "eigenmode"
+                eigen_dims = Eigenmode(1:length(Vol))
+
+                Vgood = MultipliableDimArray(V,
+            model_dims, eigen_dims)    
+
                 mass(Vol)
+
+                Tmax = maximum_timescale(μ)
+
+                # water-mass fractions
 
             end
         end

@@ -193,12 +193,18 @@ end
 function eigen(A::DimArray{<:DimArray})
 
     uniform(A) ? uA = unit(first(first(A))) : error("No eigendecomposition for a non-uniform matrix")
-    F = eigen(ustrip.(MultipliableDimArrays.Matrix(A)))
+    A_matrix = MultipliableDimArrays.Matrix(A)
+    F = eigen(ustrip.(A_matrix))
     values = uA * F.values
 
+    eigen_dims = Eigenmode(1:size(A_matrix,2))
+    model_dims = dims(A)
+    vectors = MultipliableDimArray(F.vectors,
+            model_dims, eigen_dims)    
+
     println("return vals")
-    return values, F.vectors
-    # ideally, would return an Eigen factorization
+    return values, vectors
+    # ideally, would return an Eigen factorization, in spirit like:
     #    return Eigen(QuantityArray(F.values, dimension(A)), F.vectors)
 end
 
@@ -209,3 +215,5 @@ function uniform(A::DimArray{<:DimArray})
     ulist = unit.(MultipliableDimArrays.Matrix(A))
     return allequal(ulist)
 end
+
+maximum_timescale(μ) = -1/real.(μ)[end]
