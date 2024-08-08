@@ -29,6 +29,7 @@ export linear_probe, mass, uniform
 export maximum_timescale
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
+export watermass_fraction
 export # re-export from Base
     +
 export # re-export from DimensionalData

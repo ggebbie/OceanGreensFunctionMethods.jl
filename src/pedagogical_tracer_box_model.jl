@@ -200,12 +200,13 @@ function eigen(A::DimArray{<:DimArray})
     model_dims = dims(A)
 
     values = MultipliableDimArray(uA * F.values, eigen_dims)
+    μ = DiagonalDimArray(values, dims(values))
 
     vectors = MultipliableDimArray(F.vectors,
             model_dims, eigen_dims)    
 
     println("return vals")
-    return values, vectors
+    return μ, vectors
     # ideally, would return an Eigen factorization, in spirit like:
     #    return Eigen(QuantityArray(F.values, dimension(A)), F.vectors)
 end
@@ -219,3 +220,8 @@ function uniform(A::DimArray{<:DimArray})
 end
 
 maximum_timescale(μ) = -1/real.(μ)[end]
+
+# ustrip inidicates upstream problem with left divide and units
+# can be simplified with upstream fix
+watermass_fraction(μ, V, B) = - (unit(first(first(B))) * real.(V * (μ \ (V \ ustrip.(B)))))
+

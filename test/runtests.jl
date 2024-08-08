@@ -153,23 +153,18 @@ include(srcdir("config_units.jl"))
 
                 # water-mass fractions
 
-                μ_matrix = DiagonalDimArray(μ,dims(μ))
 
                 tmp = μ_matrix \ (V \ ustrip.(B))
                 tmp = μ_matrix \ (V \ B)
 
-                a = real.(V * tmp)
-                Matrix(real.(a))
-                real.(V*(V\ustrip.(B))) # get rid of small complex parts
-                
+                a = - real.(V * tmp)
+
+                a = watermass_fraction(μ, V, B)
+                Matrix(a)
+                @test all(isapprox.(1.0,sum(a)))                
             end
         end
         
    end
     
 end
-
-
-
-
-
