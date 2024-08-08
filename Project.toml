@@ -1,12 +1,15 @@
 name = "OceanGreensFunctionMethods"
 uuid = "e3e8a769-591b-4840-946e-301c93ad313e"
 authors = ["G Jake Gebbie <ggebbie@whoi.edu>"]
-version = "1.0.0-DEV"
+version = "1.0.1-DEV"
 
 [deps]
+DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
-DynamicQuantities = "06fc5a27-2a28-4c7c-a15d-362465fb6821"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MultipliableDimArrays = "3e2a59ee-8dc2-49ed-b08b-35477f91d0a4"
 Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 julia = "1.10"
