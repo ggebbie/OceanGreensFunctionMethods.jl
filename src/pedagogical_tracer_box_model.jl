@@ -100,6 +100,8 @@ advective_diffusive_flux(C::DimArray, Fv::Fluxes ; ρ = 1035kg/m^3) =
         advective_diffusive_flux(C, Fv.down, ρ=ρ)
     )
 
+mass(V ; ρ = 1035kg/m^3) = ρ * V .|> u"Zg"
+
 function convergence(J::Fluxes)
 
     # all the fluxes leaving a box
@@ -141,18 +143,24 @@ end
 # tracer_tendency(C::DimArray{T,N}, Fv::Fluxes{T,N}) where T <: Number where N = 
 #         convergence(advective_diffusive_flux(C, Fv))
 
-tracer_tendency(C::DimArray{<:Number,N},
+tracer_tendency(
+    C::DimArray{<:Number,N},
     f::DimArray{<:Number,N},
     Fv::Fluxes{<:Number,N},
-    Fb::DimArray{<:Number,N}) where N = 
-    convergence(advective_diffusive_flux(C, Fv)) + boundary_flux(f, C, Fb)
+    Fb::DimArray{<:Number,N},
+    V::DimArray{<:Number,N}) where N = 
+    ((convergence(advective_diffusive_flux(C, Fv)) +
+    boundary_flux(f, C, Fb)) ./
+    mass(V)) .|> yr^-1 
 
-# # to be used to probe for B matrix
-# # hence make `f` the first variable
-# boundary_tendency(f::DimArray{<:Number,N},
-#     C::DimArray{<:Number,N},
-#     Fb::DimArray{<:Number,N}) where N = 
-#     boundary_flux(f, C, Fb)
+    # for use with finding B boundary matrix
+tracer_tendency(
+    f::DimArray{<:Number,N},
+    C::DimArray{<:Number,N},
+    Fb::DimArray{<:Number,N},
+    V::DimArray{<:Number,N}) where N = 
+    (boundary_flux(f, C, Fb) ./
+    mass(V)) .|> yr^-1 
 
 """
 function linear_probe(x₀,M)
@@ -180,4 +188,24 @@ function linear_probe(funk::Function,C::DimArray{T,N},args...) where T <: Number
         C[i] -= 1.0*unit(first(C)) # necessary?
     end
     return DimArray(A, dims(C))
+end
+
+function eigen(A::DimArray{<:DimArray})
+
+    uniform(A) ? uA = unit(first(first(A))) : error("No eigendecomposition for a non-uniform matrix")
+    F = eigen(ustrip.(MultipliableDimArrays.Matrix(A)))
+    values = uA * F.values
+
+    println("return vals")
+    return values, F.vectors
+    # ideally, would return an Eigen factorization
+    #    return Eigen(QuantityArray(F.values, dimension(A)), F.vectors)
+end
+
+allequal(x) = all(y -> y == first(x), x)
+
+# eigenstructure only exists if A is uniform
+function uniform(A::DimArray{<:DimArray})
+    ulist = unit.(MultipliableDimArrays.Matrix(A))
+    return allequal(ulist)
 end

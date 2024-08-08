@@ -4,6 +4,8 @@ using Distributions
 using DimensionalData
 using DimensionalData: @dim
 using Unitful
+using MultipliableDimArrays
+using LinearAlgebra
 # using OrdinaryDiffEq, ModelingToolkit, MethodOfLines, DomadinSets, Unitful
 # using DrWatson
 # using Plots
@@ -47,11 +49,10 @@ include(srcdir("config_units.jl"))
         vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
         Ny = length(meridional_locs); Nz = length(vertical_locs)
         
-        V_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
+        Vol_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
 
         model_dims = (Meridional(meridional_locs),Vertical(vertical_locs))
-        V = DimArray(fill(V_uniform, Ny, Nz), model_dims)
-#        V = DimArray(ones(model_dims), model_dims)
+        Vol = DimArray(fill(Vol_uniform, Ny, Nz), model_dims)
 
         Ψ_abyssal = 20Sv
         Fv_abyssal = abyssal_overturning(Ψ_abyssal, model_dims) # volume fluxes
@@ -101,42 +102,55 @@ include(srcdir("config_units.jl"))
         J_intermediate = advective_diffusive_flux(C, Fv_intermediate)
         deldotJ_intermediate = convergence(J_intermediate)
 
-        # boundary exchange: define the locations affected by boundary fluxes
-        meridional_boundary = ["1 High latitudes", "2 Mid-latitudes"]
-        vertical_boundary = ["1 Thermocline"]
-        boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
+        @testset "surface boundary" begin 
 
-        Fb = DimArray(hcat([10Sv, 5Sv]), boundary_dims) # boundary flux
-        f = ones(boundary_dims) # boundary tracer values
+            # boundary exchange: define the locations affected by boundary fluxes
+            meridional_boundary = ["1 High latitudes", "2 Mid-latitudes"]
+            vertical_boundary = ["1 Thermocline"]
+            boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
 
-        C0 = zeros(model_dims) # zero interior tracer to identify boundary source
-        Jb_local = local_boundary_flux( f, C0, Fb)
-        Jb = boundary_flux( f, C0, Fb)
+            Fb = DimArray(hcat([10Sv, 5Sv]), boundary_dims) # boundary flux
+            f = ones(boundary_dims) # boundary tracer values
 
-        # check: filled with zeroes away from boundary?
-        @test isequal(sum(Jb), sum(Jb_local))
+            C0 = zeros(model_dims) # zero interior tracer to identify boundary source
+            Jb_local = local_boundary_flux( f, C0, Fb)
+            Jb = boundary_flux( f, C0, Fb)
 
-        # given Cb and mass circulation, solve for dC/dt
-        Crand = rand(model_dims)
+            # check: filled with zeroes away from boundary?
+            @test isequal(sum(Jb), sum(Jb_local))
 
-        # boundary flux is already expressed as a convergence        
-        deldotJ = convergence(
-            advective_diffusive_flux(Crand, Fv))
-        + boundary_flux(f, Crand, Fb)
+            @testset "construct transport matrix" begin 
+                # given Cb and mass circulation, solve for dC/dt
+                Crand = rand(model_dims)
 
-        # ease the programming with a top-level driver function
-        dCdt = tracer_tendency(Crand, f, Fv, Fb)
+                # boundary flux is already expressed as a convergence        
+                deldotJ = convergence(
+                    advective_diffusive_flux(Crand, Fv))
+                + boundary_flux(f, Crand, Fb)
+
+                # ease the programming with a top-level driver function
+                dCdt = tracer_tendency(Crand, f, Fv, Fb, Vol)
         
-        # find A matrix.
-        # If f = 0, q = 0, then dC/dt  = Ac
-        A =  linear_probe(tracer_tendency, Crand, f, Fv, Fb)
+                # find A matrix.
+                # If f = 0, q = 0, then dC/dt  = Ac
+                A =  linear_probe(tracer_tendency, Crand, f, Fv, Fb, Vol)
 
-        # view matrix in usual mathematical form
-        MultipliableDimArrays.Matrix(A)
+                # view matrix in usual mathematical form
+                MultipliableDimArrays.Matrix(A)
 
-        # probe for B (boundary matrix)
-        B =  linear_probe(boundary_flux, f, Crand, Fb)
-        MultipliableDimArrays.Matrix(B)
+                # probe for B (boundary matrix)
+                dCdt_boundary = tracer_tendency(f, Crand, Fb, Vol)
+                B =  linear_probe(tracer_tendency, f, Crand, Fb, Vol)
+                MultipliableDimArrays.Matrix(B)
+
+                # Find eigenvalues of A. 
+                # destructuring via iteration
+                μ, V = eigen(A)
+
+                mass(Vol)
+
+            end
+        end
         
    end
     

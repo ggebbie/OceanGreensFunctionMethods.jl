@@ -5,10 +5,12 @@ using Distributions: @check_args
 using Distributions: @distr_support
 using DimensionalData
 using Unitful
+using MultipliableDimArrays
 
 import Distributions: mean, median, quantile, std, var, cov, cor, shape, params
 import Base: +
 import DimensionalData: dims
+import LinearAlgebra: eigen
 
 export Fluxes
 export TracerInverseGaussian
@@ -22,13 +24,15 @@ export tracer_tendency
 export projectdir, datadir, srcdir
 export meridional_names, vertical_names
 export boundary_flux, local_boundary_flux
-export linear_probe
+export linear_probe, mass, uniform
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export # re-export from Base
     +
 export # re-export from DimensionalData
     dims
+export # re-export from LinearAlgebra
+    eigen
     
 projectdir() = dirname(Base.active_project())
 projectdir(args...) = joinpath(projectdir(), args...)
