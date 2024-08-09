@@ -1,5 +1,6 @@
 using OceanGreensFunctionMethods
 using Documenter
+using MultipliableDimArrays
 
 DocMeta.setdocmeta!(OceanGreensFunctionMethods, :DocTestSetup, :(using OceanGreensFunctionMethods); recursive=true)
 
