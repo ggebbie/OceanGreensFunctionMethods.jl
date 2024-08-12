@@ -41,6 +41,9 @@ using DimensionalData: @dim
 # ╔═╡ 0a9a45e2-a561-4a21-afb9-b96ec884de4a
 using Unitful
 
+# ╔═╡ 2fe46717-3f77-4afa-9e74-1ddb594e40ea
+using Plots
+
 # ╔═╡ 5d30be92-5266-4700-ba7b-ac88a7f066e3
 # define our own unit: the sverdrup
 module UnitfulOcean; using Unitful; 
@@ -54,18 +57,6 @@ md"""
 Julia package to complement "A Review of Green's Function Methods in Ocean Circulation Models," by Haine et al. This package goes toward one of the stated goals of the manuscript, namely to make Green's Function methods accessible for learning purposes. Here, we also aim to make a Julia package that is useful and computationally efficient for research purposes."""
 
 
-# ╔═╡ bac2fd5b-70b5-4afb-8580-a13552f9c482
-html"""<style>
-main {
-    max-width: 96%;
-    margin-left: 1%;
-    margin-right: 2% !important;
-}
-"""
-
-# ╔═╡ 17a2dd87-04b7-45a2-975e-f0e670a07eac
-
-
 # ╔═╡ 27b7af71-e396-45b3-8723-8b2fc804a77f
 md"""## Activate a reproducible project environment
 
@@ -75,8 +66,16 @@ Uses Julia's built-in package manager `Pkg.jl` """
 md""" ## Load some helpful packages """
 
 
+# ╔═╡ 39045ccd-fd9a-4d87-a2d9-79171a3366dc
+plotly()
+
+# ╔═╡ abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
+md""" ## Suggested modifiable circulation inputs"""
+
 # ╔═╡ 6d11d809-9902-4a6a-b85e-18aed70e352f
-md""" ## Define and label the boxes """
+md""" ## Define and label the boxes 
+
+Using the outstanding [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl)"""
 
 # ╔═╡ 55a42a84-587b-41ec-8b18-96f83245ee7d
 @dim Meridional "meridional location"; @dim Vertical "vertical location"
@@ -99,9 +98,9 @@ Ny = length(meridional_locs); Nz = length(vertical_locs)
 model_dims = (Meridional(meridional_locs),Vertical(vertical_locs))
 
 # ╔═╡ fdd4e823-bdb5-4f02-8de3-aade687a94c6
-md""" ## Point of emphasis: physical units
+md""" ## Embed physical units with numerical values
 
-We aren't just solving mathematical constructs, but we are interpreting physical scenarios. Use `Unitful.jl` to put units on all quantities. """
+We aren't just solving mathematical constructs, but we are interpreting physical scenarios. Use [Unitful.jl]("https://github.com/PainterQubits/Unitful.jl") to put units on all quantities. """
 
 # ╔═╡ ae1f5365-78c5-4ae5-8aaf-c0818fa8c474
 # define units using a convenient shorthand
@@ -133,6 +132,21 @@ Unitful.register(UnitfulOcean)
 # ╔═╡ 852f36b7-170b-4d20-bd31-af6ae5c716a5
 Sv = u"sverdrup" # a convenient shortcut
 
+# ╔═╡ b9f2165e-2d18-4179-a69f-ab0fc6ceb8b6
+md""" abyssal overturning rate $(@bind Ψ_abyssal Slider((2:40)Sv,show_value = true, default = 20Sv)) """
+
+# ╔═╡ 2d21fdae-8d7d-4ef5-a447-9a2f37e695a4
+md""" intermediate overturning rate $(@bind Ψ_intermediate Slider((2:40)Sv,show_value = true, default = 10Sv)) """
+
+# ╔═╡ 246b677a-24bc-41da-96d5-1bff248657b8
+md""" vertical diffusion (exchange flux) $(@bind Fv_exchange Slider((1:30)Sv,show_value = true, default = 5Sv)) """
+
+# ╔═╡ c2a29255-e95a-4dd6-b97c-03a09337136e
+md""" high latitude boundary exchange $(@bind Fb_high Slider((1:40)Sv,show_value = true, default = 10Sv)) """
+
+# ╔═╡ b96b1c34-ef03-4874-a3f3-d5ade9a62c70
+md""" mid-latitude boundary exchange $(@bind Fb_mid Slider((1:40)Sv,show_value = true, default = 5Sv)) """
+
 # ╔═╡ 8306d2c4-8d50-4309-add1-6d1eef56cd4a
 # set the units of a quantity, then use a pipe to convert units
 Vol0 = 1e16m^3 |> km^3 # uniform value of volume for all boxes
@@ -144,15 +158,6 @@ Vol = DimArray(fill(Vol0, Ny, Nz), model_dims)
 
 # ╔═╡ 51d0e115-5859-4eab-8a91-b8193afd52b5
 Vol' # take transpose or complex conjugate transpose to view more intuitively
-
-# ╔═╡ b9f2165e-2d18-4179-a69f-ab0fc6ceb8b6
-md""" abyssal overturning rate $(@bind Ψ_abyssal Slider((2:40)Sv,show_value = true, default = 20Sv)) """
-
-# ╔═╡ 2d21fdae-8d7d-4ef5-a447-9a2f37e695a4
-md""" intermediate overturning rate $(@bind Ψ_intermediate Slider((2:40)Sv,show_value = true, default = 10Sv)) """
-
-# ╔═╡ 246b677a-24bc-41da-96d5-1bff248657b8
-md""" vertical diffusion (exchange flux) $(@bind Fv_exchange Slider((1:30)Sv,show_value = true, default = 5Sv)) """
 
 # ╔═╡ cd6dc878-4442-430b-a263-3651719f2f11
 # abyssal volume flux
@@ -192,13 +197,7 @@ deldotFm[Meridional=At("2 Mid-latitudes")]
 C = rand(model_dims) # first generate a uniform U(0,1) tracer distribution
 
 # ╔═╡ 5dfddc9c-6313-4679-a994-15a771ee4a90
-# ╠═╡ disabled = true
-#=╠═╡
 # then solve for tracer fluxes
-J = advective_diffusive_flux(C, Fv)
-  ╠═╡ =#
-
-# ╔═╡ 2da2069f-4035-448f-9833-6fcd1156b2e0
 J = advective_diffusive_flux(C, Fv)
 
 # ╔═╡ e325d781-ae5c-4f64-a608-170b4df77882
@@ -226,7 +225,7 @@ boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
 
 # ╔═╡ 378e4e6c-d399-458d-85a9-23c8ceda2b43
 # prescribe boundary volume fluxes
-Fb = DimArray(hcat([10Sv, 5Sv]), boundary_dims) # boundary flux
+Fb = DimArray(hcat([Fb_high, Fb_mid]), boundary_dims) # boundary flux
 
 # ╔═╡ d344750e-e335-4e3c-baaa-a2937c2497df
 # example: B_D (Dirichlet boundary conditions) to 1
@@ -290,17 +289,12 @@ md""" ## Eigenstructure """
 # ╔═╡ e63dfd51-6d85-47ad-9e07-d5164506ea91
 # for stability, all eigenvalues must be non-positive
 
-# ╔═╡ 2376d66b-8a50-46cf-88cb-1721c986c248
-
-
-# ╔═╡ 5e05d040-475f-4f8b-b094-f52d2fd1511b
-
-
-# ╔═╡ 5ed4eadc-396a-4e56-96f4-b9bbe605796a
-
-
 # ╔═╡ d9f77a6e-dada-476c-9e7a-25676c34518a
 diag(μ)
+
+# ╔═╡ c191889e-b3eb-4839-b494-8fad1f0ed9ce
+# real part of all eigenvalues is negative
+plot(real.(diag(μ)),xlabel="eigenvalue i",ylabel="μᵢ",legend=false)
 
 # ╔═╡ 1e3f4bd2-94cf-43a1-af98-11373a4d8561
 # maximum timescale is related to the smallest negative eigenvalue
@@ -310,10 +304,8 @@ Tmax = maximum_timescale(μ)
 # water-mass fractions
 a = watermass_fraction(μ, V, B)
 
-# ╔═╡ 2739e74f-6c5d-4d2c-ac29-9b929c2fadeb
-# see the water-mass fraction related to the first boundary of interest
-
 # ╔═╡ 2175673e-5232-4804-84cb-0d5b11f31413
+# see the water-mass fraction related to the first boundary of interest
 first(a)'
 
 # ╔═╡ 01484ca5-ed33-4b94-b188-780e9e3ef8c7
@@ -323,27 +315,21 @@ last(a)'
 # ╔═╡ c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
 Matrix(a) # all water-mass information concatenated
 
-# ╔═╡ bcac98bd-a250-4497-9757-7d357128ba4a
-# ╠═╡ disabled = true
-#=╠═╡
-        deldotJ = convergence(J)
-
-  ╠═╡ =#
-
-# ╔═╡ d0649e4c-6b78-43b5-aec6-3be449d03c09
+# ╔═╡ cf5bb364-5336-4dd1-8bb6-6e3f944673bf
 
 
-# ╔═╡ d0c8e5d6-733f-44c3-a2f4-a776f3137222
+# ╔═╡ 4021feb1-36ac-42f6-a5f6-391c0f064dc7
+
+
+# ╔═╡ 955a14c4-12d5-4818-9a88-3ebe4335ff34
 
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
-# ╠═bac2fd5b-70b5-4afb-8580-a13552f9c482
-# ╠═17a2dd87-04b7-45a2-975e-f0e670a07eac
 # ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
 # ╠═8f520c8b-19d7-48a8-be9f-3f167f07d188
 # ╠═c536e9f3-0457-499e-958c-384d6e388ef9
-# ╠═07f01269-cfd8-4d3d-8d85-0b1132ff2005
+# ╟─07f01269-cfd8-4d3d-8d85-0b1132ff2005
 # ╠═de3c6443-5ca1-4e97-82c8-5c4c9f204480
 # ╠═69147ae0-1c89-48a6-831b-ff325a984817
 # ╠═b85c6513-5a1a-4fdf-b4be-2efc3c1db830
@@ -351,6 +337,14 @@ Matrix(a) # all water-mass information concatenated
 # ╠═97df5706-1829-419a-b96b-5dbb4d704434
 # ╠═157462cf-b6f9-4de3-80f6-a3f846b5ea1a
 # ╠═0a9a45e2-a561-4a21-afb9-b96ec884de4a
+# ╠═2fe46717-3f77-4afa-9e74-1ddb594e40ea
+# ╠═39045ccd-fd9a-4d87-a2d9-79171a3366dc
+# ╟─abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
+# ╟─b9f2165e-2d18-4179-a69f-ab0fc6ceb8b6
+# ╟─2d21fdae-8d7d-4ef5-a447-9a2f37e695a4
+# ╟─246b677a-24bc-41da-96d5-1bff248657b8
+# ╟─c2a29255-e95a-4dd6-b97c-03a09337136e
+# ╟─b96b1c34-ef03-4874-a3f3-d5ade9a62c70
 # ╟─6d11d809-9902-4a6a-b85e-18aed70e352f
 # ╠═55a42a84-587b-41ec-8b18-96f83245ee7d
 # ╠═543f8a23-2e43-426e-87f0-e7750bcadd2b
@@ -371,9 +365,6 @@ Matrix(a) # all water-mass information concatenated
 # ╠═8306d2c4-8d50-4309-add1-6d1eef56cd4a
 # ╠═1e91d3e1-c26f-4118-9630-d654d352da76
 # ╠═51d0e115-5859-4eab-8a91-b8193afd52b5
-# ╟─b9f2165e-2d18-4179-a69f-ab0fc6ceb8b6
-# ╟─2d21fdae-8d7d-4ef5-a447-9a2f37e695a4
-# ╠═246b677a-24bc-41da-96d5-1bff248657b8
 # ╠═cd6dc878-4442-430b-a263-3651719f2f11
 # ╠═ff24a30f-56ee-4095-8bb3-0c7e4a72fe87
 # ╠═4bc2c6b0-ad10-4035-be82-d02060d1b3d7
@@ -386,7 +377,6 @@ Matrix(a) # all water-mass information concatenated
 # ╠═5dfddc9c-6313-4679-a994-15a771ee4a90
 # ╠═e325d781-ae5c-4f64-a608-170b4df77882
 # ╠═1e92642c-396f-4353-aa5c-8849cf26af1d
-# ╠═2da2069f-4035-448f-9833-6fcd1156b2e0
 # ╠═86076566-a96b-4faf-bdef-93b95733dcff
 # ╟─c9abc24c-d3f2-4d64-8dfc-b0fdf42d1502
 # ╠═6ed0c4d7-8fbb-439e-85fd-382e6b6e030f
@@ -408,16 +398,13 @@ Matrix(a) # all water-mass information concatenated
 # ╟─34e0f62a-9e14-4b9d-bad3-e6b23eb86c59
 # ╠═3a777fc4-4770-4fb3-8074-2f66881a78ee
 # ╠═e63dfd51-6d85-47ad-9e07-d5164506ea91
-# ╠═2376d66b-8a50-46cf-88cb-1721c986c248
-# ╠═5e05d040-475f-4f8b-b094-f52d2fd1511b
-# ╠═5ed4eadc-396a-4e56-96f4-b9bbe605796a
 # ╠═d9f77a6e-dada-476c-9e7a-25676c34518a
+# ╠═c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # ╠═1e3f4bd2-94cf-43a1-af98-11373a4d8561
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
-# ╠═2739e74f-6c5d-4d2c-ac29-9b929c2fadeb
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
 # ╠═01484ca5-ed33-4b94-b188-780e9e3ef8c7
 # ╠═c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
-# ╠═bcac98bd-a250-4497-9757-7d357128ba4a
-# ╠═d0649e4c-6b78-43b5-aec6-3be449d03c09
-# ╠═d0c8e5d6-733f-44c3-a2f4-a776f3137222
+# ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
+# ╠═4021feb1-36ac-42f6-a5f6-391c0f064dc7
+# ╠═955a14c4-12d5-4818-9a88-3ebe4335ff34
