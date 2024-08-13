@@ -38,6 +38,8 @@ These steps can be accomplished in the REPL package manager mode as well.
 using Pluto
 Pluto.run()
 ```
+ 
+The notebook should open in a browser or manually enter the URL from the command line into a browser.
 
 4. Select the `pedagogical_box_model.jl` file. Exit safe mode and allow the notebook to be run.
 

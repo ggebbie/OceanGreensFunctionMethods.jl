@@ -62,15 +62,15 @@ md"""## Activate a reproducible project environment
 
 Uses Julia's built-in package manager `Pkg.jl` """
 
+# ╔═╡ 28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
+Pkg.instantiate()
+
 # ╔═╡ 07f01269-cfd8-4d3d-8d85-0b1132ff2005
 md""" ## Load some helpful packages """
 
 
 # ╔═╡ 39045ccd-fd9a-4d87-a2d9-79171a3366dc
 plotly()
-
-# ╔═╡ 1fa031a3-e295-4846-b774-d28574c0076e
-#using Makie
 
 # ╔═╡ abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
 md""" ## Suggested modifiable circulation inputs"""
@@ -145,10 +145,10 @@ md""" intermediate overturning rate $(@bind Ψ_intermediate Slider((2:40)Sv,show
 md""" vertical diffusion (exchange flux) $(@bind Fv_exchange Slider((1:30)Sv,show_value = true, default = 5Sv)) """
 
 # ╔═╡ c2a29255-e95a-4dd6-b97c-03a09337136e
-md""" high latitude boundary exchange $(@bind Fb_high Slider((1:40)Sv,show_value = true, default = 10Sv)) """
+md""" high latitude boundary exchange $(@bind Fb_high Slider((1:40)Sv,show_value = true, default = 20Sv)) """
 
 # ╔═╡ b96b1c34-ef03-4874-a3f3-d5ade9a62c70
-md""" mid-latitude boundary exchange $(@bind Fb_mid Slider((1:40)Sv,show_value = true, default = 5Sv)) """
+md""" mid-latitude boundary exchange $(@bind Fb_mid Slider((1:40)Sv,show_value = true, default = 10Sv)) """
 
 # ╔═╡ 8306d2c4-8d50-4309-add1-6d1eef56cd4a
 # set the units of a quantity, then use a pipe to convert units
@@ -330,9 +330,8 @@ Matrix(a) # all water-mass information concatenated
 # ╔═╡ 68eab845-0db9-41ff-855b-e96ee7bc8db7
 tplot = (0:500)yr # times for plots
 
-# ╔═╡ 1ae28f78-04d4-4f19-9980-12ba3f73e8fc
-i = 4 # pick a box number
-# need to work on 3 x 3 layout
+# ╔═╡ 64a92c9d-9c87-45c7-b3ef-ff4c51f983de
+md""" cell number $(@bind boxno Slider(1:Ny*Nz,show_value = true, default = 5)) """
 
 # ╔═╡ e8fabe44-3a7d-47fc-84af-02baebf5f45a
 begin 
@@ -343,16 +342,26 @@ begin
 	ylabel = "Density",
 	xlabel = "τ",
 	legend = false,
-	title = string(i))
-	plot!([Γ[i],Γ[i]],[1e-4,1e-2]/yr)
-	plot!([Γ[i] + Δ[i]/2, Γ[i] - Δ[i]/2],[1e-4,1e-4]/yr,width=4,color=:grey)
+	title = string(boxno))
+	plot!([Γ[boxno],Γ[boxno]],[1e-4,1e-2]/yr)
+	plot!([Γ[boxno] + Δ[boxno]/2, Γ[boxno] - Δ[boxno]/2],[1e-4,1e-4]/yr,width=4,color=:grey)
 end
+
+# ╔═╡ 6eac27ef-647c-4884-aaf3-69f6705da3a8
+md"""## Tracer histories """
+
+# ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
+OceanGreensFunctionMethods.download_tracer_histories()
+
+# ╔═╡ 5e38d40e-ce9e-498e-b9e7-d87fa3487074
+
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
 # ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
 # ╠═8f520c8b-19d7-48a8-be9f-3f167f07d188
 # ╠═c536e9f3-0457-499e-958c-384d6e388ef9
+# ╠═28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
 # ╟─07f01269-cfd8-4d3d-8d85-0b1132ff2005
 # ╠═de3c6443-5ca1-4e97-82c8-5c4c9f204480
 # ╠═69147ae0-1c89-48a6-831b-ff325a984817
@@ -363,7 +372,6 @@ end
 # ╠═0a9a45e2-a561-4a21-afb9-b96ec884de4a
 # ╠═2fe46717-3f77-4afa-9e74-1ddb594e40ea
 # ╠═39045ccd-fd9a-4d87-a2d9-79171a3366dc
-# ╠═1fa031a3-e295-4846-b774-d28574c0076e
 # ╟─abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
 # ╟─b9f2165e-2d18-4179-a69f-ab0fc6ceb8b6
 # ╟─2d21fdae-8d7d-4ef5-a447-9a2f37e695a4
@@ -434,5 +442,8 @@ end
 # ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
 # ╠═4021feb1-36ac-42f6-a5f6-391c0f064dc7
 # ╠═68eab845-0db9-41ff-855b-e96ee7bc8db7
-# ╠═1ae28f78-04d4-4f19-9980-12ba3f73e8fc
+# ╟─64a92c9d-9c87-45c7-b3ef-ff4c51f983de
 # ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
+# ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
+# ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
+# ╠═5e38d40e-ce9e-498e-b9e7-d87fa3487074

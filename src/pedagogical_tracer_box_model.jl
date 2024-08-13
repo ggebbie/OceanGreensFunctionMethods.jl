@@ -257,3 +257,7 @@ function ttd_width(μ, V, B)
 end
 
 normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
+
+url_tracer_histories = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/blob/main/MATLAB/tracer_gas_histories.mat"
+
+download_tracer_histories() = Downloads.Download(url_tracer_histories())
