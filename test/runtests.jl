@@ -163,11 +163,15 @@ include("../src/config_units.jl")
                 # very similar values; is this correct?
                 Δ = ttd_width(μ, V, B)
                 @test all(Δ .≥ 0.0yr)
-
+                
             end
-            
+
+            @testset "read tracer histories" begin
+                matvars = read_tracer_histories()
+            end
+
         end
-        
+
    end
     
 end

@@ -258,6 +258,13 @@ end
 
 normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
 
-url_tracer_histories = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/blob/main/MATLAB/tracer_gas_histories.mat"
-
+location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
+#https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat
 download_tracer_histories() = Downloads.Download(url_tracer_histories())
+
+function read_tracer_histories()
+    url = OceanGreensFunctionMethods.location_tracer_histories()
+    !isdir(datadir()) && mkpath(datadir())
+    Downloads.download(url,datadir("tracer_histories.mat"))
+    return matread(datadir("tracer_histories.mat"))
+end

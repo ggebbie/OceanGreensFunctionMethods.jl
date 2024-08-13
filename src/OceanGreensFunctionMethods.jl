@@ -8,6 +8,8 @@ using DimensionalData: @dim
 using Unitful
 using MultipliableDimArrays
 using LinearAlgebra
+using Downloads
+using MAT
 
 import Distributions: mean, median, quantile, std, var, cov, cor, shape, params
 import Base: +
@@ -29,6 +31,7 @@ export boundary_flux, local_boundary_flux
 export linear_probe, mass, uniform
 export maximum_timescale, mean_age
 export ttd_width, normalized_exponential_decay
+export read_tracer_histories
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export watermass_fraction
