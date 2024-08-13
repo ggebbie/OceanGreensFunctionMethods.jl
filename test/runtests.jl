@@ -170,8 +170,11 @@ include("../src/config_units.jl")
                 matvars = read_tracer_histories()
             end
 
+            @testset "green's function" begin
+                t = 1e-2yr
+                G(t) = greens_function(t,A) # closure, i.e., anonymous function
+                
+            end
         end
-
-   end
-    
+    end
 end

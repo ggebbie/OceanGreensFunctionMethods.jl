@@ -268,3 +268,17 @@ function read_tracer_histories()
     Downloads.download(url,datadir("tracer_histories.mat"))
     return matread(datadir("tracer_histories.mat"))
 end
+
+function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{T} where T <: Real
+
+    exp(A*t) 
+end
+
+function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
+
+    # A must be uniform (check type signature someday)
+    !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
+    eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
+
+    return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
+end
