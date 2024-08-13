@@ -11,7 +11,7 @@ using LinearAlgebra
 # using Plots
 using Test
 
-#include(srcdir("config_units.jl"))
+#include(srcdir("config_units.jl")) # not sure why it doesn't work
 include("../src/config_units.jl")
 
 @testset "OceanGreensFunctionMethods.jl" begin
@@ -156,7 +156,16 @@ include("../src/config_units.jl")
                 a = watermass_fraction(μ, V, B)
                 Matrix(a)
                 @test all(isapprox.(1.0,sum(a)))                
+
+                Γ = mean_age(μ, V, B)
+                @test all(Γ .≥ 0.0yr)
+
+                # very similar values; is this correct?
+                Δ = ttd_width(μ, V, B)
+                @test all(Δ .≥ 0.0yr)
+
             end
+            
         end
         
    end

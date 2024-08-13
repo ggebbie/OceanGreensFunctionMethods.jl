@@ -69,6 +69,9 @@ md""" ## Load some helpful packages """
 # ╔═╡ 39045ccd-fd9a-4d87-a2d9-79171a3366dc
 plotly()
 
+# ╔═╡ 1fa031a3-e295-4846-b774-d28574c0076e
+#using Makie
+
 # ╔═╡ abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
 md""" ## Suggested modifiable circulation inputs"""
 
@@ -155,7 +158,6 @@ Vol0 = 1e16m^3 |> km^3 # uniform value of volume for all boxes
 # If your screen is big enough, you should see a labeled, 3 x 3 table of volume values
 Vol = DimArray(fill(Vol0, Ny, Nz), model_dims)
 
-
 # ╔═╡ 51d0e115-5859-4eab-8a91-b8193afd52b5
 Vol' # take transpose or complex conjugate transpose to view more intuitively
 
@@ -195,6 +197,9 @@ deldotFm[Meridional=At("2 Mid-latitudes")]
 # ╔═╡ 08464a04-7652-4f24-978d-cd329e7fe0a7
 # Given a tracer distribution C and volume fluxes Fv, find the tracer fluxes
 C = rand(model_dims) # first generate a uniform U(0,1) tracer distribution
+
+# ╔═╡ df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
+Plots.heatmap(transpose(C),yflip=true)
 
 # ╔═╡ 5dfddc9c-6313-4679-a994-15a771ee4a90
 # then solve for tracer fluxes
@@ -316,13 +321,32 @@ last(a)'
 Matrix(a) # all water-mass information concatenated
 
 # ╔═╡ cf5bb364-5336-4dd1-8bb6-6e3f944673bf
-
+Γ = mean_age(μ, V, B)
 
 # ╔═╡ 4021feb1-36ac-42f6-a5f6-391c0f064dc7
+# very similar values; is this correct?
+Δ = ttd_width(μ, V, B)
 
+# ╔═╡ 68eab845-0db9-41ff-855b-e96ee7bc8db7
+tplot = (0:500)yr # times for plots
 
-# ╔═╡ 955a14c4-12d5-4818-9a88-3ebe4335ff34
+# ╔═╡ 1ae28f78-04d4-4f19-9980-12ba3f73e8fc
+i = 4 # pick a box number
+# need to work on 3 x 3 layout
 
+# ╔═╡ e8fabe44-3a7d-47fc-84af-02baebf5f45a
+begin 
+	p = plot(tplot,
+	normalized_exponential_decay.(tplot,Tmax),
+	linestyle = :dash,
+	yscale = :log10,
+	ylabel = "Density",
+	xlabel = "τ",
+	legend = false,
+	title = string(i))
+	plot!([Γ[i],Γ[i]],[1e-4,1e-2]/yr)
+	plot!([Γ[i] + Δ[i]/2, Γ[i] - Δ[i]/2],[1e-4,1e-4]/yr,width=4,color=:grey)
+end
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
@@ -339,6 +363,7 @@ Matrix(a) # all water-mass information concatenated
 # ╠═0a9a45e2-a561-4a21-afb9-b96ec884de4a
 # ╠═2fe46717-3f77-4afa-9e74-1ddb594e40ea
 # ╠═39045ccd-fd9a-4d87-a2d9-79171a3366dc
+# ╠═1fa031a3-e295-4846-b774-d28574c0076e
 # ╟─abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
 # ╟─b9f2165e-2d18-4179-a69f-ab0fc6ceb8b6
 # ╟─2d21fdae-8d7d-4ef5-a447-9a2f37e695a4
@@ -374,6 +399,7 @@ Matrix(a) # all water-mass information concatenated
 # ╠═fa9f454b-b7ca-4e37-a67c-a28ff91a5e11
 # ╠═17bf7f50-78a7-4c7c-bc2f-4d9086dd2181
 # ╠═08464a04-7652-4f24-978d-cd329e7fe0a7
+# ╠═df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
 # ╠═5dfddc9c-6313-4679-a994-15a771ee4a90
 # ╠═e325d781-ae5c-4f64-a608-170b4df77882
 # ╠═1e92642c-396f-4353-aa5c-8849cf26af1d
@@ -407,4 +433,6 @@ Matrix(a) # all water-mass information concatenated
 # ╠═c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
 # ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
 # ╠═4021feb1-36ac-42f6-a5f6-391c0f064dc7
-# ╠═955a14c4-12d5-4818-9a88-3ebe4335ff34
+# ╠═68eab845-0db9-41ff-855b-e96ee7bc8db7
+# ╠═1ae28f78-04d4-4f19-9980-12ba3f73e8fc
+# ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
