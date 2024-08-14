@@ -33,6 +33,7 @@ export maximum_timescale, mean_age
 export ttd_width, normalized_exponential_decay
 export read_tracer_histories
 export greens_function
+export forward_boundary_propagator
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export watermass_fraction

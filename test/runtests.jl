@@ -171,8 +171,14 @@ include("../src/config_units.jl")
             end
 
             @testset "green's function" begin
-                t = 1e-2yr
-                G(t) = greens_function(t,A) # closure, i.e., anonymous function
+                Δτ = 0.25yr
+                τ = 0yr:Δτ:2000yr
+                ttest = 1.0yr
+                G(t) = greens_function(t,A) # a closure that captures A
+                @test all(Matrix(G(ttest)) .≥ 0.0)
+
+                G′(t) = forward_boundary_propagator(t,A,B)
+                @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
                 
             end
         end

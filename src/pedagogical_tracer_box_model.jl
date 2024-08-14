@@ -269,11 +269,6 @@ function read_tracer_histories()
     return matread(datadir("tracer_histories.mat"))
 end
 
-function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{T} where T <: Real
-
-    exp(A*t) 
-end
-
 function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
 
     # A must be uniform (check type signature someday)
@@ -282,3 +277,5 @@ function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <:
 
     return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
 end
+
+forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
