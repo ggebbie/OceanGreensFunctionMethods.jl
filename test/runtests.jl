@@ -163,24 +163,24 @@ include("../src/config_units.jl")
                 # very similar values; is this correct?
                 Δ = ttd_width(μ, V, B)
                 @test all(Δ .≥ 0.0yr)
+
+                @testset "green's function" begin
+                    Δτ = 0.25yr
+                    τ = 0yr:Δτ:2000yr
+                    ttest = 1.0yr
+                    G(t) = greens_function(t,A) # a closure that captures A
+                    @test all(Matrix(G(ttest)) .≥ 0.0)
+
+                    G′(t) = forward_boundary_propagator(t,A,B)
+                    @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
                 
+                end
             end
 
             @testset "read tracer histories" begin
                 matvars = read_tracer_histories()
             end
 
-            @testset "green's function" begin
-                Δτ = 0.25yr
-                τ = 0yr:Δτ:2000yr
-                ttest = 1.0yr
-                G(t) = greens_function(t,A) # a closure that captures A
-                @test all(Matrix(G(ttest)) .≥ 0.0)
-
-                G′(t) = forward_boundary_propagator(t,A,B)
-                @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
-                
-            end
         end
     end
 end
