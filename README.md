@@ -65,3 +65,19 @@ See the tests in `test/runtests.jl` for a more-detailed example usage and a comp
 	mean(G)
 	var(G)
 ```
+
+# Features
+
+1. Self-documented data formats.
+
+Box models and other gridded datasets can be stored in concise arrays that are organized according to physical space or some other organizational system. Geo-scientists are familiar with storing output data to file with meta-data in a self-describing format. Here we use `DimensionalData.jl` to keep data organized during the computational phase of the work as well.
+
+2. Minimizing bookkeeping of obscure indices.
+
+N-dimensional gridded data is naturally stored in N-dimensional arrays, but N-dimensional arrays are not in the right format to perform linear algebra operations with matrices and vectors. The Julia package `MultipliableDimArrays.jl` does the right thing to permit these linear algebra operations and then returns the output in the same human-readable output that the investigator originally provided. Cryptic references to boxes by a given sequential number are minimized in the code, and instead values can be looked up from more easily-interpretable names.
+
+3. Embedding physical units with numerical quantities.
+
+Green's function methods with physical data are a type of Dimensional Analysis as laid out by George W. Hart ("Multidimensional Analysis: Algebras and Systems for Science and Engineering" (Springer-Verlag, 1995). His approach fits nicely into Julia's type system and multiple dispatch using the `Unitful.jl` package. Units do not cause much computational overhead, they remind us of the physical problem at hand, and they provide a means of checking when our equations are not implemented properly.
+
+
