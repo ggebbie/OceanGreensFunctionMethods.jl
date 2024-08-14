@@ -11,7 +11,7 @@ using LinearAlgebra
 using Downloads
 using MAT
 
-import Distributions: mean, median, quantile, std, var, cov, cor, shape, params
+import Distributions: mean, median, quantile, std, var, cov, cor, shape, params, pdf, InverseGaussian
 import Base: +
 import DimensionalData: dims
 import LinearAlgebra: eigen
@@ -34,9 +34,12 @@ export ttd_width, normalized_exponential_decay
 export read_tracer_histories
 export greens_function
 export forward_boundary_propagator
+export global_ttd
+export watermass_fraction
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
-export watermass_fraction
+export # re-export from Distributions
+    InverseGaussian, pdf
 export # re-export from Base
     +
 export # re-export from DimensionalData

@@ -260,7 +260,7 @@ normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
 
 location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
 #https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat
-download_tracer_histories() = Downloads.Download(url_tracer_histories())
+#download_tracer_histories() = Downloads.Download(url_tracer_histories())
 
 function read_tracer_histories()
     url = OceanGreensFunctionMethods.location_tracer_histories()
@@ -279,3 +279,5 @@ function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <:
 end
 
 forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+
+global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))

@@ -44,6 +44,9 @@ using Unitful
 # ╔═╡ 2fe46717-3f77-4afa-9e74-1ddb594e40ea
 using Plots
 
+# ╔═╡ cc363185-cdc4-47be-a926-5178e1535f0d
+using Distributions
+
 # ╔═╡ 5d30be92-5266-4700-ba7b-ac88a7f066e3
 # define our own unit: the sverdrup
 module UnitfulOcean; using Unitful; 
@@ -327,34 +330,104 @@ Matrix(a) # all water-mass information concatenated
 # very similar values; is this correct?
 Δ = ttd_width(μ, V, B)
 
-# ╔═╡ 68eab845-0db9-41ff-855b-e96ee7bc8db7
-tplot = (0:500)yr # times for plots
+# ╔═╡ 93c9614e-70a1-49ef-933b-b86fec342597
+md"""## Green's functions """
 
-# ╔═╡ 64a92c9d-9c87-45c7-b3ef-ff4c51f983de
-md""" cell number $(@bind boxno Slider(1:Ny*Nz,show_value = true, default = 5)) """
+# ╔═╡ cd492316-d6b2-4645-80ba-c5817ec5877c
+Δτ = 0.25yr # time resolution
+
+# ╔═╡ 4c258084-da30-4393-b844-c379c9e79efd
+τ = 0yr:Δτ:2000yr # list of time lags
+
+# ╔═╡ 589ab455-2e9c-47d6-abd7-f89f367a5ed5
+G(t) = greens_function(t,A) # a closure that captures A
+
+# ╔═╡ c122abb6-185c-4894-a2c4-8ab6224e83d2
+G′(t) = forward_boundary_propagator(t,A,B) # type G + \prime + TAB
+
+# ╔═╡ 595fba3f-65ec-461f-a257-92456d4f94a0
+# global (or total) TTD
+𝒢(t) = global_ttd(t,A,B) # type \scr + G + TAB
+
+# ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
+md"""## Select interior box for diagnostics """
+
+# ╔═╡ 07eccdb4-894d-4cd5-a639-0c01a70a84ec
+@bind mbox Select(meridional_locs)
+
+# ╔═╡ 6e1fe604-4c47-4967-bcc0-fa80fbe5bfa5
+@bind vbox Select(vertical_locs)
+
+# ╔═╡ 00902450-ceb7-4c33-be7e-906502990813
+# a list comprehension
+ttd1 = [G′(τ[i])[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)]
+
+# ╔═╡ c2a38bc2-ef10-4fe5-8642-857f9acdadd7
+# could be written as a for loop instead
+ttd2 = [G′(τ[i])[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)] 
+
+# ╔═╡ 8d69c375-6a0c-400e-af85-3013a364fa1d
+ttd_global = [𝒢(τ[i])[Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)] 
+
+# ╔═╡ 09a85965-d1dc-47a3-9eba-dd1dc129db36
+Γ_ = Γ[Meridional=At(mbox),Vertical=At(vbox)] 
+
+# ╔═╡ 19ef1da1-9b1a-4300-83aa-bb503027122b
+Δ_ = Δ[Meridional=At(mbox),Vertical=At(vbox)]
+
+# ╔═╡ fd907198-8e2e-4296-b640-c0aebbd0a796
+G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
+
+# ╔═╡ 1bb59934-17be-40d3-b227-b73bb1b9c4df
+ttd_inversegaussian = pdf.(G_inversegaussian,τ)
+
+
+# ╔═╡ a183e31d-8bab-46e0-a6b1-0a181c5f0f69
+a1 = a[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
+
+# ╔═╡ 9537166f-054f-441e-a001-3ba59a4b59e0
+a2 = a[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ e8fabe44-3a7d-47fc-84af-02baebf5f45a
 begin 
-	p = plot(tplot,
-	normalized_exponential_decay.(tplot,Tmax),
-	linestyle = :dash,
-	yscale = :log10,
-	ylabel = "Density",
-	xlabel = "τ",
-	legend = false,
-	title = string(boxno))
-	plot!([Γ[boxno],Γ[boxno]],[1e-4,1e-2]/yr)
-	plot!([Γ[boxno] + Δ[boxno]/2, Γ[boxno] - Δ[boxno]/2],[1e-4,1e-4]/yr,width=4,color=:grey)
+
+	#boxloc = (Meridional=At(meridional_box),Vertical=At(vertical_box))
+	# to do: put plotting into functions
+	p = plot(τ,
+		normalized_exponential_decay.(τ,Tmax),
+		linestyle = :dash,
+		yscale = :log10,
+		ylabel = "Density",
+		xlabel = "τ",
+		label = "Tmax",
+		legend = :topright,
+		titlefontsize = 8,
+		title = mbox*", "*vbox,
+		xlims = (0yr,400yr),
+		ylims = (1e-4/yr,1e-1/yr))
+	
+	plot!([Γ_,Γ_],
+		[1e-4,1e-2]/yr,
+		label="Γ")	
+	
+	plot!([Γ_ + Δ_/2,
+		Γ_ - Δ_/2],
+		[1e-4,1e-4]/yr,
+		width=4,
+		color=:grey,
+		label="Δ")
+	
+	plot!(τ,ttd1,label="TTD 1",width=4*a1)
+	plot!(τ,ttd2,label="TTD 2",width=4*a2)
+	plot!(τ,ttd_global,label="Total TTD",width=4*a2,color=:black)
+	plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
 end
 
 # ╔═╡ 6eac27ef-647c-4884-aaf3-69f6705da3a8
 md"""## Tracer histories """
 
 # ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
-OceanGreensFunctionMethods.download_tracer_histories()
-
-# ╔═╡ 5e38d40e-ce9e-498e-b9e7-d87fa3487074
-
+read_tracer_histories()
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
@@ -371,6 +444,7 @@ OceanGreensFunctionMethods.download_tracer_histories()
 # ╠═157462cf-b6f9-4de3-80f6-a3f846b5ea1a
 # ╠═0a9a45e2-a561-4a21-afb9-b96ec884de4a
 # ╠═2fe46717-3f77-4afa-9e74-1ddb594e40ea
+# ╠═cc363185-cdc4-47be-a926-5178e1535f0d
 # ╠═39045ccd-fd9a-4d87-a2d9-79171a3366dc
 # ╟─abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
 # ╟─b9f2165e-2d18-4179-a69f-ab0fc6ceb8b6
@@ -441,9 +515,24 @@ OceanGreensFunctionMethods.download_tracer_histories()
 # ╠═c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
 # ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
 # ╠═4021feb1-36ac-42f6-a5f6-391c0f064dc7
-# ╠═68eab845-0db9-41ff-855b-e96ee7bc8db7
-# ╟─64a92c9d-9c87-45c7-b3ef-ff4c51f983de
+# ╟─93c9614e-70a1-49ef-933b-b86fec342597
+# ╠═cd492316-d6b2-4645-80ba-c5817ec5877c
+# ╠═4c258084-da30-4393-b844-c379c9e79efd
+# ╠═589ab455-2e9c-47d6-abd7-f89f367a5ed5
+# ╠═c122abb6-185c-4894-a2c4-8ab6224e83d2
+# ╠═595fba3f-65ec-461f-a257-92456d4f94a0
+# ╠═00902450-ceb7-4c33-be7e-906502990813
+# ╠═c2a38bc2-ef10-4fe5-8642-857f9acdadd7
+# ╠═8d69c375-6a0c-400e-af85-3013a364fa1d
+# ╠═09a85965-d1dc-47a3-9eba-dd1dc129db36
+# ╠═19ef1da1-9b1a-4300-83aa-bb503027122b
+# ╠═a183e31d-8bab-46e0-a6b1-0a181c5f0f69
+# ╠═9537166f-054f-441e-a001-3ba59a4b59e0
+# ╠═fd907198-8e2e-4296-b640-c0aebbd0a796
+# ╠═1bb59934-17be-40d3-b227-b73bb1b9c4df
+# ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
+# ╟─07eccdb4-894d-4cd5-a639-0c01a70a84ec
+# ╟─6e1fe604-4c47-4967-bcc0-fa80fbe5bfa5
 # ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
 # ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
 # ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
-# ╠═5e38d40e-ce9e-498e-b9e7-d87fa3487074

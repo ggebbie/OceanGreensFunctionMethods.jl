@@ -1,5 +1,6 @@
 """
     TracerInverseGaussian(Γ,Δ)
+using LinearAlgebra: NumberArray
 
 The *tracer inverse Gaussian distribution* with mean `Γ` and width `Δ` has probability density function
 
@@ -56,6 +57,9 @@ width(d::TracerInverseGaussian) = d.Δ
 params(d::TracerInverseGaussian) = (d.Γ, d.Δ)
 partype(::TracerInverseGaussian{T}) where {T} = T
 
+# constructor for original Inverse Gaussian
+InverseGaussian(d::TracerInverseGaussian) = InverseGaussian(ustrip.(d.Γ), ustrip(shape(d)))
+
 # #### Statistics
 
 mean(d::TracerInverseGaussian) = d.Γ
@@ -75,14 +79,11 @@ skewness(d::TracerInverseGaussian) = 3sqrt(d.Γ / shape(d))
 
 # #### Evaluation
 
-# function pdf(d::TracerInverseGaussian{T}, x::Real) where T<:Real
-#     if x > 0
-#         Γ, Δ = params(d)
-#         return sqrt(Δ / (twoπ * x^3)) * exp(-Δ * (x - Γ)^2 / (2Γ^2 * x))
-#     else
-#         return zero(T)
-#     end
-# end
+function pdf(d::TracerInverseGaussian{T}, x::Number) where T<:Number
+    unt = unit(d.Γ) 
+    dig = InverseGaussian(d)
+    return pdf(dig,ustrip(x))./unt
+end
 
 # function logpdf(d::TracerInverseGaussian{T}, x::Real) where T<:Real
 #     if x > 0
