@@ -58,7 +58,7 @@ params(d::TracerInverseGaussian) = (d.Γ, d.Δ)
 partype(::TracerInverseGaussian{T}) where {T} = T
 
 # constructor for original Inverse Gaussian
-InverseGaussian(d::TracerInverseGaussian) = InverseGaussian(ustrip.(d.Γ), ustrip(shape(d)))
+InverseGaussian(d::TracerInverseGaussian) = InverseGaussian(ustrip(d.Γ), ustrip(shape(d)))
 
 # #### Statistics
 

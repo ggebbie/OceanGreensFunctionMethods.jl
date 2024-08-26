@@ -10,7 +10,6 @@ Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 MultipliableDimArrays = "3e2a59ee-8dc2-49ed-b08b-35477f91d0a4"
-Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
