@@ -224,3 +224,60 @@ maximum_timescale(μ) = -1/real(last(last(μ)))
 # can be simplified with upstream fix
 watermass_fraction(μ, V, B) = - (unit(first(first(B))) * real.(V * (μ \ (V \ ustrip.(B)))))
 
+function mean_age(μ, V, B)
+
+    fix_units = unit(first(first(B))) # upstream issue to be fixed
+
+    μ_diag = diag(μ)
+    μ_neg2_diag = μ_diag.^-2
+    μ_neg2 = DiagonalDimArray(μ_neg2_diag,dims(μ))
+    
+    # use  real to get rid of very small complex parts
+    # ideally, would check that complex parts are small
+    boundary_dims = dims(B)
+    return Γ = fix_units * real.(V * (μ_neg2 * (V \ ustrip.(B* ones(boundary_dims)))))
+end
+
+function ttd_width(μ, V, B)
+
+    fix_units = unit(first(first(B))) # upstream issue to be fixed
+
+    μ_diag = diag(μ)
+    μ_neg3_diag = μ_diag.^-3 
+    μ_neg3 = DiagonalDimArray(μ_neg3_diag,dims(μ))
+    
+    # use  real to get rid of very small complex parts
+    # ideally, would check that complex parts are small
+    boundary_dims = dims(B)
+    Δ² = fix_units * (-real.(V * (μ_neg3 * (V \ ustrip.(B* ones(boundary_dims))))))
+
+    Γ = mean_age(μ, V, B)
+    Δ² -= ((1//2) .* Γ.^2)
+    return .√(Δ²)
+end
+
+normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
+
+location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
+#https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat
+#download_tracer_histories() = Downloads.Download(url_tracer_histories())
+
+function read_tracer_histories()
+    url = OceanGreensFunctionMethods.location_tracer_histories()
+    !isdir(datadir()) && mkpath(datadir())
+    Downloads.download(url,datadir("tracer_histories.mat"))
+    return matread(datadir("tracer_histories.mat"))
+end
+
+function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
+
+    # A must be uniform (check type signature someday)
+    !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
+    eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
+
+    return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
+end
+
+forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+
+global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))

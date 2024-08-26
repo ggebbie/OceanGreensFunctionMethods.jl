@@ -7,8 +7,11 @@ using DimensionalData
 using DimensionalData: @dim 
 using Unitful
 using MultipliableDimArrays
+using LinearAlgebra
+using Downloads
+using MAT
 
-import Distributions: mean, median, quantile, std, var, cov, cor, shape, params
+import Distributions: mean, median, quantile, std, var, cov, cor, shape, params, pdf, InverseGaussian
 import Base: +
 import DimensionalData: dims
 import LinearAlgebra: eigen
@@ -26,10 +29,17 @@ export projectdir, datadir, srcdir
 export meridional_names, vertical_names
 export boundary_flux, local_boundary_flux
 export linear_probe, mass, uniform
-export maximum_timescale
+export maximum_timescale, mean_age
+export ttd_width, normalized_exponential_decay
+export read_tracer_histories
+export greens_function
+export forward_boundary_propagator
+export global_ttd
+export watermass_fraction
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
-export watermass_fraction
+export # re-export from Distributions
+    InverseGaussian, pdf
 export # re-export from Base
     +
 export # re-export from DimensionalData
