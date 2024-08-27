@@ -6,6 +6,11 @@ yr = u"yr"
 Tg = u"Tg"
 s  = u"s"
 
+@dim Eigenmode "eigenmode"
+@dim Tracer "tracer"
+@dim Meridional "meridional location"
+@dim Vertical "vertical location"
+
 struct Fluxes{T,N} 
     poleward::DimArray{T,N}
     equatorward::DimArray{T,N}
@@ -263,10 +268,36 @@ location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer
 #download_tracer_histories() = Downloads.Download(url_tracer_histories())
 
 function read_tracer_histories()
+
+    # download tracer history input (make this lazy)
     url = OceanGreensFunctionMethods.location_tracer_histories()
     !isdir(datadir()) && mkpath(datadir())
-    Downloads.download(url,datadir("tracer_histories.mat"))
-    return matread(datadir("tracer_histories.mat"))
+    matfile = Downloads.download(url,datadir("tracer_histories.mat"))
+
+    file = matopen(matfile)
+
+    # all matlab variables except Year
+    varnames = Symbol.(filter(x -> x ≠ "Year", collect(keys(file))))
+    tracerdim = Tracer(varnames)
+    timedim = Ti(vec(read(file, "Year")))
+
+    BD = zeros(tracerdim,timedim)
+    
+    for v in varnames
+        BD[Tracer=At(v)] = read(file, string(v)) # note that this does NOT introduce a variable ``varname`` into scope
+    end
+    close(file)
+    return BD
+end
+
+#function tracer_surface_history(tracername, BD = read_tracer_histories())
+function tracer_surface_history(tracername, BD)
+
+    tracer_timeseries = BD[Tracer=At(tracername)]
+
+    return linear_interpolation(
+        first(DimensionalData.index(dims(tracer_timeseries))),
+        tracer_timeseries)
 end
 
 function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 

@@ -10,6 +10,7 @@ using MultipliableDimArrays
 using LinearAlgebra
 using Downloads
 using MAT
+using Interpolations
 
 import Distributions: mean, median, quantile, std, var, cov, cor, shape, params, pdf, InverseGaussian
 import Base: +
@@ -31,7 +32,7 @@ export boundary_flux, local_boundary_flux
 export linear_probe, mass, uniform
 export maximum_timescale, mean_age
 export ttd_width, normalized_exponential_decay
-export read_tracer_histories
+export read_tracer_histories, tracer_surface_history
 export greens_function
 export forward_boundary_propagator
 export global_ttd
@@ -46,8 +47,6 @@ export # re-export from DimensionalData
     dims
 export # re-export from LinearAlgebra
     eigen
-
-@dim Eigenmode "eigenmode"
 
 projectdir() = dirname(Base.active_project())
 projectdir(args...) = joinpath(projectdir(), args...)

@@ -7,8 +7,6 @@ using Unitful
 using MultipliableDimArrays
 using LinearAlgebra
 # using OrdinaryDiffEq, ModelingToolkit, MethodOfLines, DomadinSets, Unitful
-# using DrWatson
-# using Plots
 using Test
 
 #include(srcdir("config_units.jl")) # not sure why it doesn't work
@@ -42,8 +40,8 @@ include("../src/config_units.jl")
 
     @testset "pedagogical tracer box model" begin
 
-        @dim Meridional "meridional location"
-        @dim Vertical "vertical location"
+#        @dim Meridional "meridional location"
+ #       @dim Vertical "vertical location"
 
         # define grid
         meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
@@ -178,7 +176,14 @@ include("../src/config_units.jl")
             end
 
             @testset "read tracer histories" begin
-                matvars = read_tracer_histories()
+                BD = read_tracer_histories()
+                tracername = :CFC11NH
+                surface_history =  tracer_surface_history(tracername, BD)
+
+                tt = 1973.0
+                surface_history(tt)
+
+                # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;
             end
 
         end
