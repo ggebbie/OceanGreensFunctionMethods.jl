@@ -21,27 +21,27 @@ include("../src/config_units.jl")
         Γ = 20.0 # mean
         Δ = 20.0 # width
 
-        G = TracerInverseGaussian(Γ, Δ)
+        G1 = TracerInverseGaussian(Γ, Δ)
 
         # the Inverse Gaussian distribution in typical statistical toolboxes
         # has different input arguments
         μ = Γ # the same, but different notation
-        λ = shape(G) # the shape parameter is the second argument 
+        λ = shape(G1) # the shape parameter is the second argument 
         
         G2 = InverseGaussian(μ, λ)
 
         # both Inverse Gaussians should be the same
-        @test isequal(shape(G),shape(G2))
-        @test !isequal(params(G),params(G2))
-        @test isequal(partype(G), partype(G2)) # parameter type
-        @test isequal(mean(G), mean(G2))
-        @test isequal(var(G), var(G2))
+        @test isequal(shape(G1),shape(G2))
+        @test !isequal(params(G1),params(G2))
+        @test isequal(partype(G1), partype(G2)) # parameter type
+        @test isequal(mean(G1), mean(G2))
+        @test isequal(var(G1), var(G2))
     end
 
     @testset "pedagogical tracer box model" begin
 
-        @dim Meridional "meridional location"
-        @dim Vertical "vertical location"
+        #@dim Meridional "meridional location"
+        #@dim Vertical "vertical location"
 
         # define grid
         meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
@@ -104,10 +104,8 @@ include("../src/config_units.jl")
         @testset "surface boundary" begin 
 
             # boundary exchange: define the locations affected by boundary fluxes
-            meridional_boundary = ["1 High latitudes", "2 Mid-latitudes"]
-            vertical_boundary = ["1 Thermocline"]
-            boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
-
+            boundary_dims = boundary_dimensions()
+           
             Fb = DimArray(hcat([10Sv, 5Sv]), boundary_dims) # boundary flux
             f = ones(boundary_dims) # boundary tracer values
 
@@ -179,36 +177,37 @@ include("../src/config_units.jl")
                 BD = read_tracer_histories()
                 tracername = :CFC11NH
                 box2_box1_ratio = 0.75
-                source_history =  tracer_source_history(tracername, BD, box2_box1_ratio)
+                source_history_func(t) =  tracer_source_history(t, tracername, BD, box2_box1_ratio)
                 
                 tt = 1973.0yr
-                source_history(tt)
+                source_history_func(tt)
 
                 t0 = 1973.0yr
                 tf = 1974.0yr
-                source_history(tf)
-                # OceanGreensFunctionMethods.forcing_integrand(t0, tf, μ, V, B, source_history)
-
-                # forcing_int(t) = OceanGreensFunctionMethods.forcing_integrand(t, tf, μ, V, B, source_history)
-
-                # # MATLAB: integral(integrand,ti,tf,'ArrayValued',true)
-
-                # integral, err = quadgk(forcing_int, 1970.0yr, 1971.0yr)# rtol=1e-8)
-
-                integrate_forcing(t0, tf, μ, V, B, source_history)
+                source_history_func(tf)
+                tester = integrate_forcing(t0, tf, μ, V, B, source_history_func)
 
                 # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;
 
                 C₀ = zeros(model_dims)
                 tlist = (1970.0:1980.0)yr
-                tmp = Array{DimArray}(undef,size(tlist))
-                Cevolve = DimArray(tmp,Ti(tlist))
+                # tmp = Array{DimArray}(undef,size(tlist))
+                # Cevolve = DimArray(tmp,Ti(tlist))
 
-                Cevolve = evolve_concentration(C₀, A, B, tlist, source_history; halflife = nothing)
+                Cevolve = evolve_concentration(C₀, A, B, tlist, source_history_func; halflife = nothing)
 
+                sss =  [Cevolve[t][3,1] for t in eachindex(tlist)]
             end
 
         end
     end
 end
+
+
+
+
+
+
+
+
 

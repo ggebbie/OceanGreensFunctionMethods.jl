@@ -34,7 +34,7 @@ vertical_names() = ["1 Thermocline", "2 Deep", "3 Abyssal"]
 
 function boundary_dimensions()
     meridional_boundary = meridional_names()[1:2]
-    vertical_boundary = vertical_names()[1]
+    vertical_boundary = [vertical_names()[1]] # add brackets to keep as vector
     return  (Meridional(meridional_boundary), Vertical(vertical_boundary))
 end
 
@@ -310,25 +310,27 @@ tracer_units() = Dict(
     :N2OSH => nmol/kg
     )
     
-function tracer_source_history(tracername, BD, box2_box1_ratio)
+function tracer_point_source_history(tracername, BD)
 
     tracer_timeseries = BD[Tracer=At(tracername)] * tracer_units()[tracername]
 
-    box1 = linear_interpolation(
+    return linear_interpolation(
         first(DimensionalData.index(dims(tracer_timeseries))),
         tracer_timeseries)
-
-    box2 = box2_box1_ratio * box1
-
-    # replace this section with a function call.
-    meridional_boundary = ["1 High latitudes", "2 Mid-latitudes"]
-            vertical_boundary = ["1 Thermocline"]
-            boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
-    
-    
 end
 
-function evolve_concentration(C₀, A, B, tlist, surface_history; halflife = nothing)
+function tracer_source_history(t, tracername, BD, box2_box1_ratio)
+
+    source_func = tracer_point_source_history(tracername, BD)
+    box1 = source_func(t)
+    box2 = box2_box1_ratio * box1
+    
+    # replace this section with a function call.
+    boundary_dims = boundary_dimensions()
+    return DimArray(hcat([box1,box2]),boundary_dims)
+end
+
+function evolve_concentration(C₀, A, B, tlist, source_history; halflife = nothing)
 # function concs = find_concentrations(boxModel,times,halflife,source_history,init_concs)
 # % Integrate forcing vector over time to compute the concentration history.
 # % Find propagator by analytical expression using eigen-methods.
@@ -337,8 +339,9 @@ function evolve_concentration(C₀, A, B, tlist, surface_history; halflife = not
     μ, V = eigen(A)
 
     # pre-allocate tracer concentration evolution
-    Czero = zeros(dims(C₀))
-    tmp = Array{typeof(Czero)}(undef,size(tlist))
+    #Czero = zeros(dims(C₀))
+    #tmp = Array{typeof(Czero)}(undef,size(tlist))
+    tmp = Array{DimArray}(undef,size(tlist))
 
     # initial condition contribution
     Ci = DimArray(tmp,Ti(tlist))
@@ -391,12 +394,15 @@ end
 function forcing_integrand(t, tf, μ, V, B, source_history)
 
     matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
-    return real.(V*matexp * V \ (B*source_history(t))) # matlab code has right divide (?)
+
+    # annoying finding: parentheses matter in next line
+    return real.(V*matexp * (V \ (B*source_history(t)))) # matlab code has right divide (?)
 end
 
 function integrate_forcing(t0, tf, μ, V, B, source_history)
 
-    forcing_func(t) = forcing_integrand(t, tf, μ, V, B, source_history)
+    Bunit = unit(first(first(B)))
+    forcing_func(t) = Bunit * forcing_integrand(t, tf, μ, V, ustrip.(B), source_history)
 
     # MATLAB: integral(integrand,ti,tf,'ArrayValued',true)
     integral, err = quadgk(forcing_func, t0, tf)
