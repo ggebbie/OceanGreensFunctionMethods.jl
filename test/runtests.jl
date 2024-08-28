@@ -40,8 +40,8 @@ include("../src/config_units.jl")
 
     @testset "pedagogical tracer box model" begin
 
-#        @dim Meridional "meridional location"
- #       @dim Vertical "vertical location"
+        @dim Meridional "meridional location"
+        @dim Vertical "vertical location"
 
         # define grid
         meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
@@ -178,14 +178,37 @@ include("../src/config_units.jl")
             @testset "read tracer histories" begin
                 BD = read_tracer_histories()
                 tracername = :CFC11NH
-                surface_history =  tracer_surface_history(tracername, BD)
+                box2_box1_ratio = 0.75
+                source_history =  tracer_source_history(tracername, BD, box2_box1_ratio)
+                
+                tt = 1973.0yr
+                source_history(tt)
 
-                tt = 1973.0
-                surface_history(tt)
+                t0 = 1973.0yr
+                tf = 1974.0yr
+                source_history(tf)
+                # OceanGreensFunctionMethods.forcing_integrand(t0, tf, μ, V, B, source_history)
+
+                # forcing_int(t) = OceanGreensFunctionMethods.forcing_integrand(t, tf, μ, V, B, source_history)
+
+                # # MATLAB: integral(integrand,ti,tf,'ArrayValued',true)
+
+                # integral, err = quadgk(forcing_int, 1970.0yr, 1971.0yr)# rtol=1e-8)
+
+                integrate_forcing(t0, tf, μ, V, B, source_history)
 
                 # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;
+
+                C₀ = zeros(model_dims)
+                tlist = (1970.0:1980.0)yr
+                tmp = Array{DimArray}(undef,size(tlist))
+                Cevolve = DimArray(tmp,Ti(tlist))
+
+                Cevolve = evolve_concentration(C₀, A, B, tlist, source_history; halflife = nothing)
+
             end
 
         end
     end
 end
+

@@ -5,6 +5,9 @@ m  = u"m"
 yr = u"yr"
 Tg = u"Tg"
 s  = u"s"
+pmol = u"pmol"
+fmol = u"fmol"
+nmol = u"nmol"
 
 @dim Eigenmode "eigenmode"
 @dim Tracer "tracer"
@@ -28,6 +31,12 @@ dims(F::Fluxes) = dims(F.poleward)
 
 meridional_names() = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
 vertical_names() = ["1 Thermocline", "2 Deep", "3 Abyssal"]
+
+function boundary_dimensions()
+    meridional_boundary = meridional_names()[1:2]
+    vertical_boundary = vertical_names()[1]
+    return  (Meridional(meridional_boundary), Vertical(vertical_boundary))
+end
 
 function abyssal_overturning(Ψ,model_dims)
 
@@ -279,7 +288,7 @@ function read_tracer_histories()
     # all matlab variables except Year
     varnames = Symbol.(filter(x -> x ≠ "Year", collect(keys(file))))
     tracerdim = Tracer(varnames)
-    timedim = Ti(vec(read(file, "Year")))
+    timedim = Ti(vec(read(file, "Year"))yr)
 
     BD = zeros(tracerdim,timedim)
     
@@ -290,14 +299,109 @@ function read_tracer_histories()
     return BD
 end
 
-#function tracer_surface_history(tracername, BD = read_tracer_histories())
-function tracer_surface_history(tracername, BD)
+tracer_units() = Dict(
+    :CFC11NH => NoUnits,
+    :CFC11SH => pmol/kg,
+    :CFC12NH => pmol/kg,
+    :CFC12SH => pmol/kg,
+    :SF6NH => fmol/kg,
+    :SF6SH => fmol/kg,
+    :N2ONH => nmol/kg,
+    :N2OSH => nmol/kg
+    )
+    
+function tracer_source_history(tracername, BD, box2_box1_ratio)
 
-    tracer_timeseries = BD[Tracer=At(tracername)]
+    tracer_timeseries = BD[Tracer=At(tracername)] * tracer_units()[tracername]
 
-    return linear_interpolation(
+    box1 = linear_interpolation(
         first(DimensionalData.index(dims(tracer_timeseries))),
         tracer_timeseries)
+
+    box2 = box2_box1_ratio * box1
+
+    # replace this section with a function call.
+    meridional_boundary = ["1 High latitudes", "2 Mid-latitudes"]
+            vertical_boundary = ["1 Thermocline"]
+            boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
+    
+    
+end
+
+function evolve_concentration(C₀, A, B, tlist, surface_history; halflife = nothing)
+# function concs = find_concentrations(boxModel,times,halflife,source_history,init_concs)
+# % Integrate forcing vector over time to compute the concentration history.
+# % Find propagator by analytical expression using eigen-methods.
+# % The concs matrix is ordered by [box, time]
+
+    μ, V = eigen(A)
+
+    # pre-allocate tracer concentration evolution
+    Czero = zeros(dims(C₀))
+    tmp = Array{typeof(Czero)}(undef,size(tlist))
+
+    # initial condition contribution
+    Ci = DimArray(tmp,Ti(tlist))
+
+    # forcing contribution
+    Cf = DimArray(tmp,Ti(tlist))
+
+    # total contribution
+    #C = DimArray(tmp,Ti(tlist))
+
+    # apply initial condition
+    # concsI = zeros(Nb,Nt) ;
+    # concsI(:,1) = init_concs ;
+    Ci[1] = C₀    
+
+    # concsF = zeros(Nb,Nt) ;
+    Cf[1] = zeros(dims(C₀))
+    
+    #C[1] = Ci[1] .+ Cf[1]
+    
+    # % Compute solution.
+    for tt = 2:length(tlist)
+        println(tt)
+        ti = tlist[tt-1]
+        tf = tlist[tt]
+
+        #     concsI(:,tt) =      V*expm(D.*(tf-ti))/V*(concsI(:,tt-1) + concsF(:,tt-1)) ;    % Initial condition contribution
+        Ci[tt] = timestep_initial_condition(Ci[tt-1]+Cf[tt-1], μ, V, ti, tf)
+
+        # Forcing contribution
+        #     integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
+        #     concsF(:,tt) = integral(integrand,ti,tf,'ArrayValued',true) ;
+        Cf[tt] = integrate_forcing(ti,tf, μ, V, B, source_history)
+
+        # total
+        #C[tt] = real.(Ci[tt] + Cf[tt])
+    end # tt
+
+    return real.(Ci .+ Cf)  # Cut imaginary part which is zero to machine precision.
+end
+
+# MATLAB: concsI(:,tt) =      V*expm(D.*(tf-ti))/V*(concsI(:,tt-1) + concsF(:,tt-1)) ;    % Initial condition contribution
+function timestep_initial_condition(C, μ, V, ti, tf)
+
+    matexp = MultipliableDimArray( exp(Matrix(μ*(tf-ti))), dims(μ), dims(μ))
+    return real.(V*matexp * (V\C)) # matlab code has right divide (?)
+end
+
+# MATLAB: integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
+function forcing_integrand(t, tf, μ, V, B, source_history)
+
+    matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
+    return real.(V*matexp * V \ (B*source_history(t))) # matlab code has right divide (?)
+end
+
+function integrate_forcing(t0, tf, μ, V, B, source_history)
+
+    forcing_func(t) = forcing_integrand(t, tf, μ, V, B, source_history)
+
+    # MATLAB: integral(integrand,ti,tf,'ArrayValued',true)
+    integral, err = quadgk(forcing_func, t0, tf)
+
+    (err < 1e-5) ? (return integral) : error("integration error too large")
 end
 
 function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
