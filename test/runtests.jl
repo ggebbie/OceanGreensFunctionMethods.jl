@@ -42,13 +42,10 @@ include("../src/config_units.jl")
 
         # define grid
         model_dims = model_dimensions()
-        Nb = length(model_dims) # number of boxes
-        Nx = size(model_dims) # size in each dimension
+        Ny, Nz = size(model_dims) # size in each dimension
+        Nb = Ny * Nz # number of boxes
         
         Vol_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
-
-
-
         Vol = DimArray(fill(Vol_uniform, Ny, Nz), model_dims)
 
         Ψ_abyssal = 20Sv

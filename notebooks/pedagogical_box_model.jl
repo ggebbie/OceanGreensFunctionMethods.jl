@@ -307,11 +307,28 @@ Tmax = maximum_timescale(μ)
 # ╔═╡ 6eac27ef-647c-4884-aaf3-69f6705da3a8
 md"""## Tracer histories """
 
-# ╔═╡ dcacc2b9-d9df-464c-a46c-cbf777615113
-md""" ### Transient tracers """
-
 # ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
-read_tracer_histories()
+BD = read_tracer_histories() # Dirichlet boundary conditions
+
+# ╔═╡ 6f979bb9-733d-4981-9a53-d75162cbd372
+md""" Choose tracers """
+
+# ╔═╡ f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
+md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11"""
+
+# ╔═╡ ef360b00-8f37-45b4-9d95-4992922ee03d
+md""" $(@bind use_CFC12 CheckBox(default=true)) CFC-12"""
+
+# ╔═╡ fc1d1240-e96a-4d5e-a5f4-773d84074e22
+md""" $(@bind use_SF6 CheckBox(default=true)) SF₆"""
+
+# ╔═╡ e34ae847-d82e-49f4-aa22-6753596c4ea0
+begin
+	plot()
+	use_CFC11 && plot!(BD[Tracer=At(:CFC11NH)])
+	use_CFC12 && plot!(BD[Tracer=At(:CFC12NH)])
+	use_SF6 && plot!(BD[Tracer=At(:SF6NH)])
+end
 
 # ╔═╡ 11eb59cf-de62-4fb4-9963-defe594e6b92
 md""" ## Transport matrix diagnostics """
@@ -511,8 +528,12 @@ end
 # ╠═c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # ╠═1e3f4bd2-94cf-43a1-af98-11373a4d8561
 # ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
-# ╟─dcacc2b9-d9df-464c-a46c-cbf777615113
 # ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
+# ╟─6f979bb9-733d-4981-9a53-d75162cbd372
+# ╟─f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
+# ╟─ef360b00-8f37-45b4-9d95-4992922ee03d
+# ╟─fc1d1240-e96a-4d5e-a5f4-773d84074e22
+# ╠═e34ae847-d82e-49f4-aa22-6753596c4ea0
 # ╟─11eb59cf-de62-4fb4-9963-defe594e6b92
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
