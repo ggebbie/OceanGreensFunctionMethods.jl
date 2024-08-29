@@ -40,17 +40,15 @@ include("../src/config_units.jl")
 
     @testset "pedagogical tracer box model" begin
 
-        #@dim Meridional "meridional location"
-        #@dim Vertical "vertical location"
-
         # define grid
-        meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
-        vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
-        Ny = length(meridional_locs); Nz = length(vertical_locs)
+        model_dims = model_dimensions()
+        Nb = length(model_dims) # number of boxes
+        Nx = size(model_dims) # size in each dimension
         
         Vol_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
 
-        model_dims = (Meridional(meridional_locs),Vertical(vertical_locs))
+
+
         Vol = DimArray(fill(Vol_uniform, Ny, Nz), model_dims)
 
         Ψ_abyssal = 20Sv
@@ -202,12 +200,4 @@ include("../src/config_units.jl")
         end
     end
 end
-
-
-
-
-
-
-
-
 

@@ -30,7 +30,7 @@ export tracer_tendency
 export projectdir, datadir, srcdir
 export meridional_names, vertical_names
 export boundary_flux, local_boundary_flux
-export boundary_dimensions
+export model_dimensions, boundary_dimensions
 export linear_probe, mass, uniform
 export maximum_timescale, mean_age
 export ttd_width, normalized_exponential_decay

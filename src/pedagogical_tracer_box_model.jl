@@ -32,6 +32,10 @@ dims(F::Fluxes) = dims(F.poleward)
 meridional_names() = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
 vertical_names() = ["1 Thermocline", "2 Deep", "3 Abyssal"]
 
+# meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
+# vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
+model_dimensions() = (Meridional(meridional_names()),Vertical(vertical_names())) 
+
 function boundary_dimensions()
     meridional_boundary = meridional_names()[1:2]
     vertical_boundary = [vertical_names()[1]] # add brackets to keep as vector

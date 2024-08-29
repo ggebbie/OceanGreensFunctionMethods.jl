@@ -83,25 +83,16 @@ md""" ## Define and label the boxes
 
 Using the outstanding [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl)"""
 
-# ╔═╡ 55a42a84-587b-41ec-8b18-96f83245ee7d
-@dim Meridional "meridional location"; @dim Vertical "vertical location"
-
-# ╔═╡ 543f8a23-2e43-426e-87f0-e7750bcadd2b
-# labels for the three latitudes
-meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
-
-# ╔═╡ 8fb8a936-9f06-4944-8c18-02eaa32f2dd0
-# labels for the three depths
-vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
-
-# ╔═╡ 931c8f1a-d97f-4543-8e7b-a24304651c0b
-# 3 x 3 box model
-Ny = length(meridional_locs); Nz = length(vertical_locs)
-
-# ╔═╡ d936f769-aa79-41a6-ba56-4b99eb8738bc
+# ╔═╡ ccc6b783-6cca-4d03-8fca-f3c312316c34
 # define "dimensions" to be used with `DimensionalData.jl` 
 # permits numerical quantities to be bundled with their meta-data
-model_dims = (Meridional(meridional_locs),Vertical(vertical_locs))
+model_dims = model_dimensions()
+
+# ╔═╡ 82a174f2-1849-4d67-85dd-944c6e445d53
+Nb = prod(size(model_dims)) # number of boxes
+
+# ╔═╡ f3a7040d-2177-4693-a423-48e833718b43
+Ny, Nz = size(model_dims) # size in each dimension
 
 # ╔═╡ fdd4e823-bdb5-4f02-8de3-aade687a94c6
 md""" ## Embed physical units with numerical values
@@ -199,7 +190,16 @@ deldotFm[Meridional=At("2 Mid-latitudes")]
 
 # ╔═╡ 08464a04-7652-4f24-978d-cd329e7fe0a7
 # Given a tracer distribution C and volume fluxes Fv, find the tracer fluxes
+# As an example, consider a randomly generated tracer field
 C = rand(model_dims) # first generate a uniform U(0,1) tracer distribution
+
+# ╔═╡ 100e928b-679b-48a3-b817-ac0dae73476b
+ # extract tracer value by using geographic indices
+ C[2,2]
+
+# ╔═╡ 18f8bdce-9ce9-4e27-bf8e-53be37dc3fd0
+# or extracer tracer using dimensional labels
+C[Meridional=At("2 Mid-latitudes")]
 
 # ╔═╡ df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
 Plots.heatmap(transpose(C),yflip=true)
@@ -223,13 +223,9 @@ deldotJ = convergence(J) # tracer flux convergence
 # ╔═╡ c9abc24c-d3f2-4d64-8dfc-b0fdf42d1502
 md"""## Boundary conditions """
 
-# ╔═╡ 6ed0c4d7-8fbb-439e-85fd-382e6b6e030f
+# ╔═╡ 20d23e54-8eec-4c6e-894a-d7d90d82ce54
 # boundary exchange: define the locations affected by boundary fluxes
-meridional_boundary = ["1 High latitudes", "2 Mid-latitudes"]; vertical_boundary = ["1 Thermocline"]
-
-# ╔═╡ c5381568-9e1a-4763-8da3-86638b468ec4
-# define dimensions that label the numerical arrays
-boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
+boundary_dims = boundary_dimensions()
 
 # ╔═╡ 378e4e6c-d399-458d-85a9-23c8ceda2b43
 # prescribe boundary volume fluxes
@@ -260,7 +256,7 @@ A =  linear_probe(tracer_tendency, C, f, Fv, Fb, Vol)
 
 # ╔═╡ 15e6cead-7de1-4cdd-ae84-f7537e789900
 # A is stored with box labels for both the rows and columns
-# to view matrix in usual mathematical form
+# Instead, to view matrix in usual mathematical form, use `Matrix`
 Matrix(A)
 
 # ╔═╡ 6a25a144-0ccc-4604-85a7-b724eaa4cfed
@@ -273,7 +269,7 @@ A[5][5]
 
 # ╔═╡ 1312b135-a267-4736-8e56-ff44bc7be59b
 # or get the same information using labels, but it gets long
-A[Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")][Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")] # still displayed with info about spatial-locations
+A[Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")][Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")] 
 
 # ╔═╡ 59b47e9c-784a-4ed5-aeb6-79b5c756fff6
 md""" ## Construct boundary matrix """
@@ -283,7 +279,7 @@ md""" ## Construct boundary matrix """
 B =  linear_probe(tracer_tendency, f, C, Fb, Vol)
 
 # ╔═╡ 769d63db-36d1-437a-a3da-0bc9f6e14b69
-# view in the usual mathematical way where order information is lost
+# view in the usual mathematical way where order information is obscured
 Matrix(B)
 
 # ╔═╡ 34e0f62a-9e14-4b9d-bad3-e6b23eb86c59
@@ -308,6 +304,18 @@ plot(real.(diag(μ)),xlabel="eigenvalue i",ylabel="μᵢ",legend=false)
 # maximum timescale is related to the smallest negative eigenvalue
 Tmax = maximum_timescale(μ)
 
+# ╔═╡ 6eac27ef-647c-4884-aaf3-69f6705da3a8
+md"""## Tracer histories """
+
+# ╔═╡ dcacc2b9-d9df-464c-a46c-cbf777615113
+md""" ### Transient tracers """
+
+# ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
+read_tracer_histories()
+
+# ╔═╡ 11eb59cf-de62-4fb4-9963-defe594e6b92
+md""" ## Transport matrix diagnostics """
+
 # ╔═╡ 3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # water-mass fractions
 a = watermass_fraction(μ, V, B)
@@ -331,7 +339,7 @@ Matrix(a) # all water-mass information concatenated
 Δ = ttd_width(μ, V, B)
 
 # ╔═╡ 93c9614e-70a1-49ef-933b-b86fec342597
-md"""## Green's functions """
+md"""### Green's functions """
 
 # ╔═╡ cd492316-d6b2-4645-80ba-c5817ec5877c
 Δτ = 0.25yr # time resolution
@@ -423,12 +431,6 @@ begin
 	plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
 end
 
-# ╔═╡ 6eac27ef-647c-4884-aaf3-69f6705da3a8
-md"""## Tracer histories """
-
-# ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
-read_tracer_histories()
-
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
 # ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
@@ -453,11 +455,9 @@ read_tracer_histories()
 # ╟─c2a29255-e95a-4dd6-b97c-03a09337136e
 # ╟─b96b1c34-ef03-4874-a3f3-d5ade9a62c70
 # ╟─6d11d809-9902-4a6a-b85e-18aed70e352f
-# ╠═55a42a84-587b-41ec-8b18-96f83245ee7d
-# ╠═543f8a23-2e43-426e-87f0-e7750bcadd2b
-# ╠═8fb8a936-9f06-4944-8c18-02eaa32f2dd0
-# ╠═931c8f1a-d97f-4543-8e7b-a24304651c0b
-# ╠═d936f769-aa79-41a6-ba56-4b99eb8738bc
+# ╠═ccc6b783-6cca-4d03-8fca-f3c312316c34
+# ╠═82a174f2-1849-4d67-85dd-944c6e445d53
+# ╠═f3a7040d-2177-4693-a423-48e833718b43
 # ╟─fdd4e823-bdb5-4f02-8de3-aade687a94c6
 # ╠═ae1f5365-78c5-4ae5-8aaf-c0818fa8c474
 # ╠═f1fff88c-0357-4f56-bea5-75b9a63807c0
@@ -481,14 +481,15 @@ read_tracer_histories()
 # ╠═fa9f454b-b7ca-4e37-a67c-a28ff91a5e11
 # ╠═17bf7f50-78a7-4c7c-bc2f-4d9086dd2181
 # ╠═08464a04-7652-4f24-978d-cd329e7fe0a7
+# ╠═100e928b-679b-48a3-b817-ac0dae73476b
+# ╠═18f8bdce-9ce9-4e27-bf8e-53be37dc3fd0
 # ╠═df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
 # ╠═5dfddc9c-6313-4679-a994-15a771ee4a90
 # ╠═e325d781-ae5c-4f64-a608-170b4df77882
 # ╠═1e92642c-396f-4353-aa5c-8849cf26af1d
 # ╠═86076566-a96b-4faf-bdef-93b95733dcff
 # ╟─c9abc24c-d3f2-4d64-8dfc-b0fdf42d1502
-# ╠═6ed0c4d7-8fbb-439e-85fd-382e6b6e030f
-# ╠═c5381568-9e1a-4763-8da3-86638b468ec4
+# ╠═20d23e54-8eec-4c6e-894a-d7d90d82ce54
 # ╠═378e4e6c-d399-458d-85a9-23c8ceda2b43
 # ╠═d344750e-e335-4e3c-baaa-a2937c2497df
 # ╠═ba4789f3-7576-423b-9e94-abf4c3259eb4
@@ -509,6 +510,10 @@ read_tracer_histories()
 # ╠═d9f77a6e-dada-476c-9e7a-25676c34518a
 # ╠═c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # ╠═1e3f4bd2-94cf-43a1-af98-11373a4d8561
+# ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
+# ╟─dcacc2b9-d9df-464c-a46c-cbf777615113
+# ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
+# ╟─11eb59cf-de62-4fb4-9963-defe594e6b92
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
 # ╠═01484ca5-ed33-4b94-b188-780e9e3ef8c7
@@ -533,6 +538,4 @@ read_tracer_histories()
 # ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
 # ╟─07eccdb4-894d-4cd5-a639-0c01a70a84ec
 # ╟─6e1fe604-4c47-4967-bcc0-fa80fbe5bfa5
-# ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
-# ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
-# ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
+# ╟─e8fabe44-3a7d-47fc-84af-02baebf5f45a
