@@ -1,7 +1,7 @@
 name = "OceanGreensFunctionMethods"
 uuid = "e3e8a769-591b-4840-946e-301c93ad313e"
 authors = ["G Jake Gebbie <ggebbie@whoi.edu>"]
-version = "1.0.2-DEV"
+version = "1.0.3-DEV"
 
 [deps]
 DimensionalData = "0703355e-b756-11e9-17c0-8b28908087d0"
