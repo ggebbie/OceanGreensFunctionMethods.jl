@@ -413,6 +413,9 @@ G′(t) = forward_boundary_propagator(t,A,B) # type G + \prime + TAB
 # global (or total) TTD
 𝒢(t) = global_ttd(t,A,B) # type \scr + G + TAB
 
+# ╔═╡ e5841ad8-dfb9-47d5-bcb0-0f7448f43645
+a
+
 # ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
 md""" Select interior box for diagnostics """
 
@@ -442,12 +445,11 @@ G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
 # ╔═╡ 1bb59934-17be-40d3-b227-b73bb1b9c4df
 ttd_inversegaussian = pdf.(G_inversegaussian,τ)
 
-
 # ╔═╡ a183e31d-8bab-46e0-a6b1-0a181c5f0f69
-a1 = a[Meridional=At(mbox),Vertical=At(vbox)][Meridional=At(mbox),Vertical=At(vbox)]
+a1 = a[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ 9537166f-054f-441e-a001-3ba59a4b59e0
-a2 = a[Meridional=At(mbox),Vertical=At(vbox)][Meridional=At(mbox),Vertical=At(vbox)]
+a2 = a[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ e8fabe44-3a7d-47fc-84af-02baebf5f45a
 begin 
@@ -502,14 +504,20 @@ ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Mer
 # global adjoint TTD
 𝒢dagger(t) = adjoint_global_ttd(t,A,B)
 
-# ╔═╡ ce83003f-c114-441d-bcf9-aaa717d59867
-𝒢dagger(10yr)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)]
-
-# ╔═╡ 2f8f47a6-e1a8-4174-9e07-a631b81a3357
-Matrix(𝒢(10yr))
-
 # ╔═╡ 257c6649-d003-42bc-9e17-0c33b7cd304c
 ttd_global_adjoint = [𝒢dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)] for i in eachindex(τ)] 
+
+# ╔═╡ cf82fade-07ac-4aa9-bd06-7a10820a724f
+Γ_adjoint = adjoint_mean_age(A,B)[At(mbox_adj),At(vbox_adj)]
+
+# ╔═╡ c6460013-d800-4280-97db-50c5aa84e709
+Δ_adjoint = adjoint_ttd_width(A,B)[At(mbox_adj),At(vbox_adj)]
+
+# ╔═╡ 4e0ce7d3-a1fd-4995-83d0-bdc74bc5e339
+G_inversegaussian_adjoint = TracerInverseGaussian(Γ_adjoint, Δ_adjoint)
+
+# ╔═╡ f861d37b-427b-4c12-b0ff-c55be4d82523
+ttd_inversegaussian_adjoint = pdf.(G_inversegaussian_adjoint,τ)
 
 # ╔═╡ c7a4d285-25e3-42eb-8e5b-7967aad1a366
 begin 
@@ -527,12 +535,12 @@ begin
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr))
 	
-	plot!([Γ_,Γ_],
+	plot!([Γ_adjoint,Γ_adjoint],
 		[1e-4,1e-2]/yr,
 		label="Γ")	
 	
-	plot!([Γ_ + Δ_/2,
-		Γ_ - Δ_/2],
+	plot!([Γ_adjoint + Δ_adjoint/2,
+		Γ_adjoint - Δ_adjoint/2],
 		[1e-4,1e-4]/yr,
 		width=4,
 		color=:grey,
@@ -541,7 +549,7 @@ begin
 	plot!(τ,ttd1_adj,label="TTD 1",width=4*a1)
 	plot!(τ,ttd2_adj,label="TTD 2",width=4*a2)
 	plot!(τ,ttd_global_adjoint,label="Total TTD",width=4*a2,color=:black)
-	#plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
+	plot!(τ,ttd_inversegaussian_adjoint,label="Fitted inverse Gaussian")
 end
 
 # ╔═╡ Cell order:
@@ -650,6 +658,7 @@ end
 # ╠═8d69c375-6a0c-400e-af85-3013a364fa1d
 # ╠═09a85965-d1dc-47a3-9eba-dd1dc129db36
 # ╠═19ef1da1-9b1a-4300-83aa-bb503027122b
+# ╠═e5841ad8-dfb9-47d5-bcb0-0f7448f43645
 # ╠═a183e31d-8bab-46e0-a6b1-0a181c5f0f69
 # ╠═9537166f-054f-441e-a001-3ba59a4b59e0
 # ╠═fd907198-8e2e-4296-b640-c0aebbd0a796
@@ -664,6 +673,8 @@ end
 # ╠═1df15962-dd41-4f07-82c8-37d2d60511fb
 # ╠═48449ccf-df3f-4b71-a160-53d39baa9a90
 # ╠═b3522980-6beb-4e05-901d-0859c7a8cb58
-# ╠═ce83003f-c114-441d-bcf9-aaa717d59867
-# ╠═2f8f47a6-e1a8-4174-9e07-a631b81a3357
 # ╠═257c6649-d003-42bc-9e17-0c33b7cd304c
+# ╠═cf82fade-07ac-4aa9-bd06-7a10820a724f
+# ╠═c6460013-d800-4280-97db-50c5aa84e709
+# ╠═4e0ce7d3-a1fd-4995-83d0-bdc74bc5e339
+# ╠═f861d37b-427b-4c12-b0ff-c55be4d82523

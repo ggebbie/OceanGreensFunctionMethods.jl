@@ -33,7 +33,9 @@ export boundary_flux, local_boundary_flux
 export model_dimensions, boundary_dimensions
 export linear_probe, mass, uniform
 export maximum_timescale, mean_age
+export adjoint_mean_age
 export ttd_width, normalized_exponential_decay
+export adjoint_ttd_width
 export read_tracer_histories, tracer_source_history
 export greens_function
 export forward_boundary_propagator

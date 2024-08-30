@@ -256,6 +256,7 @@ function mean_age(μ, V, B)
     return Γ = fix_units * real.(V * (μ_neg2 * (V \ ustrip.(B* ones(boundary_dims)))))
 end
 
+
 function ttd_width(μ, V, B)
 
     fix_units = unit(first(first(B))) # upstream issue to be fixed
@@ -275,6 +276,16 @@ function ttd_width(μ, V, B)
 end
 
 normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
+
+function adjoint_mean_age(A, B)
+    μ, V = eigen(transpose(A))
+    return mean_age(μ, V, B)
+end
+
+function adjoint_ttd_width(A, B)
+    μ, V = eigen(transpose(A))
+    return ttd_width(μ, V, B)
+end
 
 location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
 #https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat
