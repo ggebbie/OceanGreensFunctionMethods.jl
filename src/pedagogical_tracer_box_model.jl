@@ -345,16 +345,20 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
     # pre-allocate tracer concentration evolution
     #Czero = zeros(dims(C₀))
     #tmp = Array{typeof(Czero)}(undef,size(tlist))
-    tmp = Array{DimArray}(undef,size(tlist))
+    #tmp = Array{DimArray}(undef,size(tlist))
 
     # initial condition contribution
-    Ci = DimArray(tmp,Ti(tlist))
+    Ci = DimArray(Array{DimArray}(undef,size(tlist)),Ti(tlist))
 
-    # forcing contribution
-    Cf = DimArray(tmp,Ti(tlist))
+    Cf = DimArray(Array{DimArray}(undef,size(tlist)),Ti(tlist))
 
-    # total contribution
-    #C = DimArray(tmp,Ti(tlist))
+    C = DimArray(Array{DimArray}(undef,size(tlist)),Ti(tlist))
+
+    # # forcing contribution
+    # Cf = DimArray(tmp,Ti(tlist))
+
+    # # total contribution
+    # C = DimArray(tmp,Ti(tlist))
 
     # apply initial condition
     # concsI = zeros(Nb,Nt) ;
@@ -364,34 +368,29 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
     # concsF = zeros(Nb,Nt) ;
     Cf[1] = zeros(dims(C₀))
     
-    #C[1] = Ci[1] .+ Cf[1]
+    C[1] = Ci[1] + Cf[1]
     
     # % Compute solution.
     for tt = 2:length(tlist)
-        println(tt)
         ti = tlist[tt-1]
         tf = tlist[tt]
-
-        #     concsI(:,tt) =      V*expm(D.*(tf-ti))/V*(concsI(:,tt-1) + concsF(:,tt-1)) ;    % Initial condition contribution
-        Ci[tt] = timestep_initial_condition(Ci[tt-1]+Cf[tt-1], μ, V, ti, tf)
+        Ci[tt] = timestep_initial_condition(C[tt-1], μ, V, ti, tf)
 
         # Forcing contribution
-        #     integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
-        #     concsF(:,tt) = integral(integrand,ti,tf,'ArrayValued',true) ;
-        Cf[tt] = integrate_forcing(ti,tf, μ, V, B, source_history)
+        Cf[tt] = integrate_forcing( ti, tf, μ, V, B, source_history)
 
         # total
-        #C[tt] = real.(Ci[tt] + Cf[tt])
+        C[tt] = Ci[tt] + Cf[tt]
     end # tt
 
-    return real.(Ci .+ Cf)  # Cut imaginary part which is zero to machine precision.
+    return real.(C) #real.(Ci + Cf)  # Cut imaginary part which is zero to machine precision.
 end
 
 # MATLAB: concsI(:,tt) =      V*expm(D.*(tf-ti))/V*(concsI(:,tt-1) + concsF(:,tt-1)) ;    % Initial condition contribution
 function timestep_initial_condition(C, μ, V, ti, tf)
 
     matexp = MultipliableDimArray( exp(Matrix(μ*(tf-ti))), dims(μ), dims(μ))
-    return real.(V*matexp * (V\C)) # matlab code has right divide (?)
+    return real.( V * (matexp * (V\C))) # matlab code has right divide (?)
 end
 
 # MATLAB: integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
@@ -400,7 +399,7 @@ function forcing_integrand(t, tf, μ, V, B, source_history)
     matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
 
     # annoying finding: parentheses matter in next line
-    return real.(V*matexp * (V \ (B*source_history(t)))) # matlab code has right divide (?)
+    return real.( V * (matexp * (V \ (B*source_history(t))))) 
 end
 
 function integrate_forcing(t0, tf, μ, V, B, source_history)

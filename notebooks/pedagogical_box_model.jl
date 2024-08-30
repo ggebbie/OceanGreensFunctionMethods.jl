@@ -146,7 +146,8 @@ md""" mid-latitude boundary exchange $(@bind Fb_mid Slider((1:40)Sv,show_value =
 
 # ╔═╡ 8306d2c4-8d50-4309-add1-6d1eef56cd4a
 # set the units of a quantity, then use a pipe to convert units
-Vol0 = 1e16m^3 |> km^3 # uniform value of volume for all boxes
+#Vol0 = 1e16m^3 |> km^3 # uniform value of volume for all boxes
+Vol0 = 300.0Sv*yr |> km^3 # use MATLAB value not manuscript value (5% difference)
 
 # ╔═╡ 1e91d3e1-c26f-4118-9630-d654d352da76
 # If your screen is big enough, you should see a labeled, 3 x 3 table of volume values
@@ -232,7 +233,7 @@ boundary_dims = boundary_dimensions()
 Fb = DimArray(hcat([Fb_high, Fb_mid]), boundary_dims) # boundary flux
 
 # ╔═╡ d344750e-e335-4e3c-baaa-a2937c2497df
-# example: B_D (Dirichlet boundary conditions) to 1
+# example: set B_D (Dirichlet boundary conditions) to 1
 f = ones(boundary_dims) # boundary tracer values
 
 # ╔═╡ ba4789f3-7576-423b-9e94-abf4c3259eb4
@@ -268,7 +269,7 @@ A[Vertical=At("3 Abyssal"),Meridional=At("2 Mid-latitudes")] # still displayed w
 A[5][5]
 
 # ╔═╡ 1312b135-a267-4736-8e56-ff44bc7be59b
-# or get the same information using labels, but it gets long
+# or get the same information about one element using labels, but it gets long
 A[Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")][Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")] 
 
 # ╔═╡ 59b47e9c-784a-4ed5-aeb6-79b5c756fff6
@@ -314,21 +315,93 @@ BD = read_tracer_histories() # Dirichlet boundary conditions
 md""" Choose tracers """
 
 # ╔═╡ f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
-md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11"""
+md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12 $(@bind use_SF6 CheckBox(default=true)) SF₆ """
 
-# ╔═╡ ef360b00-8f37-45b4-9d95-4992922ee03d
-md""" $(@bind use_CFC12 CheckBox(default=true)) CFC-12"""
-
-# ╔═╡ fc1d1240-e96a-4d5e-a5f4-773d84074e22
-md""" $(@bind use_SF6 CheckBox(default=true)) SF₆"""
+# ╔═╡ cf38b164-4414-4344-824e-68a09cc38f6b
+md""" Source history """
 
 # ╔═╡ e34ae847-d82e-49f4-aa22-6753596c4ea0
 begin
-	plot()
-	use_CFC11 && plot!(BD[Tracer=At(:CFC11NH)])
-	use_CFC12 && plot!(BD[Tracer=At(:CFC12NH)])
-	use_SF6 && plot!(BD[Tracer=At(:SF6NH)])
+	source_plot = plot(xlims=(1930yr,2020yr),
+		yscale=:log10,
+		ylims = (1e-1,1e3),
+		legend = :topleft,
+		titlelabel="")	
+
+	use_CFC11 && plot!(BD[Tracer=At(:CFC11NH)],label="CFC-11")
+	use_CFC12 && plot!(BD[Tracer=At(:CFC12NH)],label="CFC-12")
+	use_SF6 && plot!(BD[Tracer=At(:SF6NH)],label="SF₆")
+	title!("")
+	source_plot
 end
+
+# ╔═╡ 897deef3-d754-4ca4-8c6f-00b67313a5a0
+md""" Interior history """
+
+# ╔═╡ 1ecd9ce2-cea7-417e-b965-24784cd0f563
+md""" $(@bind mbox1 Select(meridional_names())) $(@bind vbox1 Select(vertical_names())) """
+
+# ╔═╡ 67c8abf3-db55-4e02-a77c-db466a947936
+if use_CFC11 
+	
+	tracer_plot = plot(xlims=(1930yr,2015yr),
+		yscale=:log10,
+		ylims = (1e-1,1e3),
+		legend = :topleft,
+		title="")	
+
+	tracername = :CFC11NH
+	box2_box1_ratio = 0.75
+    source_history_func(t) =  tracer_source_history(t,
+		tracername,
+		BD,
+		box2_box1_ratio)
+
+	C₀ = zeros(model_dims)
+    tlist = (1900.25:0.25:2015.0)yr
+    Cevolve = evolve_concentration(C₀, 
+		A,
+		B,
+		tlist, 
+		source_history_func;
+		halflife = nothing)
+	
+    	sss = [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
+	
+	plot!(tlist,sss,
+		title = mbox1*", "*vbox1,
+		titlefontsize=6,
+		label="CFC-11")
+    	#plot!([Cevolve[t][3,1] for t in eachindex(tlist)],label="CFC-11")
+end
+
+# ╔═╡ 91cdd912-c7e7-43b5-a2a9-ea0e66d66f30
+Cevolve[179][:]
+
+
+# ╔═╡ e9c30903-9cf3-4597-a70f-b19d2ecacc6d
+# ╠═╡ disabled = true
+#=╠═╡
+begin
+	tracer_plot = plot(xlims=(1930yr,2020yr),
+		yscale=:log10,
+		ylims = (1e-1,1e3),
+		legend = :topleft,
+		title="")	
+
+	if use_CFC11 
+		plot!(BD[Tracer=At(:CFC11NH)],label="CFC-11")
+	end
+	if use_CFC12 
+		plot!(BD[Tracer=At(:CFC12NH)],label="CFC-12")
+	end
+	if use_SF6
+		plot!(BD[Tracer=At(:SF6NH)],label="SF₆")
+	end
+	title!("")
+	tracer_plot
+end
+  ╠═╡ =#
 
 # ╔═╡ 11eb59cf-de62-4fb4-9963-defe594e6b92
 md""" ## Transport matrix diagnostics """
@@ -377,11 +450,8 @@ G′(t) = forward_boundary_propagator(t,A,B) # type G + \prime + TAB
 # ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
 md"""## Select interior box for diagnostics """
 
-# ╔═╡ 07eccdb4-894d-4cd5-a639-0c01a70a84ec
-@bind mbox Select(meridional_locs)
-
-# ╔═╡ 6e1fe604-4c47-4967-bcc0-fa80fbe5bfa5
-@bind vbox Select(vertical_locs)
+# ╔═╡ 7a71a95a-8523-4cb8-9f69-00bf374acf67
+md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_names())) """
 
 # ╔═╡ 00902450-ceb7-4c33-be7e-906502990813
 # a list comprehension
@@ -426,7 +496,7 @@ begin
 		xlabel = "τ",
 		label = "Tmax",
 		legend = :topright,
-		titlefontsize = 8,
+		titlefontsize = 6,
 		title = mbox*", "*vbox,
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr))
@@ -531,9 +601,13 @@ end
 # ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
 # ╟─6f979bb9-733d-4981-9a53-d75162cbd372
 # ╟─f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
-# ╟─ef360b00-8f37-45b4-9d95-4992922ee03d
-# ╟─fc1d1240-e96a-4d5e-a5f4-773d84074e22
+# ╟─cf38b164-4414-4344-824e-68a09cc38f6b
 # ╠═e34ae847-d82e-49f4-aa22-6753596c4ea0
+# ╟─897deef3-d754-4ca4-8c6f-00b67313a5a0
+# ╟─1ecd9ce2-cea7-417e-b965-24784cd0f563
+# ╠═67c8abf3-db55-4e02-a77c-db466a947936
+# ╠═91cdd912-c7e7-43b5-a2a9-ea0e66d66f30
+# ╠═e9c30903-9cf3-4597-a70f-b19d2ecacc6d
 # ╟─11eb59cf-de62-4fb4-9963-defe594e6b92
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
@@ -557,6 +631,5 @@ end
 # ╠═fd907198-8e2e-4296-b640-c0aebbd0a796
 # ╠═1bb59934-17be-40d3-b227-b73bb1b9c4df
 # ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
-# ╟─07eccdb4-894d-4cd5-a639-0c01a70a84ec
-# ╟─6e1fe604-4c47-4967-bcc0-fa80fbe5bfa5
-# ╟─e8fabe44-3a7d-47fc-84af-02baebf5f45a
+# ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67
+# ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a

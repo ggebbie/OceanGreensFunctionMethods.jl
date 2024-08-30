@@ -45,7 +45,8 @@ include("../src/config_units.jl")
         Ny, Nz = size(model_dims) # size in each dimension
         Nb = Ny * Nz # number of boxes
         
-        Vol_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
+        #Vol_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
+        Vol_uniform = 300.0Sv*yr |> km^3 # uniform value of volume for all boxes
         Vol = DimArray(fill(Vol_uniform, Ny, Nz), model_dims)
 
         Ψ_abyssal = 20Sv
@@ -101,7 +102,7 @@ include("../src/config_units.jl")
             # boundary exchange: define the locations affected by boundary fluxes
             boundary_dims = boundary_dimensions()
            
-            Fb = DimArray(hcat([10Sv, 5Sv]), boundary_dims) # boundary flux
+            Fb = DimArray(hcat([20Sv, 10Sv]), boundary_dims) # boundary flux
             f = ones(boundary_dims) # boundary tracer values
 
             C0 = zeros(model_dims) # zero interior tracer to identify boundary source
@@ -141,6 +142,20 @@ include("../src/config_units.jl")
                 # destructuring via iteration
                 μ, V = eigen(A)
 
+                @testset "matrix exponential" begin
+                    dt = 0.1yr
+                    Matrix(μ)
+                    Matrix(μ*dt)
+                    exp(Matrix(μ*dt))
+                    Matrix(A)
+                    matexp = MultipliableDimArray( exp(Matrix(μ*dt)), dims(μ), dims(μ))
+                    t1 =  real.( V * (matexp * (V\C))) # matlab code has right divide (?)
+
+                    # move upstream to MultipliableDimArrays eventually
+                    eAt = MultipliableDimArray(exp(Matrix(A*dt)),dims(A),dims(A))
+                    t2 = real.( eAt*C) # matlab code has right divide (?)
+                    t3 = vec(t1) - vec(t2)
+                end
                 Tmax = maximum_timescale(μ)
 
                 # water-mass fractions
@@ -172,20 +187,20 @@ include("../src/config_units.jl")
                 BD = read_tracer_histories()
                 tracername = :CFC11NH
                 box2_box1_ratio = 0.75
-                source_history_func(t) =  tracer_source_history(t, tracername, BD, box2_box1_ratio)
+                source_history_func(x) =  tracer_source_history(x, tracername, BD, box2_box1_ratio)
                 
                 tt = 1973.0yr
                 source_history_func(tt)
 
-                t0 = 1973.0yr
-                tf = 1974.0yr
+                ti = 1980.0yr
+                tf = 1981.0yr
                 source_history_func(tf)
-                tester = integrate_forcing(t0, tf, μ, V, B, source_history_func)
+                tester = integrate_forcing(ti, tf, μ, V, B, source_history_func)
 
                 # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;
 
                 C₀ = zeros(model_dims)
-                tlist = (1970.0:1980.0)yr
+                tlist = (1980.0:1981.0)yr
                 # tmp = Array{DimArray}(undef,size(tlist))
                 # Cevolve = DimArray(tmp,Ti(tlist))
 
