@@ -181,34 +181,34 @@ include("../src/config_units.jl")
                     @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
                 
                 end
-            end
 
-            @testset "read tracer histories" begin
-                BD = read_tracer_histories()
-                tracername = :CFC11NH
-                box2_box1_ratio = 0.75
-                source_history_func(x) =  tracer_source_history(x, tracername, BD, box2_box1_ratio)
+                @testset "read tracer histories" begin
+
+                    BD = read_tracer_histories()
+                    tracername = :CFC11NH
+                    box2_box1_ratio = 0.75
+                    source_history_func(x) =  tracer_source_history(x, tracername, BD, box2_box1_ratio)
                 
-                tt = 1973.0yr
-                source_history_func(tt)
+                    tt = 1973.0yr
+                    source_history_func(tt)
 
-                ti = 1980.0yr
-                tf = 1981.0yr
-                source_history_func(tf)
-                tester = integrate_forcing(ti, tf, μ, V, B, source_history_func)
+                    ti = 1980.0yr
+                    tf = 1981.0yr
+                    source_history_func(tf)
+                    tester = integrate_forcing(ti, tf, μ, V, B, source_history_func)
 
-                # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;
+                    # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;
 
-                C₀ = zeros(model_dims)
-                tlist = (1980.0:1981.0)yr
-                # tmp = Array{DimArray}(undef,size(tlist))
-                # Cevolve = DimArray(tmp,Ti(tlist))
+                    C₀ = zeros(model_dims)
+                    tlist = (1980.0:1981.0)yr
+                    # tmp = Array{DimArray}(undef,size(tlist))
+                    # Cevolve = DimArray(tmp,Ti(tlist))
 
-                Cevolve = evolve_concentration(C₀, A, B, tlist, source_history_func; halflife = nothing)
+                    Cevolve = evolve_concentration(C₀, A, B, tlist, source_history_func; halflife = nothing)
 
-                sss =  [Cevolve[t][3,1] for t in eachindex(tlist)]
+                    sss =  [Cevolve[t][3,1] for t in eachindex(tlist)]
+                end
             end
-
         end
     end
 end
