@@ -7,8 +7,6 @@ using Unitful
 using MultipliableDimArrays
 using LinearAlgebra
 # using OrdinaryDiffEq, ModelingToolkit, MethodOfLines, DomadinSets, Unitful
-# using DrWatson
-# using Plots
 using Test
 
 #include(srcdir("config_units.jl")) # not sure why it doesn't work
@@ -23,36 +21,32 @@ include("../src/config_units.jl")
         Γ = 20.0 # mean
         Δ = 20.0 # width
 
-        G = TracerInverseGaussian(Γ, Δ)
+        G1 = TracerInverseGaussian(Γ, Δ)
 
         # the Inverse Gaussian distribution in typical statistical toolboxes
         # has different input arguments
         μ = Γ # the same, but different notation
-        λ = shape(G) # the shape parameter is the second argument 
+        λ = shape(G1) # the shape parameter is the second argument 
         
         G2 = InverseGaussian(μ, λ)
 
         # both Inverse Gaussians should be the same
-        @test isequal(shape(G),shape(G2))
-        @test !isequal(params(G),params(G2))
-        @test isequal(partype(G), partype(G2)) # parameter type
-        @test isequal(mean(G), mean(G2))
-        @test isequal(var(G), var(G2))
+        @test isequal(shape(G1),shape(G2))
+        @test !isequal(params(G1),params(G2))
+        @test isequal(partype(G1), partype(G2)) # parameter type
+        @test isequal(mean(G1), mean(G2))
+        @test isequal(var(G1), var(G2))
     end
 
     @testset "pedagogical tracer box model" begin
 
-        @dim Meridional "meridional location"
-        @dim Vertical "vertical location"
-
         # define grid
-        meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
-        vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
-        Ny = length(meridional_locs); Nz = length(vertical_locs)
+        model_dims = model_dimensions()
+        Ny, Nz = size(model_dims) # size in each dimension
+        Nb = Ny * Nz # number of boxes
         
-        Vol_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
-
-        model_dims = (Meridional(meridional_locs),Vertical(vertical_locs))
+        #Vol_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
+        Vol_uniform = 300.0Sv*yr |> km^3 # uniform value of volume for all boxes
         Vol = DimArray(fill(Vol_uniform, Ny, Nz), model_dims)
 
         Ψ_abyssal = 20Sv
@@ -106,11 +100,9 @@ include("../src/config_units.jl")
         @testset "surface boundary" begin 
 
             # boundary exchange: define the locations affected by boundary fluxes
-            meridional_boundary = ["1 High latitudes", "2 Mid-latitudes"]
-            vertical_boundary = ["1 Thermocline"]
-            boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
-
-            Fb = DimArray(hcat([10Sv, 5Sv]), boundary_dims) # boundary flux
+            boundary_dims = boundary_dimensions()
+           
+            Fb = DimArray(hcat([20Sv, 10Sv]), boundary_dims) # boundary flux
             f = ones(boundary_dims) # boundary tracer values
 
             C0 = zeros(model_dims) # zero interior tracer to identify boundary source
@@ -150,6 +142,20 @@ include("../src/config_units.jl")
                 # destructuring via iteration
                 μ, V = eigen(A)
 
+                @testset "matrix exponential" begin
+                    dt = 0.1yr
+                    Matrix(μ)
+                    Matrix(μ*dt)
+                    exp(Matrix(μ*dt))
+                    Matrix(A)
+                    matexp = MultipliableDimArray( exp(Matrix(μ*dt)), dims(μ), dims(μ))
+                    t1 =  real.( V * (matexp * (V\C))) # matlab code has right divide (?)
+
+                    # move upstream to MultipliableDimArrays eventually
+                    eAt = MultipliableDimArray(exp(Matrix(A*dt)),dims(A),dims(A))
+                    t2 = real.( eAt*C) # matlab code has right divide (?)
+                    t3 = vec(t1) - vec(t2)
+                end
                 Tmax = maximum_timescale(μ)
 
                 # water-mass fractions
@@ -175,12 +181,35 @@ include("../src/config_units.jl")
                     @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
                 
                 end
-            end
 
-            @testset "read tracer histories" begin
-                matvars = read_tracer_histories()
-            end
+                @testset "read tracer histories" begin
 
+                    BD = read_tracer_histories()
+                    tracername = :CFC11NH
+                    box2_box1_ratio = 0.75
+                    source_history_func(x) =  tracer_source_history(x, tracername, BD, box2_box1_ratio)
+                
+                    tt = 1973.0yr
+                    source_history_func(tt)
+
+                    ti = 1980.0yr
+                    tf = 1981.0yr
+                    source_history_func(tf)
+                    tester = integrate_forcing(ti, tf, μ, V, B, source_history_func)
+
+                    # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;
+
+                    C₀ = zeros(model_dims)
+                    tlist = (1980.0:1981.0)yr
+                    # tmp = Array{DimArray}(undef,size(tlist))
+                    # Cevolve = DimArray(tmp,Ti(tlist))
+
+                    Cevolve = evolve_concentration(C₀, A, B, tlist, source_history_func; halflife = nothing)
+
+                    sss =  [Cevolve[t][3,1] for t in eachindex(tlist)]
+                end
+            end
         end
     end
 end
+

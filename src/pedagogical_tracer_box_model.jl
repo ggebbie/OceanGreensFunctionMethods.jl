@@ -5,6 +5,14 @@ m  = u"m"
 yr = u"yr"
 Tg = u"Tg"
 s  = u"s"
+pmol = u"pmol"
+fmol = u"fmol"
+nmol = u"nmol"
+
+@dim Eigenmode "eigenmode"
+@dim Tracer "tracer"
+@dim Meridional "meridional location"
+@dim Vertical "vertical location"
 
 struct Fluxes{T,N} 
     poleward::DimArray{T,N}
@@ -23,6 +31,16 @@ dims(F::Fluxes) = dims(F.poleward)
 
 meridional_names() = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
 vertical_names() = ["1 Thermocline", "2 Deep", "3 Abyssal"]
+
+# meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
+# vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
+model_dimensions() = (Meridional(meridional_names()),Vertical(vertical_names())) 
+
+function boundary_dimensions()
+    meridional_boundary = meridional_names()[1:2]
+    vertical_boundary = [vertical_names()[1]] # add brackets to keep as vector
+    return  (Meridional(meridional_boundary), Vertical(vertical_boundary))
+end
 
 function abyssal_overturning(Ψ,model_dims)
 
@@ -263,10 +281,116 @@ location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer
 #download_tracer_histories() = Downloads.Download(url_tracer_histories())
 
 function read_tracer_histories()
+
+    # download tracer history input (make this lazy)
     url = OceanGreensFunctionMethods.location_tracer_histories()
     !isdir(datadir()) && mkpath(datadir())
-    Downloads.download(url,datadir("tracer_histories.mat"))
-    return matread(datadir("tracer_histories.mat"))
+    matfile = Downloads.download(url,datadir("tracer_histories.mat"))
+
+    file = matopen(matfile)
+
+    # all matlab variables except Year
+    varnames = Symbol.(filter(x -> x ≠ "Year", collect(keys(file))))
+    tracerdim = Tracer(varnames)
+    timedim = Ti(vec(read(file, "Year"))yr)
+
+    BD = zeros(tracerdim,timedim)
+    
+    for v in varnames
+        BD[Tracer=At(v)] = read(file, string(v)) # note that this does NOT introduce a variable ``varname`` into scope
+    end
+    close(file)
+    return BD
+end
+
+tracer_units() = Dict(
+    :CFC11NH => NoUnits,
+    :CFC11SH => NoUnits,
+    :CFC12NH => NoUnits,
+    :CFC12SH => NoUnits,
+    :SF6NH => NoUnits,
+    :SF6SH => NoUnits,
+    :N2ONH => nmol/kg,
+    :N2OSH => nmol/kg
+    )
+    
+function tracer_point_source_history(tracername, BD)
+
+    tracer_timeseries = BD[Tracer=At(tracername)] * tracer_units()[tracername]
+
+    return linear_interpolation(
+        first(DimensionalData.index(dims(tracer_timeseries))),
+        tracer_timeseries)
+end
+
+function tracer_source_history(t, tracername, BD, box2_box1_ratio)
+
+    source_func = tracer_point_source_history(tracername, BD)
+    box1 = source_func(t)
+    box2 = box2_box1_ratio * box1
+    
+    # replace this section with a function call.
+    boundary_dims = boundary_dimensions()
+    return DimArray(hcat([box1,box2]),boundary_dims)
+end
+
+function evolve_concentration(C₀, A, B, tlist, source_history; halflife = nothing)
+# % Integrate forcing vector over time to compute the concentration history.
+# % Find propagator by analytical expression using eigen-methods.
+
+    μ, V = eigen(A)
+
+    # initial condition contribution
+    Ci = deepcopy(C₀)
+
+    # forcing contribution
+    Cf = zeros(dims(C₀))
+
+    # total
+    C = DimArray(Array{DimArray}(undef,size(tlist)),Ti(tlist))
+    
+    C[1] = Ci + Cf
+    
+    # % Compute solution.
+    for tt = 2:length(tlist)
+        ti = tlist[tt-1]
+        tf = tlist[tt]
+        Ci = timestep_initial_condition(C[tt-1], μ, V, ti, tf)
+
+        # Forcing contribution
+        Cf = integrate_forcing( ti, tf, μ, V, B, source_history)
+
+        # total
+        C[tt] = Ci + Cf
+    end # tt
+    return real.(C) #real.(Ci + Cf)  # Cut imaginary part which is zero to machine precision.
+end
+
+# MATLAB: concsI(:,tt) =      V*expm(D.*(tf-ti))/V*(concsI(:,tt-1) + concsF(:,tt-1)) ;    % Initial condition contribution
+function timestep_initial_condition(C, μ, V, ti, tf)
+
+    matexp = MultipliableDimArray( exp(Matrix(μ*(tf-ti))), dims(μ), dims(μ))
+    return real.( V * (matexp * (V\C))) # matlab code has right divide (?)
+end
+
+# MATLAB: integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
+function forcing_integrand(t, tf, μ, V, B, source_history)
+
+    matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
+
+    # annoying finding: parentheses matter in next line
+    return real.( V * (matexp * (V \ (B*source_history(t))))) 
+end
+
+function integrate_forcing(t0, tf, μ, V, B, source_history)
+
+    Bunit = unit(first(first(B)))
+    forcing_func(t) = Bunit * forcing_integrand(t, tf, μ, V, ustrip.(B), source_history)
+
+    # MATLAB: integral(integrand,ti,tf,'ArrayValued',true)
+    integral, err = quadgk(forcing_func, t0, tf)
+
+    (err < 1e-5) ? (return integral) : error("integration error too large")
 end
 
 function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
@@ -281,3 +405,26 @@ end
 forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
 
 global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+
+
+function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
+
+    # fixed parameters for transient tracers
+    box2_box1_ratio = 0.75
+    C₀ = zeros(model_dimensions())
+	
+    source_history_func(t) =  tracer_source_history(t,
+	tracername,
+	BD,
+	box2_box1_ratio)
+
+    Cevolve = evolve_concentration(C₀, 
+	A,
+	B,
+	tlist, 
+	source_history_func;
+	halflife = nothing)
+	
+    return [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
+
+end

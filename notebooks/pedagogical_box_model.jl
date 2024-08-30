@@ -83,25 +83,16 @@ md""" ## Define and label the boxes
 
 Using the outstanding [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl)"""
 
-# ╔═╡ 55a42a84-587b-41ec-8b18-96f83245ee7d
-@dim Meridional "meridional location"; @dim Vertical "vertical location"
-
-# ╔═╡ 543f8a23-2e43-426e-87f0-e7750bcadd2b
-# labels for the three latitudes
-meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
-
-# ╔═╡ 8fb8a936-9f06-4944-8c18-02eaa32f2dd0
-# labels for the three depths
-vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
-
-# ╔═╡ 931c8f1a-d97f-4543-8e7b-a24304651c0b
-# 3 x 3 box model
-Ny = length(meridional_locs); Nz = length(vertical_locs)
-
-# ╔═╡ d936f769-aa79-41a6-ba56-4b99eb8738bc
+# ╔═╡ ccc6b783-6cca-4d03-8fca-f3c312316c34
 # define "dimensions" to be used with `DimensionalData.jl` 
 # permits numerical quantities to be bundled with their meta-data
-model_dims = (Meridional(meridional_locs),Vertical(vertical_locs))
+model_dims = model_dimensions()
+
+# ╔═╡ 82a174f2-1849-4d67-85dd-944c6e445d53
+Nb = prod(size(model_dims)) # number of boxes
+
+# ╔═╡ f3a7040d-2177-4693-a423-48e833718b43
+Ny, Nz = size(model_dims) # size in each dimension
 
 # ╔═╡ fdd4e823-bdb5-4f02-8de3-aade687a94c6
 md""" ## Embed physical units with numerical values
@@ -155,7 +146,8 @@ md""" mid-latitude boundary exchange $(@bind Fb_mid Slider((1:40)Sv,show_value =
 
 # ╔═╡ 8306d2c4-8d50-4309-add1-6d1eef56cd4a
 # set the units of a quantity, then use a pipe to convert units
-Vol0 = 1e16m^3 |> km^3 # uniform value of volume for all boxes
+#Vol0 = 1e16m^3 |> km^3 # uniform value of volume for all boxes
+Vol0 = 300.0Sv*yr |> km^3 # use MATLAB value not manuscript value (5% difference)
 
 # ╔═╡ 1e91d3e1-c26f-4118-9630-d654d352da76
 # If your screen is big enough, you should see a labeled, 3 x 3 table of volume values
@@ -199,7 +191,16 @@ deldotFm[Meridional=At("2 Mid-latitudes")]
 
 # ╔═╡ 08464a04-7652-4f24-978d-cd329e7fe0a7
 # Given a tracer distribution C and volume fluxes Fv, find the tracer fluxes
+# As an example, consider a randomly generated tracer field
 C = rand(model_dims) # first generate a uniform U(0,1) tracer distribution
+
+# ╔═╡ 100e928b-679b-48a3-b817-ac0dae73476b
+ # extract tracer value by using geographic indices
+ C[2,2]
+
+# ╔═╡ 18f8bdce-9ce9-4e27-bf8e-53be37dc3fd0
+# or extracer tracer using dimensional labels
+C[Meridional=At("2 Mid-latitudes")]
 
 # ╔═╡ df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
 Plots.heatmap(transpose(C),yflip=true)
@@ -223,20 +224,16 @@ deldotJ = convergence(J) # tracer flux convergence
 # ╔═╡ c9abc24c-d3f2-4d64-8dfc-b0fdf42d1502
 md"""## Boundary conditions """
 
-# ╔═╡ 6ed0c4d7-8fbb-439e-85fd-382e6b6e030f
+# ╔═╡ 20d23e54-8eec-4c6e-894a-d7d90d82ce54
 # boundary exchange: define the locations affected by boundary fluxes
-meridional_boundary = ["1 High latitudes", "2 Mid-latitudes"]; vertical_boundary = ["1 Thermocline"]
-
-# ╔═╡ c5381568-9e1a-4763-8da3-86638b468ec4
-# define dimensions that label the numerical arrays
-boundary_dims = (Meridional(meridional_boundary), Vertical(vertical_boundary))
+boundary_dims = boundary_dimensions()
 
 # ╔═╡ 378e4e6c-d399-458d-85a9-23c8ceda2b43
 # prescribe boundary volume fluxes
 Fb = DimArray(hcat([Fb_high, Fb_mid]), boundary_dims) # boundary flux
 
 # ╔═╡ d344750e-e335-4e3c-baaa-a2937c2497df
-# example: B_D (Dirichlet boundary conditions) to 1
+# example: set B_D (Dirichlet boundary conditions) to 1
 f = ones(boundary_dims) # boundary tracer values
 
 # ╔═╡ ba4789f3-7576-423b-9e94-abf4c3259eb4
@@ -260,7 +257,7 @@ A =  linear_probe(tracer_tendency, C, f, Fv, Fb, Vol)
 
 # ╔═╡ 15e6cead-7de1-4cdd-ae84-f7537e789900
 # A is stored with box labels for both the rows and columns
-# to view matrix in usual mathematical form
+# Instead, to view matrix in usual mathematical form, use `Matrix`
 Matrix(A)
 
 # ╔═╡ 6a25a144-0ccc-4604-85a7-b724eaa4cfed
@@ -272,8 +269,8 @@ A[Vertical=At("3 Abyssal"),Meridional=At("2 Mid-latitudes")] # still displayed w
 A[5][5]
 
 # ╔═╡ 1312b135-a267-4736-8e56-ff44bc7be59b
-# or get the same information using labels, but it gets long
-A[Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")][Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")] # still displayed with info about spatial-locations
+# or get the same information about one element using labels, but it gets long
+A[Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")][Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")] 
 
 # ╔═╡ 59b47e9c-784a-4ed5-aeb6-79b5c756fff6
 md""" ## Construct boundary matrix """
@@ -283,7 +280,7 @@ md""" ## Construct boundary matrix """
 B =  linear_probe(tracer_tendency, f, C, Fb, Vol)
 
 # ╔═╡ 769d63db-36d1-437a-a3da-0bc9f6e14b69
-# view in the usual mathematical way where order information is lost
+# view in the usual mathematical way where order information is obscured
 Matrix(B)
 
 # ╔═╡ 34e0f62a-9e14-4b9d-bad3-e6b23eb86c59
@@ -308,6 +305,73 @@ plot(real.(diag(μ)),xlabel="eigenvalue i",ylabel="μᵢ",legend=false)
 # maximum timescale is related to the smallest negative eigenvalue
 Tmax = maximum_timescale(μ)
 
+# ╔═╡ 6eac27ef-647c-4884-aaf3-69f6705da3a8
+md"""## Tracer histories """
+
+# ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
+BD = read_tracer_histories() # Dirichlet boundary conditions
+
+# ╔═╡ 6f979bb9-733d-4981-9a53-d75162cbd372
+md""" Choose tracers """
+
+# ╔═╡ f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
+md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12 $(@bind use_SF6 CheckBox(default=true)) SF₆ """
+
+# ╔═╡ cf38b164-4414-4344-824e-68a09cc38f6b
+md""" Source history """
+
+# ╔═╡ e34ae847-d82e-49f4-aa22-6753596c4ea0
+begin
+	source_plot = plot(xlims=(1930yr,2015yr),
+		yscale=:log10,
+		ylims = (1e-1,1e3),
+		legend = :topleft,
+		titlelabel="")	
+
+	use_CFC11 && plot!(BD[Tracer=At(:CFC11NH)],label="CFC-11")
+	use_CFC12 && plot!(BD[Tracer=At(:CFC12NH)],label="CFC-12")
+	use_SF6 && plot!(BD[Tracer=At(:SF6NH)],label="SF₆")
+	title!("")
+	source_plot
+end
+
+# ╔═╡ 897deef3-d754-4ca4-8c6f-00b67313a5a0
+md""" Interior history """
+
+# ╔═╡ 1ecd9ce2-cea7-417e-b965-24784cd0f563
+md""" $(@bind mbox1 Select(meridional_names())) $(@bind vbox1 Select(vertical_names())) """
+
+# ╔═╡ ec1439f9-7f02-439a-ac70-d67869cdae35
+begin 
+	tlist = (1900.25:0.25:2015.0)yr
+
+	transient_tracer_plot = plot(xlims=(1930yr,2015yr),
+		yscale=:log10,
+		ylims = (1e-1,1e3),
+		legend = :topleft,
+		title = mbox1*", "*vbox1,
+		titlefontsize=6)
+
+	if use_CFC11 
+		ct = transient_tracer_timeseries(:CFC11NH, BD, A, B, tlist, mbox1, vbox1)
+		plot!(tlist, ct, label="CFC-11")
+	end
+	if use_CFC12 
+		ct = transient_tracer_timeseries(:CFC12NH, BD, A, B, tlist, mbox1, vbox1)
+		plot!(tlist, ct, label="CFC-12")
+	end
+	if use_SF6 
+		ct = transient_tracer_timeseries(:SF6NH, BD, A, B, tlist, mbox1, vbox1)
+		plot!(tlist, ct, label="SF₆")
+	end
+	
+	transient_tracer_plot
+end
+
+
+# ╔═╡ 11eb59cf-de62-4fb4-9963-defe594e6b92
+md""" ## Transport matrix diagnostics """
+
 # ╔═╡ 3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # water-mass fractions
 a = watermass_fraction(μ, V, B)
@@ -331,7 +395,7 @@ Matrix(a) # all water-mass information concatenated
 Δ = ttd_width(μ, V, B)
 
 # ╔═╡ 93c9614e-70a1-49ef-933b-b86fec342597
-md"""## Green's functions """
+md"""### Green's functions """
 
 # ╔═╡ cd492316-d6b2-4645-80ba-c5817ec5877c
 Δτ = 0.25yr # time resolution
@@ -350,13 +414,10 @@ G′(t) = forward_boundary_propagator(t,A,B) # type G + \prime + TAB
 𝒢(t) = global_ttd(t,A,B) # type \scr + G + TAB
 
 # ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
-md"""## Select interior box for diagnostics """
+md"""### Select interior box for diagnostics """
 
-# ╔═╡ 07eccdb4-894d-4cd5-a639-0c01a70a84ec
-@bind mbox Select(meridional_locs)
-
-# ╔═╡ 6e1fe604-4c47-4967-bcc0-fa80fbe5bfa5
-@bind vbox Select(vertical_locs)
+# ╔═╡ 7a71a95a-8523-4cb8-9f69-00bf374acf67
+md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_names())) """
 
 # ╔═╡ 00902450-ceb7-4c33-be7e-906502990813
 # a list comprehension
@@ -401,7 +462,7 @@ begin
 		xlabel = "τ",
 		label = "Tmax",
 		legend = :topright,
-		titlefontsize = 8,
+		titlefontsize = 6,
 		title = mbox*", "*vbox,
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr))
@@ -422,12 +483,6 @@ begin
 	plot!(τ,ttd_global,label="Total TTD",width=4*a2,color=:black)
 	plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
 end
-
-# ╔═╡ 6eac27ef-647c-4884-aaf3-69f6705da3a8
-md"""## Tracer histories """
-
-# ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
-read_tracer_histories()
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
@@ -453,11 +508,9 @@ read_tracer_histories()
 # ╟─c2a29255-e95a-4dd6-b97c-03a09337136e
 # ╟─b96b1c34-ef03-4874-a3f3-d5ade9a62c70
 # ╟─6d11d809-9902-4a6a-b85e-18aed70e352f
-# ╠═55a42a84-587b-41ec-8b18-96f83245ee7d
-# ╠═543f8a23-2e43-426e-87f0-e7750bcadd2b
-# ╠═8fb8a936-9f06-4944-8c18-02eaa32f2dd0
-# ╠═931c8f1a-d97f-4543-8e7b-a24304651c0b
-# ╠═d936f769-aa79-41a6-ba56-4b99eb8738bc
+# ╠═ccc6b783-6cca-4d03-8fca-f3c312316c34
+# ╠═82a174f2-1849-4d67-85dd-944c6e445d53
+# ╠═f3a7040d-2177-4693-a423-48e833718b43
 # ╟─fdd4e823-bdb5-4f02-8de3-aade687a94c6
 # ╠═ae1f5365-78c5-4ae5-8aaf-c0818fa8c474
 # ╠═f1fff88c-0357-4f56-bea5-75b9a63807c0
@@ -481,14 +534,15 @@ read_tracer_histories()
 # ╠═fa9f454b-b7ca-4e37-a67c-a28ff91a5e11
 # ╠═17bf7f50-78a7-4c7c-bc2f-4d9086dd2181
 # ╠═08464a04-7652-4f24-978d-cd329e7fe0a7
+# ╠═100e928b-679b-48a3-b817-ac0dae73476b
+# ╠═18f8bdce-9ce9-4e27-bf8e-53be37dc3fd0
 # ╠═df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
 # ╠═5dfddc9c-6313-4679-a994-15a771ee4a90
 # ╠═e325d781-ae5c-4f64-a608-170b4df77882
 # ╠═1e92642c-396f-4353-aa5c-8849cf26af1d
 # ╠═86076566-a96b-4faf-bdef-93b95733dcff
 # ╟─c9abc24c-d3f2-4d64-8dfc-b0fdf42d1502
-# ╠═6ed0c4d7-8fbb-439e-85fd-382e6b6e030f
-# ╠═c5381568-9e1a-4763-8da3-86638b468ec4
+# ╠═20d23e54-8eec-4c6e-894a-d7d90d82ce54
 # ╠═378e4e6c-d399-458d-85a9-23c8ceda2b43
 # ╠═d344750e-e335-4e3c-baaa-a2937c2497df
 # ╠═ba4789f3-7576-423b-9e94-abf4c3259eb4
@@ -509,6 +563,16 @@ read_tracer_histories()
 # ╠═d9f77a6e-dada-476c-9e7a-25676c34518a
 # ╠═c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # ╠═1e3f4bd2-94cf-43a1-af98-11373a4d8561
+# ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
+# ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
+# ╟─6f979bb9-733d-4981-9a53-d75162cbd372
+# ╟─f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
+# ╟─cf38b164-4414-4344-824e-68a09cc38f6b
+# ╟─e34ae847-d82e-49f4-aa22-6753596c4ea0
+# ╟─897deef3-d754-4ca4-8c6f-00b67313a5a0
+# ╟─1ecd9ce2-cea7-417e-b965-24784cd0f563
+# ╟─ec1439f9-7f02-439a-ac70-d67869cdae35
+# ╟─11eb59cf-de62-4fb4-9963-defe594e6b92
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
 # ╠═01484ca5-ed33-4b94-b188-780e9e3ef8c7
@@ -531,8 +595,5 @@ read_tracer_histories()
 # ╠═fd907198-8e2e-4296-b640-c0aebbd0a796
 # ╠═1bb59934-17be-40d3-b227-b73bb1b9c4df
 # ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
-# ╟─07eccdb4-894d-4cd5-a639-0c01a70a84ec
-# ╟─6e1fe604-4c47-4967-bcc0-fa80fbe5bfa5
-# ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
-# ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
-# ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
+# ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67
+# ╟─e8fabe44-3a7d-47fc-84af-02baebf5f45a

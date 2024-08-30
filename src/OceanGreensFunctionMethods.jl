@@ -10,6 +10,8 @@ using MultipliableDimArrays
 using LinearAlgebra
 using Downloads
 using MAT
+using Interpolations
+using QuadGK
 
 import Distributions: mean, median, quantile, std, var, cov, cor, shape, params, pdf, InverseGaussian
 import Base: +
@@ -28,14 +30,21 @@ export tracer_tendency
 export projectdir, datadir, srcdir
 export meridional_names, vertical_names
 export boundary_flux, local_boundary_flux
+export model_dimensions, boundary_dimensions
 export linear_probe, mass, uniform
 export maximum_timescale, mean_age
 export ttd_width, normalized_exponential_decay
-export read_tracer_histories
+export read_tracer_histories, tracer_source_history
 export greens_function
 export forward_boundary_propagator
 export global_ttd
 export watermass_fraction
+export tracer_units
+export integrate_forcing
+export evolve_concentration
+export timestep_initial_condition
+export Eigenmode, Tracer, Meridional, Vertical
+export transient_tracer_timeseries
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export # re-export from Distributions
@@ -46,8 +55,6 @@ export # re-export from DimensionalData
     dims
 export # re-export from LinearAlgebra
     eigen
-
-@dim Eigenmode "eigenmode"
 
 projectdir() = dirname(Base.active_project())
 projectdir(args...) = joinpath(projectdir(), args...)
