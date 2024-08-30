@@ -37,7 +37,8 @@ export ttd_width, normalized_exponential_decay
 export read_tracer_histories, tracer_source_history
 export greens_function
 export forward_boundary_propagator
-export global_ttd
+export adjoint_boundary_propagator
+export global_ttd, adjoint_global_ttd
 export watermass_fraction
 export tracer_units
 export integrate_forcing

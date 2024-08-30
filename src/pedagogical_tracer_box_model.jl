@@ -393,20 +393,6 @@ function integrate_forcing(t0, tf, μ, V, B, source_history)
     (err < 1e-5) ? (return integral) : error("integration error too large")
 end
 
-function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
-
-    # A must be uniform (check type signature someday)
-    !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
-    eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
-
-    return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
-end
-
-forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
-
-global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
-
-
 function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
 
     # fixed parameters for transient tracers
@@ -428,3 +414,21 @@ function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
     return [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
 
 end
+
+function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
+
+    # A must be uniform (check type signature someday)
+    !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
+    eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
+
+    return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
+end
+
+forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+
+global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+
+# note: Matrix(B') not yet implemented, use transpose for now
+adjoint_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
+
+adjoint_global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(adjoint_boundary_propagator(t,A,B)) * ones(dims(B))

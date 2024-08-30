@@ -414,7 +414,7 @@ G′(t) = forward_boundary_propagator(t,A,B) # type G + \prime + TAB
 𝒢(t) = global_ttd(t,A,B) # type \scr + G + TAB
 
 # ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
-md"""### Select interior box for diagnostics """
+md""" Select interior box for diagnostics """
 
 # ╔═╡ 7a71a95a-8523-4cb8-9f69-00bf374acf67
 md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_names())) """
@@ -444,21 +444,19 @@ ttd_inversegaussian = pdf.(G_inversegaussian,τ)
 
 
 # ╔═╡ a183e31d-8bab-46e0-a6b1-0a181c5f0f69
-a1 = a[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
+a1 = a[Meridional=At(mbox),Vertical=At(vbox)][Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ 9537166f-054f-441e-a001-3ba59a4b59e0
-a2 = a[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
+a2 = a[Meridional=At(mbox),Vertical=At(vbox)][Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ e8fabe44-3a7d-47fc-84af-02baebf5f45a
 begin 
-
-	#boxloc = (Meridional=At(meridional_box),Vertical=At(vertical_box))
 	# to do: put plotting into functions
 	p = plot(τ,
 		normalized_exponential_decay.(τ,Tmax),
 		linestyle = :dash,
 		yscale = :log10,
-		ylabel = "Density",
+		ylabel = "G′(τ)",
 		xlabel = "τ",
 		label = "Tmax",
 		legend = :topright,
@@ -482,6 +480,68 @@ begin
 	plot!(τ,ttd2,label="TTD 2",width=4*a2)
 	plot!(τ,ttd_global,label="Total TTD",width=4*a2,color=:black)
 	plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
+end
+
+# ╔═╡ 7c725552-883e-4fb3-b22e-292518913dfd
+md""" ## Adjoint Green's functions """
+
+# ╔═╡ 4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
+md""" $(@bind mbox_adj Select(meridional_names())) $(@bind vbox_adj Select(vertical_names())) """
+
+# ╔═╡ ab31341c-ff59-41bc-8a7f-752931bb8e9d
+# † is invalid in Julia as an identifier 
+G′dagger(t) = adjoint_boundary_propagator(t,A,B) # type G + \prime + TAB
+
+# ╔═╡ 1df15962-dd41-4f07-82c8-37d2d60511fb
+ttd1_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 48449ccf-df3f-4b71-a160-53d39baa9a90
+ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ b3522980-6beb-4e05-901d-0859c7a8cb58
+# global adjoint TTD
+𝒢dagger(t) = adjoint_global_ttd(t,A,B)
+
+# ╔═╡ ce83003f-c114-441d-bcf9-aaa717d59867
+𝒢dagger(10yr)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)]
+
+# ╔═╡ 2f8f47a6-e1a8-4174-9e07-a631b81a3357
+Matrix(𝒢(10yr))
+
+# ╔═╡ 257c6649-d003-42bc-9e17-0c33b7cd304c
+ttd_global_adjoint = [𝒢dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)] for i in eachindex(τ)] 
+
+# ╔═╡ c7a4d285-25e3-42eb-8e5b-7967aad1a366
+begin 
+	# to do: put plotting into functions
+	p_adj = plot(τ,
+		normalized_exponential_decay.(τ,Tmax),
+		linestyle = :dash,
+		yscale = :log10,
+		ylabel = "G′†",
+		xlabel = "τ",
+		label = "Tmax",
+		legend = :topright,
+		titlefontsize = 6,
+		title = mbox_adj*", "*vbox_adj,
+		xlims = (0yr,400yr),
+		ylims = (1e-4/yr,1e-1/yr))
+	
+	plot!([Γ_,Γ_],
+		[1e-4,1e-2]/yr,
+		label="Γ")	
+	
+	plot!([Γ_ + Δ_/2,
+		Γ_ - Δ_/2],
+		[1e-4,1e-4]/yr,
+		width=4,
+		color=:grey,
+		label="Δ")
+	
+	plot!(τ,ttd1_adj,label="TTD 1",width=4*a1)
+	plot!(τ,ttd2_adj,label="TTD 2",width=4*a2)
+	plot!(τ,ttd_global_adjoint,label="Total TTD",width=4*a2,color=:black)
+	#plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
 end
 
 # ╔═╡ Cell order:
@@ -596,4 +656,14 @@ end
 # ╠═1bb59934-17be-40d3-b227-b73bb1b9c4df
 # ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
 # ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67
-# ╟─e8fabe44-3a7d-47fc-84af-02baebf5f45a
+# ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
+# ╟─7c725552-883e-4fb3-b22e-292518913dfd
+# ╟─4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
+# ╠═c7a4d285-25e3-42eb-8e5b-7967aad1a366
+# ╠═ab31341c-ff59-41bc-8a7f-752931bb8e9d
+# ╠═1df15962-dd41-4f07-82c8-37d2d60511fb
+# ╠═48449ccf-df3f-4b71-a160-53d39baa9a90
+# ╠═b3522980-6beb-4e05-901d-0859c7a8cb58
+# ╠═ce83003f-c114-441d-bcf9-aaa717d59867
+# ╠═2f8f47a6-e1a8-4174-9e07-a631b81a3357
+# ╠═257c6649-d003-42bc-9e17-0c33b7cd304c

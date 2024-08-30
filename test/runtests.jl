@@ -179,7 +179,11 @@ include("../src/config_units.jl")
 
                     G′(t) = forward_boundary_propagator(t,A,B)
                     @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
-                
+
+                    # † is invalid in Julia as an identifier 
+                    G′dagger(t) = adjoint_boundary_propagator(t,A,B)
+                    @test all(Matrix(G′dagger(ttest)) .≥ 0.0/yr)
+
                 end
 
                 @testset "read tracer histories" begin
