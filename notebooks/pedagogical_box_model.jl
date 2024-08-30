@@ -322,7 +322,7 @@ md""" Source history """
 
 # ╔═╡ e34ae847-d82e-49f4-aa22-6753596c4ea0
 begin
-	source_plot = plot(xlims=(1930yr,2020yr),
+	source_plot = plot(xlims=(1930yr,2015yr),
 		yscale=:log10,
 		ylims = (1e-1,1e3),
 		legend = :topleft,
@@ -352,6 +352,7 @@ if use_CFC11
 
 	tracername = :CFC11NH
 	box2_box1_ratio = 0.75
+	
     source_history_func(t) =  tracer_source_history(t,
 		tracername,
 		BD,
@@ -372,36 +373,33 @@ if use_CFC11
 		title = mbox1*", "*vbox1,
 		titlefontsize=6,
 		label="CFC-11")
-    	#plot!([Cevolve[t][3,1] for t in eachindex(tlist)],label="CFC-11")
+
 end
 
-# ╔═╡ 91cdd912-c7e7-43b5-a2a9-ea0e66d66f30
-Cevolve[179][:]
-
-
-# ╔═╡ e9c30903-9cf3-4597-a70f-b19d2ecacc6d
-# ╠═╡ disabled = true
-#=╠═╡
-begin
-	tracer_plot = plot(xlims=(1930yr,2020yr),
+# ╔═╡ ec1439f9-7f02-439a-ac70-d67869cdae35
+begin 
+	transient_tracer_plot = plot(xlims=(1930yr,2015yr),
 		yscale=:log10,
 		ylims = (1e-1,1e3),
 		legend = :topleft,
 		title="")	
 
 	if use_CFC11 
-		plot!(BD[Tracer=At(:CFC11NH)],label="CFC-11")
+		ct = transient_tracer_timeseries(:CFC11NH, BD, A, B, mbox1, vbox1)
+
+		plot!(tlist,ct,
+			title = mbox1*", "*vbox1,
+			titlefontsize=6,
+			label="CFC-11")
 	end
-	if use_CFC12 
-		plot!(BD[Tracer=At(:CFC12NH)],label="CFC-12")
-	end
-	if use_SF6
-		plot!(BD[Tracer=At(:SF6NH)],label="SF₆")
-	end
-	title!("")
-	tracer_plot
+	
+	transient_tracer_plot
 end
-  ╠═╡ =#
+
+
+# ╔═╡ 91cdd912-c7e7-43b5-a2a9-ea0e66d66f30
+Cevolve[179][:]
+
 
 # ╔═╡ 11eb59cf-de62-4fb4-9963-defe594e6b92
 md""" ## Transport matrix diagnostics """
@@ -602,12 +600,12 @@ end
 # ╟─6f979bb9-733d-4981-9a53-d75162cbd372
 # ╟─f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
 # ╟─cf38b164-4414-4344-824e-68a09cc38f6b
-# ╠═e34ae847-d82e-49f4-aa22-6753596c4ea0
+# ╟─e34ae847-d82e-49f4-aa22-6753596c4ea0
 # ╟─897deef3-d754-4ca4-8c6f-00b67313a5a0
 # ╟─1ecd9ce2-cea7-417e-b965-24784cd0f563
 # ╠═67c8abf3-db55-4e02-a77c-db466a947936
+# ╟─ec1439f9-7f02-439a-ac70-d67869cdae35
 # ╠═91cdd912-c7e7-43b5-a2a9-ea0e66d66f30
-# ╠═e9c30903-9cf3-4597-a70f-b19d2ecacc6d
 # ╟─11eb59cf-de62-4fb4-9963-defe594e6b92
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413

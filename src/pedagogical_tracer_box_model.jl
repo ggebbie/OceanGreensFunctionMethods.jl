@@ -405,3 +405,27 @@ end
 forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
 
 global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+
+
+function transient_tracer_timeseries(tracername, BD, A, B, mbox1, vbox1)
+
+    # fixed parameters for transient tracers
+    box2_box1_ratio = 0.75
+    C₀ = zeros(model_dimensions())
+    tlist = (1900.25:0.25:2015.0)yr
+	
+    source_history_func(t) =  tracer_source_history(t,
+	tracername,
+	BD,
+	box2_box1_ratio)
+
+    Cevolve = evolve_concentration(C₀, 
+	A,
+	B,
+	tlist, 
+	source_history_func;
+	halflife = nothing)
+	
+    return [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
+
+end
