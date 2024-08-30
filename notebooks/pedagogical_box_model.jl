@@ -341,64 +341,32 @@ md""" Interior history """
 # ╔═╡ 1ecd9ce2-cea7-417e-b965-24784cd0f563
 md""" $(@bind mbox1 Select(meridional_names())) $(@bind vbox1 Select(vertical_names())) """
 
-# ╔═╡ 67c8abf3-db55-4e02-a77c-db466a947936
-if use_CFC11 
-	
-	tracer_plot = plot(xlims=(1930yr,2015yr),
-		yscale=:log10,
-		ylims = (1e-1,1e3),
-		legend = :topleft,
-		title="")	
-
-	tracername = :CFC11NH
-	box2_box1_ratio = 0.75
-	
-    source_history_func(t) =  tracer_source_history(t,
-		tracername,
-		BD,
-		box2_box1_ratio)
-
-	C₀ = zeros(model_dims)
-    tlist = (1900.25:0.25:2015.0)yr
-    Cevolve = evolve_concentration(C₀, 
-		A,
-		B,
-		tlist, 
-		source_history_func;
-		halflife = nothing)
-	
-    	sss = [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
-	
-	plot!(tlist,sss,
-		title = mbox1*", "*vbox1,
-		titlefontsize=6,
-		label="CFC-11")
-
-end
-
 # ╔═╡ ec1439f9-7f02-439a-ac70-d67869cdae35
 begin 
+	tlist = (1900.25:0.25:2015.0)yr
+
 	transient_tracer_plot = plot(xlims=(1930yr,2015yr),
 		yscale=:log10,
 		ylims = (1e-1,1e3),
 		legend = :topleft,
-		title="")	
+		title = mbox1*", "*vbox1,
+		titlefontsize=6)
 
 	if use_CFC11 
-		ct = transient_tracer_timeseries(:CFC11NH, BD, A, B, mbox1, vbox1)
-
-		plot!(tlist,ct,
-			title = mbox1*", "*vbox1,
-			titlefontsize=6,
-			label="CFC-11")
+		ct = transient_tracer_timeseries(:CFC11NH, BD, A, B, tlist, mbox1, vbox1)
+		plot!(tlist, ct, label="CFC-11")
+	end
+	if use_CFC12 
+		ct = transient_tracer_timeseries(:CFC12NH, BD, A, B, tlist, mbox1, vbox1)
+		plot!(tlist, ct, label="CFC-12")
+	end
+	if use_SF6 
+		ct = transient_tracer_timeseries(:SF6NH, BD, A, B, tlist, mbox1, vbox1)
+		plot!(tlist, ct, label="SF₆")
 	end
 	
 	transient_tracer_plot
 end
-
-
-# ╔═╡ 91cdd912-c7e7-43b5-a2a9-ea0e66d66f30
-Cevolve[179][:]
 
 
 # ╔═╡ 11eb59cf-de62-4fb4-9963-defe594e6b92
@@ -446,7 +414,7 @@ G′(t) = forward_boundary_propagator(t,A,B) # type G + \prime + TAB
 𝒢(t) = global_ttd(t,A,B) # type \scr + G + TAB
 
 # ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
-md"""## Select interior box for diagnostics """
+md"""### Select interior box for diagnostics """
 
 # ╔═╡ 7a71a95a-8523-4cb8-9f69-00bf374acf67
 md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_names())) """
@@ -603,9 +571,7 @@ end
 # ╟─e34ae847-d82e-49f4-aa22-6753596c4ea0
 # ╟─897deef3-d754-4ca4-8c6f-00b67313a5a0
 # ╟─1ecd9ce2-cea7-417e-b965-24784cd0f563
-# ╠═67c8abf3-db55-4e02-a77c-db466a947936
 # ╟─ec1439f9-7f02-439a-ac70-d67869cdae35
-# ╠═91cdd912-c7e7-43b5-a2a9-ea0e66d66f30
 # ╟─11eb59cf-de62-4fb4-9963-defe594e6b92
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
@@ -630,4 +596,4 @@ end
 # ╠═1bb59934-17be-40d3-b227-b73bb1b9c4df
 # ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
 # ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67
-# ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
+# ╟─e8fabe44-3a7d-47fc-84af-02baebf5f45a
