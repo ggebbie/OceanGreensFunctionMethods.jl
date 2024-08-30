@@ -335,54 +335,34 @@ function tracer_source_history(t, tracername, BD, box2_box1_ratio)
 end
 
 function evolve_concentration(C₀, A, B, tlist, source_history; halflife = nothing)
-# function concs = find_concentrations(boxModel,times,halflife,source_history,init_concs)
 # % Integrate forcing vector over time to compute the concentration history.
 # % Find propagator by analytical expression using eigen-methods.
-# % The concs matrix is ordered by [box, time]
 
     μ, V = eigen(A)
 
-    # pre-allocate tracer concentration evolution
-    #Czero = zeros(dims(C₀))
-    #tmp = Array{typeof(Czero)}(undef,size(tlist))
-    #tmp = Array{DimArray}(undef,size(tlist))
-
     # initial condition contribution
-    Ci = DimArray(Array{DimArray}(undef,size(tlist)),Ti(tlist))
+    Ci = deepcopy(C₀)
 
-    Cf = DimArray(Array{DimArray}(undef,size(tlist)),Ti(tlist))
+    # forcing contribution
+    Cf = zeros(dims(C₀))
 
+    # total
     C = DimArray(Array{DimArray}(undef,size(tlist)),Ti(tlist))
-
-    # # forcing contribution
-    # Cf = DimArray(tmp,Ti(tlist))
-
-    # # total contribution
-    # C = DimArray(tmp,Ti(tlist))
-
-    # apply initial condition
-    # concsI = zeros(Nb,Nt) ;
-    # concsI(:,1) = init_concs ;
-    Ci[1] = C₀    
-
-    # concsF = zeros(Nb,Nt) ;
-    Cf[1] = zeros(dims(C₀))
     
-    C[1] = Ci[1] + Cf[1]
+    C[1] = Ci + Cf
     
     # % Compute solution.
     for tt = 2:length(tlist)
         ti = tlist[tt-1]
         tf = tlist[tt]
-        Ci[tt] = timestep_initial_condition(C[tt-1], μ, V, ti, tf)
+        Ci = timestep_initial_condition(C[tt-1], μ, V, ti, tf)
 
         # Forcing contribution
-        Cf[tt] = integrate_forcing( ti, tf, μ, V, B, source_history)
+        Cf = integrate_forcing( ti, tf, μ, V, B, source_history)
 
         # total
-        C[tt] = Ci[tt] + Cf[tt]
+        C[tt] = Ci + Cf
     end # tt
-
     return real.(C) #real.(Ci + Cf)  # Cut imaginary part which is zero to machine precision.
 end
 
