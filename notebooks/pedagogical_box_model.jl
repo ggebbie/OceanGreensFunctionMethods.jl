@@ -552,6 +552,89 @@ begin
 	plot!(τ,ttd_inversegaussian_adjoint,label="Fitted inverse Gaussian")
 end
 
+# ╔═╡ 13d659ac-d820-404e-bdcb-c66b05381309
+md""" ## Residence time distribution """
+
+# ╔═╡ 42ca866d-9c14-4761-9d0f-131870e25d9e
+#md""" Select source $(@bind mbox_source Select(meridional_names()[1:2]))"""
+
+# ╔═╡ 0a62e096-f375-4053-bc88-7ef89ce1173a
+RTD(t) = residence_time(t,A,B)
+
+# ╔═╡ f6f550a5-d04d-4d2a-89e7-484734370416
+rtd11 = [RTD(τ[i])[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 8c2daa28-94f1-4540-b753-5cf1744d9d63
+rtd12 = [RTD(τ[i])[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 6d1b4753-aabb-4274-a5fb-de26270c4378
+rtd21 = [RTD(τ[i])[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 025e7a9d-d587-44d6-ba0c-1343ad18121a
+begin 
+	# to do: put plotting into functions
+	p_source = plot(τ,
+		normalized_exponential_decay.(τ,Tmax),
+		linestyle = :dash,
+		yscale = :log10,
+		ylabel = "R(τ)",
+		xlabel = "τ",
+		label = "Tmax",
+		legend = :topright,
+		titlefontsize = 6,
+		title = "1 High latitudes"*", "*" 1 Thermocline",
+		xlims = (0yr,400yr),
+		ylims = (1e-4/yr,1e-1/yr))
+	
+	#plot!([Γ_adjoint,Γ_adjoint],
+		#[1e-4,1e-2]/yr,
+		#label="Γ")	
+	
+	#plot!([Γ_adjoint + Δ_adjoint/2,
+		#Γ_adjoint - Δ_adjoint/2],
+		#[1e-4,1e-4]/yr,
+		#width=4,
+		#color=:grey,
+		#label="Δ")
+	
+	plot!(τ,rtd11,label="RTD box 1",width=4*a1)
+	plot!(τ,rtd21,label="RTD box 2",width=4*a2)
+end
+
+# ╔═╡ 35d26007-c24d-4f1c-9318-02d01a863095
+rtd22 = [RTD(τ[i])[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 34e7154d-adf2-4e10-9ea5-967b95de5482
+begin 
+	# to do: put plotting into functions
+	p_source2 = plot(τ,
+		normalized_exponential_decay.(τ,Tmax),
+		linestyle = :dash,
+		yscale = :log10,
+		ylabel = "R(τ)",
+		xlabel = "τ",
+		label = "Tmax",
+		legend = :topright,
+		titlefontsize = 6,
+		title = "2 Mid-latitudes"*", "*" 1 Thermocline",
+		xlims = (0yr,400yr),
+		ylims = (1e-4/yr,1e-1/yr))
+	
+	#plot!([Γ_adjoint,Γ_adjoint],
+		#[1e-4,1e-2]/yr,
+		#label="Γ")	
+	
+	#plot!([Γ_adjoint + Δ_adjoint/2,
+		#Γ_adjoint - Δ_adjoint/2],
+		#[1e-4,1e-4]/yr,
+		#width=4,
+		#color=:grey,
+		#label="Δ")
+	
+	plot!(τ,rtd12,label="RTD box 1",width=4*a1)
+	plot!(τ,rtd22,label="RTD box 2",width=4*a2)
+end
+
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
 # ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
@@ -667,7 +750,7 @@ end
 # ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67
 # ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
 # ╟─7c725552-883e-4fb3-b22e-292518913dfd
-# ╟─4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
+# ╠═4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
 # ╠═c7a4d285-25e3-42eb-8e5b-7967aad1a366
 # ╠═ab31341c-ff59-41bc-8a7f-752931bb8e9d
 # ╠═1df15962-dd41-4f07-82c8-37d2d60511fb
@@ -678,3 +761,12 @@ end
 # ╠═c6460013-d800-4280-97db-50c5aa84e709
 # ╠═4e0ce7d3-a1fd-4995-83d0-bdc74bc5e339
 # ╠═f861d37b-427b-4c12-b0ff-c55be4d82523
+# ╟─13d659ac-d820-404e-bdcb-c66b05381309
+# ╟─42ca866d-9c14-4761-9d0f-131870e25d9e
+# ╠═025e7a9d-d587-44d6-ba0c-1343ad18121a
+# ╠═34e7154d-adf2-4e10-9ea5-967b95de5482
+# ╠═0a62e096-f375-4053-bc88-7ef89ce1173a
+# ╠═f6f550a5-d04d-4d2a-89e7-484734370416
+# ╠═8c2daa28-94f1-4540-b753-5cf1744d9d63
+# ╠═6d1b4753-aabb-4274-a5fb-de26270c4378
+# ╠═35d26007-c24d-4f1c-9318-02d01a863095

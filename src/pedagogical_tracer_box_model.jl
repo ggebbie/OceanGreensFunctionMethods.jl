@@ -443,3 +443,5 @@ global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_f
 adjoint_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
 
 adjoint_global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(adjoint_boundary_propagator(t,A,B)) * ones(dims(B))
+
+residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = (t/2) * transpose(B)*greens_function(t,A)*B
