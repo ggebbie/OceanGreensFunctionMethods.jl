@@ -185,6 +185,10 @@ include("../src/config_units.jl")
                     G′dagger(t) = adjoint_boundary_propagator(t,A,B)
                     @test all(Matrix(G′dagger(ttest)) .≥ 0.0/yr)
 
+                    # residence times
+                    # numerical values quite different from MATLAB
+                    a_RTD = residence_time_watermass_fractions(μ, V, B)
+                    @test isapprox(sum(Matrix(a_RTD)[:]),1.0) # fails due to missing complex conjugate
                 end
 
                 @testset "read tracer histories" begin

@@ -387,18 +387,57 @@ last(a)'
 # ╔═╡ c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
 Matrix(a) # all water-mass information concatenated
 
+# ╔═╡ e5841ad8-dfb9-47d5-bcb0-0f7448f43645
+a
+
+# ╔═╡ 0071aa97-27c3-469f-b1bb-e07337489f0e
+begin
+	msource1 = "1 High latitudes"
+	vsource1 = "1 Thermocline"
+	Plots.heatmap(transpose(a[At(msource1),At(vsource1)]),
+		title="Water mass fraction: "*msource1*" "*vsource1,
+		titlefontsize=6,
+		yflip=true,
+		color=:heat,
+		clims=(0.25,0.75))
+end
+
+# ╔═╡ 5786b2d4-d049-4119-8e1c-5ecf8e8c683e
+begin
+	msource2 = "2 Mid-latitudes"
+	vsource2 = "1 Thermocline"
+	Plots.heatmap(transpose(a[At(msource2),At(vsource2)]),
+		title="Water mass fraction: "*msource2*" "*vsource2,
+		titlefontsize=6,
+		yflip=true,
+		color=:heat,
+		clims=(0.25,0.75))
+end
+
 # ╔═╡ cf5bb364-5336-4dd1-8bb6-6e3f944673bf
+begin
 Γ = mean_age(μ, V, B)
+	
+	Plots.heatmap(transpose(Γ),
+		title="Mean Age ["*string(unit(first(Γ)))*"]",
+		titlefontsize=6,
+		yflip=true,
+		color=:heat,
+		clims=(0yr,200yr))
+end
 
 # ╔═╡ 4021feb1-36ac-42f6-a5f6-391c0f064dc7
-# very similar values; is this correct?
+# very similar values - matches with MATLAB results
 Δ = ttd_width(μ, V, B)
-
-# ╔═╡ 9fc62b4a-cb29-4dfc-9c37-fae941a7fb3b
-Δ[2,2]
 
 # ╔═╡ 93c9614e-70a1-49ef-933b-b86fec342597
 md"""### Green's functions """
+
+# ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
+md""" Select interior box for diagnostics """
+
+# ╔═╡ 7a71a95a-8523-4cb8-9f69-00bf374acf67
+md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_names())) """
 
 # ╔═╡ cd492316-d6b2-4645-80ba-c5817ec5877c
 Δτ = 0.25yr # time resolution
@@ -415,15 +454,6 @@ G′(t) = forward_boundary_propagator(t,A,B) # type G + \prime + TAB
 # ╔═╡ 595fba3f-65ec-461f-a257-92456d4f94a0
 # global (or total) TTD
 𝒢(t) = global_ttd(t,A,B) # type \scr + G + TAB
-
-# ╔═╡ e5841ad8-dfb9-47d5-bcb0-0f7448f43645
-a
-
-# ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
-md""" Select interior box for diagnostics """
-
-# ╔═╡ 7a71a95a-8523-4cb8-9f69-00bf374acf67
-md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_names())) """
 
 # ╔═╡ 00902450-ceb7-4c33-be7e-906502990813
 # a list comprehension
@@ -442,17 +472,17 @@ ttd_global = [𝒢(τ[i])[Meridional=At(mbox),Vertical=At(vbox)] for i in eachin
 # ╔═╡ 19ef1da1-9b1a-4300-83aa-bb503027122b
 Δ_ = Δ[Meridional=At(mbox),Vertical=At(vbox)]
 
-# ╔═╡ fd907198-8e2e-4296-b640-c0aebbd0a796
-G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
-
-# ╔═╡ 1bb59934-17be-40d3-b227-b73bb1b9c4df
-ttd_inversegaussian = pdf.(G_inversegaussian,τ)
-
 # ╔═╡ a183e31d-8bab-46e0-a6b1-0a181c5f0f69
 a1 = a[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ 9537166f-054f-441e-a001-3ba59a4b59e0
 a2 = a[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
+
+# ╔═╡ fd907198-8e2e-4296-b640-c0aebbd0a796
+G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
+
+# ╔═╡ 1bb59934-17be-40d3-b227-b73bb1b9c4df
+ttd_inversegaussian = pdf.(G_inversegaussian,τ)
 
 # ╔═╡ e8fabe44-3a7d-47fc-84af-02baebf5f45a
 begin 
@@ -556,7 +586,7 @@ begin
 end
 
 # ╔═╡ 13d659ac-d820-404e-bdcb-c66b05381309
-md""" ## Residence time distribution """
+md""" ## Residence time distributions """
 
 # ╔═╡ 42ca866d-9c14-4761-9d0f-131870e25d9e
 #md""" Select source $(@bind mbox_source Select(meridional_names()[1:2]))"""
@@ -575,7 +605,6 @@ rtd21 = [RTD(τ[i])[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline"
 
 # ╔═╡ 025e7a9d-d587-44d6-ba0c-1343ad18121a
 begin 
-	# to do: put plotting into functions
 	p_source = plot(τ,
 		normalized_exponential_decay.(τ,Tmax),
 		linestyle = :dash,
@@ -587,7 +616,7 @@ begin
 		titlefontsize = 6,
 		title = "1 High latitudes"*", "*" 1 Thermocline",
 		xlims = (0yr,400yr),
-		ylims = (1e-4/yr,1e-1/yr))
+		ylims = (1e-4/yr,1e-1/yr)) 
 	
 	#plot!([Γ_adjoint,Γ_adjoint],
 		#[1e-4,1e-2]/yr,
@@ -637,6 +666,13 @@ begin
 	plot!(τ,rtd12,label="RTD box 1",width=4*a1)
 	plot!(τ,rtd22,label="RTD box 2",width=4*a2)
 end
+
+# ╔═╡ 29c38299-d49f-422c-9065-2faa9d2db491
+# numerical values not matching MATLAB
+a_RTD = residence_time_watermass_fractions(μ, V, B)
+
+# ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
+sum(Matrix(a_RTD)[:])
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
@@ -731,10 +767,15 @@ end
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
 # ╠═01484ca5-ed33-4b94-b188-780e9e3ef8c7
 # ╠═c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
+# ╠═e5841ad8-dfb9-47d5-bcb0-0f7448f43645
+# ╠═0071aa97-27c3-469f-b1bb-e07337489f0e
+# ╠═5786b2d4-d049-4119-8e1c-5ecf8e8c683e
 # ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
-# ╠═4021feb1-36ac-42f6-a5f6-391c0f064dc7
-# ╠═9fc62b4a-cb29-4dfc-9c37-fae941a7fb3b
+# ╟─4021feb1-36ac-42f6-a5f6-391c0f064dc7
 # ╟─93c9614e-70a1-49ef-933b-b86fec342597
+# ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
+# ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67
+# ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
 # ╠═cd492316-d6b2-4645-80ba-c5817ec5877c
 # ╠═4c258084-da30-4393-b844-c379c9e79efd
 # ╠═589ab455-2e9c-47d6-abd7-f89f367a5ed5
@@ -745,16 +786,12 @@ end
 # ╠═8d69c375-6a0c-400e-af85-3013a364fa1d
 # ╠═09a85965-d1dc-47a3-9eba-dd1dc129db36
 # ╠═19ef1da1-9b1a-4300-83aa-bb503027122b
-# ╠═e5841ad8-dfb9-47d5-bcb0-0f7448f43645
 # ╠═a183e31d-8bab-46e0-a6b1-0a181c5f0f69
 # ╠═9537166f-054f-441e-a001-3ba59a4b59e0
 # ╠═fd907198-8e2e-4296-b640-c0aebbd0a796
 # ╠═1bb59934-17be-40d3-b227-b73bb1b9c4df
-# ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
-# ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67
-# ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
 # ╟─7c725552-883e-4fb3-b22e-292518913dfd
-# ╠═4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
+# ╟─4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
 # ╠═c7a4d285-25e3-42eb-8e5b-7967aad1a366
 # ╠═ab31341c-ff59-41bc-8a7f-752931bb8e9d
 # ╠═1df15962-dd41-4f07-82c8-37d2d60511fb
@@ -774,3 +811,5 @@ end
 # ╠═8c2daa28-94f1-4540-b753-5cf1744d9d63
 # ╠═6d1b4753-aabb-4274-a5fb-de26270c4378
 # ╠═35d26007-c24d-4f1c-9318-02d01a863095
+# ╠═29c38299-d49f-422c-9065-2faa9d2db491
+# ╠═58701b47-1669-484c-ab88-904f31fedb97

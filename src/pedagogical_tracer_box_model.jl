@@ -230,17 +230,47 @@ end
 
 allequal(x) = all(y -> y == first(x), x)
 
-# eigenstructure only exists if A is uniform
-function uniform(A::DimArray{<:DimArray})
-    ulist = unit.(MultipliableDimArrays.Matrix(A))
-    return allequal(ulist)
-end
+# # eigenstructure only exists if A is uniform
+# function uniform(A::DimArray{<:DimArray})
+#     ulist = unit.(MultipliableDimArrays.Matrix(A))
+#     return allequal(ulist)
+# end
 
 maximum_timescale(μ) = -1/real(last(last(μ)))
 
-# ustrip inidicates upstream problem with left divide and units
-# can be simplified with upstream fix
-watermass_fraction(μ, V, B) = - (unit(first(first(B))) * real.(V * (μ \ (V \ ustrip.(B)))))
+function watermass_fraction(μ, V, B; alg=:forward)
+    if alg == :forward
+        return watermass_fraction_forward(μ, V, B)
+    elseif alg == :adjoint 
+        return watermass_fraction_adjoint(μ, V, B)
+    elseif alg == :residence
+        return watermass_fraction_residence_time(μ, V, B)
+    else
+        error("not yet implemented")
+    end
+end
+
+watermass_fraction_forward(μ, V, B) = - real.(V / μ / V * B)
+# previous working (slower) method 
+#watermass_fraction_forward(μ, V, B) = - (unit(first(first(B))) * real.(V * (μ \ (V \ ustrip.(B)))))
+
+
+function watermass_fraction_residence_time(μ, V, B)
+    # real(    B'*V/(D.^2)/V*B)
+    tmp = transpose(B) * V # complex conjugate not implemented, ok b.c. B real 
+
+    fix_units = unit(first(first(B)))
+    tmp = V \ ustrip.(B)
+    μ_diag = diag(μ)
+    μ_neg2_diag = μ_diag.^-2
+    μ_neg2 = DiagonalDimArray(μ_neg2_diag,dims(μ))
+
+    
+    Nb = prod(size(first(B)))
+    # not quite correct, should be complex conjugate not transpose
+    return real.(transpose(tmp)*(μ_neg2* tmp)) ./ Nb .* fix_units^2
+#       ./boxModel.no_boxes ;
+end
 
 function mean_age(μ, V, B)
 
@@ -444,4 +474,6 @@ adjoint_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: Dim
 
 adjoint_global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(adjoint_boundary_propagator(t,A,B)) * ones(dims(B))
 
-residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = (t/2) * transpose(B)*greens_function(t,A)*B
+# not normalized by number of boxes: consistent with manuscript?
+residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
+
