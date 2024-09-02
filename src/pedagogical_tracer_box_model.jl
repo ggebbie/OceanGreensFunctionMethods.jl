@@ -251,8 +251,6 @@ function watermass_fraction(μ, V, B; alg=:forward)
 end
 
 watermass_fraction_forward(μ, V, B) = - real.(V / μ / V * B)
-# previous working (slower) method 
-#watermass_fraction_forward(μ, V, B) = - (unit(first(first(B))) * real.(V * (μ \ (V \ ustrip.(B)))))
 
 function watermass_fraction_residence_time(μ, V, B)
     # real(    B'*V/(D.^2)/V*B)
@@ -296,6 +294,11 @@ function mean_age_forward(μ, V, B)
     return Γ = real.(V / μ2 / V * B) * ones(boundary_dims)
 end
 
+function mean_age_adjoint(A, B)
+    μ, V = eigen(transpose(A))
+    return mean_age(μ, V, B)
+end
+
 function ttd_width(μ, V, B)
 
     fix_units = unit(first(first(B))) # upstream issue to be fixed
@@ -316,10 +319,6 @@ end
 
 normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
 
-function adjoint_mean_age(A, B)
-    μ, V = eigen(transpose(A))
-    return mean_age(μ, V, B)
-end
 
 function adjoint_ttd_width(A, B)
     μ, V = eigen(transpose(A))
