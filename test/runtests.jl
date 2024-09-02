@@ -168,6 +168,7 @@ include("../src/config_units.jl")
 
                 # very similar values; is this correct?
                 Δ = ttd_width(μ, V, B)
+                @test 90yr < Δ[2,2] < 91yr # compare to MATLAB point value
                 @test all(Δ .≥ 0.0yr)
 
                 @testset "green's function" begin

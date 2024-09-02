@@ -394,6 +394,9 @@ Matrix(a) # all water-mass information concatenated
 # very similar values; is this correct?
 Δ = ttd_width(μ, V, B)
 
+# ╔═╡ 9fc62b4a-cb29-4dfc-9c37-fae941a7fb3b
+Δ[2,2]
+
 # ╔═╡ 93c9614e-70a1-49ef-933b-b86fec342597
 md"""### Green's functions """
 
@@ -730,6 +733,7 @@ end
 # ╠═c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
 # ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
 # ╠═4021feb1-36ac-42f6-a5f6-391c0f064dc7
+# ╠═9fc62b4a-cb29-4dfc-9c37-fae941a7fb3b
 # ╟─93c9614e-70a1-49ef-933b-b86fec342597
 # ╠═cd492316-d6b2-4645-80ba-c5817ec5877c
 # ╠═4c258084-da30-4393-b844-c379c9e79efd
