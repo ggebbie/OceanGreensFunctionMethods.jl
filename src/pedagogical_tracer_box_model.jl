@@ -254,7 +254,6 @@ watermass_fraction_forward(μ, V, B) = - real.(V / μ / V * B)
 # previous working (slower) method 
 #watermass_fraction_forward(μ, V, B) = - (unit(first(first(B))) * real.(V * (μ \ (V \ ustrip.(B)))))
 
-
 function watermass_fraction_residence_time(μ, V, B)
     # real(    B'*V/(D.^2)/V*B)
     tmp = transpose(B) * V # complex conjugate not implemented, ok b.c. B real 
@@ -272,20 +271,30 @@ function watermass_fraction_residence_time(μ, V, B)
 #       ./boxModel.no_boxes ;
 end
 
-function mean_age(μ, V, B)
+function mean_age(μ, V, B; alg=:forward)
+    if alg == :forward
+        return mean_age_forward(μ, V, B)
+    elseif alg == :adjoint 
+        return mean_age_adjoint(μ, V, B)
+    elseif alg == :residence
+        return mean_age_residence_time(μ, V, B)
+    else
+        error("not yet implemented")
+    end
+end
 
-    fix_units = unit(first(first(B))) # upstream issue to be fixed
+function mean_age_forward(μ, V, B)
 
+    # MATLAB: real(    V/(D.^2)/V*B)*[1; 1]
     μ_diag = diag(μ)
-    μ_neg2_diag = μ_diag.^-2
-    μ_neg2 = DiagonalDimArray(μ_neg2_diag,dims(μ))
-    
+    μ2_diag = μ_diag.^2
+    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
+
     # use  real to get rid of very small complex parts
     # ideally, would check that complex parts are small
     boundary_dims = dims(B)
-    return Γ = fix_units * real.(V * (μ_neg2 * (V \ ustrip.(B* ones(boundary_dims)))))
+    return Γ = real.(V / μ2 / V * B) * ones(boundary_dims)
 end
-
 
 function ttd_width(μ, V, B)
 
