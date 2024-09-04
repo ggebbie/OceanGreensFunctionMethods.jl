@@ -151,10 +151,12 @@ include("../src/config_units.jl")
                     matexp = MultipliableDimArray( exp(Matrix(μ*dt)), dims(μ), dims(μ))
                     t1 =  real.( V * (matexp * (V\C))) # matlab code has right divide (?)
 
-                    # move upstream to MultipliableDimArrays eventually
-                    eAt = MultipliableDimArray(exp(Matrix(A*dt)),dims(A),dims(A))
+                    # mostly handled by MultipliableDimArrays 
+                    #eAt = MultipliableDimArray(exp(Matrix(A*dt)),dims(A),dims(A))
+                    eAt = exp(A*dt)
                     t2 = real.( eAt*C) # matlab code has right divide (?)
                     t3 = vec(t1) - vec(t2)
+                    @test maximum(abs.(t3)) < 1e-8
                 end
                 Tmax = maximum_timescale(μ)
 
@@ -178,6 +180,8 @@ include("../src/config_units.jl")
                     G(t) = greens_function(t,A) # a closure that captures A
                     @test all(Matrix(G(ttest)) .≥ 0.0)
 
+                    # add test: normalization of Green's function
+                    
                     G′(t) = forward_boundary_propagator(t,A,B)
                     @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
 

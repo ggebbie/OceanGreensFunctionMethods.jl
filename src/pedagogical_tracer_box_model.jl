@@ -9,10 +9,10 @@ pmol = u"pmol"
 fmol = u"fmol"
 nmol = u"nmol"
 
-@dim Eigenmode "eigenmode"
 @dim Tracer "tracer"
 @dim Meridional "meridional location"
 @dim Vertical "vertical location"
+@dim Global "global quantity"
 
 struct Fluxes{T,N} 
     poleward::DimArray{T,N}
@@ -31,9 +31,6 @@ dims(F::Fluxes) = dims(F.poleward)
 
 meridional_names() = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
 vertical_names() = ["1 Thermocline", "2 Deep", "3 Abyssal"]
-
-# meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
-# vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
 model_dimensions() = (Meridional(meridional_names()),Vertical(vertical_names())) 
 
 function boundary_dimensions()
@@ -208,25 +205,25 @@ function linear_probe(funk::Function,C::DimArray{T,N},args...) where T <: Number
     return DimArray(A, dims(C))
 end
 
-function eigen(A::DimArray{<:DimArray})
+# function eigen(A::DimArray{<:DimArray})
 
-    uniform(A) ? uA = unit(first(first(A))) : error("No eigendecomposition for a non-uniform matrix")
-    A_matrix = MultipliableDimArrays.Matrix(A)
-    F = eigen(ustrip.(A_matrix))
+#     uniform(A) ? uA = unit(first(first(A))) : error("No eigendecomposition for a non-uniform matrix")
+#     A_matrix = MultipliableDimArrays.Matrix(A)
+#     F = eigen(ustrip.(A_matrix))
 
-    eigen_dims = Eigenmode(1:size(A_matrix,2))
-    model_dims = dims(A)
+#     eigen_dims = Eigenmode(1:size(A_matrix,2))
+#     model_dims = dims(A)
 
-    values = MultipliableDimArray(uA * F.values, eigen_dims)
-    μ = DiagonalDimArray(values, dims(values))
+#     values = MultipliableDimArray(uA * F.values, eigen_dims)
+#     μ = DiagonalDimArray(values, dims(values))
 
-    vectors = MultipliableDimArray(F.vectors,
-            model_dims, eigen_dims)    
+#     vectors = MultipliableDimArray(F.vectors,
+#             model_dims, eigen_dims)    
 
-    return μ, vectors
-    # ideally, would return an Eigen factorization, in spirit like:
-    #    return Eigen(QuantityArray(F.values, dimension(A)), F.vectors)
-end
+#     return μ, vectors
+#     # ideally, would return an Eigen factorization, in spirit like:
+#     #    return Eigen(QuantityArray(F.values, dimension(A)), F.vectors)
+# end
 
 allequal(x) = all(y -> y == first(x), x)
 
@@ -291,12 +288,21 @@ function mean_age_forward(μ, V, B)
     # use  real to get rid of very small complex parts
     # ideally, would check that complex parts are small
     boundary_dims = dims(B)
-    return Γ = real.(V / μ2 / V * B) * ones(boundary_dims)
+    return real.(V / μ2 / V * B) * ones(boundary_dims)
 end
 
-function mean_age_adjoint(A, B)
-    μ, V = eigen(transpose(A))
-    return mean_age(μ, V, B)
+#function mean_age_adjoint(A, B)
+function mean_age_adjoint(μ, V, B)
+    # MATLAB: [1, 1]*real(    B'*V/(D.^2)/V)
+    μ_diag = diag(μ)
+    μ2_diag = μ_diag.^2
+    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
+
+    return transpose(ones(dims(B))) * real.(transpose(B) * V / μ2 / V) 
+    
+    # previous working method 
+    #μ, V = eigen(transpose(A))
+    #return mean_age(μ, V, B)
 end
 
 function ttd_width(μ, V, B)
@@ -464,14 +470,19 @@ function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
 
 end
 
-function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
+# function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
 
-    # A must be uniform (check type signature someday)
-    !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
-    eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
+#     # A must be uniform (check type signature someday)
+#     !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
+#     eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
 
-    return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
-end
+#     return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
+# end
+greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*t)
+#     # A must be uniform (check type signature someday)
+#     !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
+#     eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
+#     return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
 
 forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
 

@@ -405,11 +405,11 @@ version = "2023.1.10"
 
 [[deps.MultipliableDimArrays]]
 deps = ["DimensionalData", "LinearAlgebra", "Revise", "Unitful", "UnitfulLinearAlgebra"]
-git-tree-sha1 = "7ad0eb2e339ec841889c2ed669a5ce2420865d99"
+git-tree-sha1 = "7bae5ee50ba66e1483954653993e788c68f5c8fb"
 repo-rev = "main"
 repo-url = "https://github.com/ggebbie/MultipliableDimArrays.jl"
 uuid = "3e2a59ee-8dc2-49ed-b08b-35477f91d0a4"
-version = "0.1.4"
+version = "0.1.6"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"

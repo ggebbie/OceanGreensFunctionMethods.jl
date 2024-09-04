@@ -72,6 +72,9 @@ Pkg.instantiate()
 md""" ## Load some helpful packages """
 
 
+# ╔═╡ 01f84c5f-8881-401f-a0a8-8ae69385f9fe
+#using MultipliableDimArrays
+
 # ╔═╡ 39045ccd-fd9a-4d87-a2d9-79171a3366dc
 plotly()
 
@@ -402,6 +405,9 @@ begin
 		clims=(0.25,0.75))
 end
 
+# ╔═╡ 0b804941-fed3-4830-980b-8d383d473858
+ a[At(msource1),At(vsource1)]
+
 # ╔═╡ 5786b2d4-d049-4119-8e1c-5ecf8e8c683e
 begin
 	msource2 = "2 Mid-latitudes"
@@ -416,7 +422,7 @@ end
 
 # ╔═╡ cf5bb364-5336-4dd1-8bb6-6e3f944673bf
 begin
-Γ = mean_age(μ, V, B)
+	Γ = mean_age(μ, V, B)
 	
 	Plots.heatmap(transpose(Γ),
 		title="Mean Age ["*string(unit(first(Γ)))*"]",
@@ -541,7 +547,8 @@ ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Mer
 ttd_global_adjoint = [𝒢dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)] for i in eachindex(τ)] 
 
 # ╔═╡ cf82fade-07ac-4aa9-bd06-7a10820a724f
-Γ_adjoint = adjoint_mean_age(A,B)[At(mbox_adj),At(vbox_adj)]
+#Γ_adjoint = adjoint_mean_age(A,B)[At(mbox_adj),At(vbox_adj)]
+Γ_adjoint = mean_age(μ, V, B, alg=:adjoint)[At(mbox_adj),At(vbox_adj)]
 
 # ╔═╡ c6460013-d800-4280-97db-50c5aa84e709
 Δ_adjoint = adjoint_ttd_width(A,B)[At(mbox_adj),At(vbox_adj)]
@@ -690,6 +697,7 @@ sum(Matrix(a_RTD)[:])
 # ╠═0a9a45e2-a561-4a21-afb9-b96ec884de4a
 # ╠═2fe46717-3f77-4afa-9e74-1ddb594e40ea
 # ╠═cc363185-cdc4-47be-a926-5178e1535f0d
+# ╠═01f84c5f-8881-401f-a0a8-8ae69385f9fe
 # ╠═39045ccd-fd9a-4d87-a2d9-79171a3366dc
 # ╟─abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
 # ╟─b9f2165e-2d18-4179-a69f-ab0fc6ceb8b6
@@ -769,6 +777,7 @@ sum(Matrix(a_RTD)[:])
 # ╠═c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
 # ╠═e5841ad8-dfb9-47d5-bcb0-0f7448f43645
 # ╠═0071aa97-27c3-469f-b1bb-e07337489f0e
+# ╠═0b804941-fed3-4830-980b-8d383d473858
 # ╠═5786b2d4-d049-4119-8e1c-5ecf8e8c683e
 # ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
 # ╟─4021feb1-36ac-42f6-a5f6-391c0f064dc7
