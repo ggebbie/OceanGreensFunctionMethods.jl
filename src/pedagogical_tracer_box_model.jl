@@ -320,6 +320,21 @@ end
     #return mean_age(μ, V, B)
 #end
 
+function mean_age_residence(μ, V, B)
+    # MATLAB: [1, 1]*real(-2.*B'*V/(D.^3)/V*B)*[1; 1]./boxModel.no_boxes
+    μ_diag = diag(μ)
+    μ3_diag = μ_diag.^3 
+    μ3 = DiagonalDimArray(μ3_diag,dims(μ))
+
+    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
+
+    tmp = -2 .* ones_row_vector * real.(transpose(B) * V / μ3 / V * B) * transpose(ones_row_vector) 
+
+    Nb = size(V) # number of boxes
+    return tmp ./ Nb
+end
+
 function ttd_width(μ, V, B; alg=:forward)
     if alg == :forward
         return ttd_width_forward(μ, V, B)

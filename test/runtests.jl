@@ -179,6 +179,10 @@ include("../src/config_units.jl")
                 Γ_adjoint = mean_age(μ, V, B, alg=:adjoint)
                 @test all(Γ_adjoint .≥ 0.0yr)
 
+                Γ_residence = mean_age(μ, V, B, alg=:residence)
+                Matrix(Γ_residence)
+                @test all(Γ_residence .≥ 0.0yr)
+
                 # very similar values; is this correct?
                 Δ = ttd_width(μ, V, B)
                 @test 90yr < Δ[2,2] < 91yr # compare to MATLAB point value
