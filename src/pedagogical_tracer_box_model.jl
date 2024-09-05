@@ -507,16 +507,15 @@ greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity
 
 function boundary_propagator(t,A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
 if alg == :forward 
-    return forward_boundary_propagator(t, A, B)
+    return boundary_propagator_forward(t, A, B)
 elseif alg == :adjoint
-    return adjoint_boundary_propagator(t, A, B)
+    return boundary_propagator_adjoint(t, A, B)
 end
     error("boundary propagator method not implemented")
 end
 
-forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
-
-adjoint_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
+boundary_propagator_forward(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+boundary_propagator_adjoint(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
 
 function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
     if alg == :forward 
@@ -529,9 +528,7 @@ function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where D
 end
 
 global_ttd_forward(t, A::DimMatrix{DM}, B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
-
-# slightly different than MATLAB formulation: @(t) pagemtimes([1, 1],Solution.adj_bdyProp(t))
-global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(adjoint_boundary_propagator(t,A,B)) * ones(dims(B))
+global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(ones(dims(B))) *  boundary_propagator_adjoint(t,A,B)
 
 # not normalized by number of boxes: consistent with manuscript?
 residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
