@@ -516,14 +516,22 @@ end
 
 forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
 
-# note: Matrix(B') not yet implemented, use transpose for now
 adjoint_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
 
-global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+    if alg == :forward 
+        return global_ttd_forward(t, A, B)
+    elseif alg == :adjoint
+        return global_ttd_adjoint(t, A, B)
+    else
+        error("global ttd method not implemented")
+    end
+end
 
+global_ttd_forward(t, A::DimMatrix{DM}, B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
 
-adjoint_global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(adjoint_boundary_propagator(t,A,B)) * ones(dims(B))
+# slightly different than MATLAB formulation: @(t) pagemtimes([1, 1],Solution.adj_bdyProp(t))
+global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(adjoint_boundary_propagator(t,A,B)) * ones(dims(B))
 
 # not normalized by number of boxes: consistent with manuscript?
 residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
-
