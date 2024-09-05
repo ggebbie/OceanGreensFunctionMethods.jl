@@ -214,6 +214,9 @@ include("../src/config_units.jl")
 
                     𝒢dagger(t) = global_ttd(t,A,B,alg=:adjoint)
                     𝒢dagger(1yr)
+
+                    RTD(t) = residence_time(t,A,B)
+                    RTD(1yr)
                     
                     # residence times
                     # numerical values quite different from MATLAB

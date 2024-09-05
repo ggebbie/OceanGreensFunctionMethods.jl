@@ -679,10 +679,10 @@ end
 
 # ╔═╡ 29c38299-d49f-422c-9065-2faa9d2db491
 # numerical values not matching MATLAB
-a_RTD = residence_time_watermass_fractions(μ, V, B)
+a_RTD = watermass_fraction(μ, V, B, alg=:residence)
 
 # ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
-sum(Matrix(a_RTD)[:])
+sum(Matrix(a_RTD)[:]) # a test that all mass is taken into account
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
