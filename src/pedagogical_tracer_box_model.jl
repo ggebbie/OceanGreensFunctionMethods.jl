@@ -471,14 +471,10 @@ forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(μ*(tf-t)) /
 #end
     
 function integrate_forcing(t0, tf, μ, V, B, source_history)
-
-#    Bunit = unit(first(first(B)))
- #   forcing_func(t) = Bunit * forcing_integrand(t, tf, μ, V, ustrip.(B), source_history)
     forcing_func(t) = forcing_integrand(t, tf, μ, V, B, source_history)
 
     # MATLAB: integral(integrand,ti,tf,'ArrayValued',true)
     integral, err = quadgk(forcing_func, t0, tf)
-
     (err < 1e-5) ? (return integral) : error("integration error too large")
 end
 
