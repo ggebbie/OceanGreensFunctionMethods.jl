@@ -205,33 +205,7 @@ function linear_probe(funk::Function,C::DimArray{T,N},args...) where T <: Number
     return DimArray(A, dims(C))
 end
 
-# function eigen(A::DimArray{<:DimArray})
-
-#     uniform(A) ? uA = unit(first(first(A))) : error("No eigendecomposition for a non-uniform matrix")
-#     A_matrix = MultipliableDimArrays.Matrix(A)
-#     F = eigen(ustrip.(A_matrix))
-
-#     eigen_dims = Eigenmode(1:size(A_matrix,2))
-#     model_dims = dims(A)
-
-#     values = MultipliableDimArray(uA * F.values, eigen_dims)
-#     μ = DiagonalDimArray(values, dims(values))
-
-#     vectors = MultipliableDimArray(F.vectors,
-#             model_dims, eigen_dims)    
-
-#     return μ, vectors
-#     # ideally, would return an Eigen factorization, in spirit like:
-#     #    return Eigen(QuantityArray(F.values, dimension(A)), F.vectors)
-# end
-
 allequal(x) = all(y -> y == first(x), x)
-
-# # eigenstructure only exists if A is uniform
-# function uniform(A::DimArray{<:DimArray})
-#     ulist = unit.(MultipliableDimArrays.Matrix(A))
-#     return allequal(ulist)
-# end
 
 maximum_timescale(μ) = -1/real(last(last(μ)))
 
