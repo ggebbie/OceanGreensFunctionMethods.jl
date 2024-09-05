@@ -231,20 +231,13 @@ include("../src/config_units.jl")
                     tf = 1981.0yr
                     source_history_func(tf)
                     func_test(t) = OceanGreensFunctionMethods.forcing_integrand(t, tf, μ, V, B, source_history_func)
-                    func_test(ti)
-
-                    tester = integrate_forcing(ti, tf, μ, V, B, source_history_func)
-
-                    # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;
+                    tester = integrate_forcing(ti, tf, μ, V, B, source_history_func) # does it run?,
 
                     C₀ = zeros(model_dims)
                     tlist = (1980.0:1981.0)yr
-                    # tmp = Array{DimArray}(undef,size(tlist))
-                    # Cevolve = DimArray(tmp,Ti(tlist))
-
                     Cevolve = evolve_concentration(C₀, A, B, tlist, source_history_func; halflife = nothing)
-
-                    sss =  [Cevolve[t][3,1] for t in eachindex(tlist)]
+                    Ct =  [Cevolve[t][3,1] for t in eachindex(tlist)]
+                    @test Ct[end] > Ct[begin] 
                 end
             end
         end
