@@ -72,6 +72,9 @@ Pkg.instantiate()
 md""" ## Load some helpful packages """
 
 
+# ╔═╡ 01f84c5f-8881-401f-a0a8-8ae69385f9fe
+#using MultipliableDimArrays
+
 # ╔═╡ 39045ccd-fd9a-4d87-a2d9-79171a3366dc
 plotly()
 
@@ -387,15 +390,60 @@ last(a)'
 # ╔═╡ c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
 Matrix(a) # all water-mass information concatenated
 
+# ╔═╡ e5841ad8-dfb9-47d5-bcb0-0f7448f43645
+a
+
+# ╔═╡ 0071aa97-27c3-469f-b1bb-e07337489f0e
+begin
+	msource1 = "1 High latitudes"
+	vsource1 = "1 Thermocline"
+	Plots.heatmap(transpose(a[At(msource1),At(vsource1)]),
+		title="Water mass fraction: "*msource1*" "*vsource1,
+		titlefontsize=6,
+		yflip=true,
+		color=:heat,
+		clims=(0.25,0.75))
+end
+
+# ╔═╡ 0b804941-fed3-4830-980b-8d383d473858
+ a[At(msource1),At(vsource1)]
+
+# ╔═╡ 5786b2d4-d049-4119-8e1c-5ecf8e8c683e
+begin
+	msource2 = "2 Mid-latitudes"
+	vsource2 = "1 Thermocline"
+	Plots.heatmap(transpose(a[At(msource2),At(vsource2)]),
+		title="Water mass fraction: "*msource2*" "*vsource2,
+		titlefontsize=6,
+		yflip=true,
+		color=:heat,
+		clims=(0.25,0.75))
+end
+
 # ╔═╡ cf5bb364-5336-4dd1-8bb6-6e3f944673bf
-Γ = mean_age(μ, V, B)
+begin
+	Γ = mean_age(μ, V, B)
+	
+	Plots.heatmap(transpose(Γ),
+		title="Mean Age ["*string(unit(first(Γ)))*"]",
+		titlefontsize=6,
+		yflip=true,
+		color=:heat,
+		clims=(0yr,200yr))
+end
 
 # ╔═╡ 4021feb1-36ac-42f6-a5f6-391c0f064dc7
-# very similar values; is this correct?
+# very similar values - matches with MATLAB results
 Δ = ttd_width(μ, V, B)
 
 # ╔═╡ 93c9614e-70a1-49ef-933b-b86fec342597
 md"""### Green's functions """
+
+# ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
+md""" Select interior box for diagnostics """
+
+# ╔═╡ 7a71a95a-8523-4cb8-9f69-00bf374acf67
+md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_names())) """
 
 # ╔═╡ cd492316-d6b2-4645-80ba-c5817ec5877c
 Δτ = 0.25yr # time resolution
@@ -407,17 +455,11 @@ md"""### Green's functions """
 G(t) = greens_function(t,A) # a closure that captures A
 
 # ╔═╡ c122abb6-185c-4894-a2c4-8ab6224e83d2
-G′(t) = forward_boundary_propagator(t,A,B) # type G + \prime + TAB
+G′(t) = boundary_propagator(t,A,B,alg=:forward) # type G + \prime + TAB
 
 # ╔═╡ 595fba3f-65ec-461f-a257-92456d4f94a0
 # global (or total) TTD
 𝒢(t) = global_ttd(t,A,B) # type \scr + G + TAB
-
-# ╔═╡ 96240170-eacb-4d5a-9316-eb6615a78f0a
-md"""### Select interior box for diagnostics """
-
-# ╔═╡ 7a71a95a-8523-4cb8-9f69-00bf374acf67
-md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_names())) """
 
 # ╔═╡ 00902450-ceb7-4c33-be7e-906502990813
 # a list comprehension
@@ -436,29 +478,26 @@ ttd_global = [𝒢(τ[i])[Meridional=At(mbox),Vertical=At(vbox)] for i in eachin
 # ╔═╡ 19ef1da1-9b1a-4300-83aa-bb503027122b
 Δ_ = Δ[Meridional=At(mbox),Vertical=At(vbox)]
 
-# ╔═╡ fd907198-8e2e-4296-b640-c0aebbd0a796
-G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
-
-# ╔═╡ 1bb59934-17be-40d3-b227-b73bb1b9c4df
-ttd_inversegaussian = pdf.(G_inversegaussian,τ)
-
-
 # ╔═╡ a183e31d-8bab-46e0-a6b1-0a181c5f0f69
 a1 = a[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ 9537166f-054f-441e-a001-3ba59a4b59e0
 a2 = a[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
 
+# ╔═╡ fd907198-8e2e-4296-b640-c0aebbd0a796
+G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
+
+# ╔═╡ 1bb59934-17be-40d3-b227-b73bb1b9c4df
+ttd_inversegaussian = pdf.(G_inversegaussian,τ)
+
 # ╔═╡ e8fabe44-3a7d-47fc-84af-02baebf5f45a
 begin 
-
-	#boxloc = (Meridional=At(meridional_box),Vertical=At(vertical_box))
 	# to do: put plotting into functions
 	p = plot(τ,
 		normalized_exponential_decay.(τ,Tmax),
 		linestyle = :dash,
 		yscale = :log10,
-		ylabel = "Density",
+		ylabel = "G′(τ)",
 		xlabel = "τ",
 		label = "Tmax",
 		legend = :topright,
@@ -484,6 +523,167 @@ begin
 	plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
 end
 
+# ╔═╡ 7c725552-883e-4fb3-b22e-292518913dfd
+md""" ## Adjoint Green's functions """
+
+# ╔═╡ 4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
+md""" $(@bind mbox_adj Select(meridional_names())) $(@bind vbox_adj Select(vertical_names())) """
+
+# ╔═╡ ab31341c-ff59-41bc-8a7f-752931bb8e9d
+# † is invalid in Julia as an identifier 
+G′dagger(t) = boundary_propagator(t,A,B,alg=:adjoint) # type G + \prime + TAB
+
+# ╔═╡ 1df15962-dd41-4f07-82c8-37d2d60511fb
+ttd1_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 48449ccf-df3f-4b71-a160-53d39baa9a90
+ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ b3522980-6beb-4e05-901d-0859c7a8cb58
+# global adjoint TTD
+𝒢dagger(t) = global_ttd(t,A,B,alg=:adjoint)
+
+# ╔═╡ b719ab41-4226-40c7-9682-5385d076dc7a
+𝒢dagger(1yr)
+
+# ╔═╡ 257c6649-d003-42bc-9e17-0c33b7cd304c
+ttd_global_adjoint = [𝒢dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)] for i in eachindex(τ)] 
+
+# ╔═╡ cf82fade-07ac-4aa9-bd06-7a10820a724f
+#Γ_adjoint = adjoint_mean_age(A,B)[At(mbox_adj),At(vbox_adj)]
+Γ_adjoint = mean_age(μ, V, B, alg=:adjoint)[At(mbox_adj),At(vbox_adj)]
+
+# ╔═╡ c6460013-d800-4280-97db-50c5aa84e709
+Δ_adjoint = ttd_width(μ, V, B,alg=:adjoint)[At(mbox_adj),At(vbox_adj)]
+
+# ╔═╡ 4e0ce7d3-a1fd-4995-83d0-bdc74bc5e339
+G_inversegaussian_adjoint = TracerInverseGaussian(Γ_adjoint, Δ_adjoint)
+
+# ╔═╡ f861d37b-427b-4c12-b0ff-c55be4d82523
+ttd_inversegaussian_adjoint = pdf.(G_inversegaussian_adjoint,τ)
+
+# ╔═╡ c7a4d285-25e3-42eb-8e5b-7967aad1a366
+begin 
+	# to do: put plotting into functions
+	p_adj = plot(τ,
+		normalized_exponential_decay.(τ,Tmax),
+		linestyle = :dash,
+		yscale = :log10,
+		ylabel = "G′†",
+		xlabel = "τ",
+		label = "Tmax",
+		legend = :topright,
+		titlefontsize = 6,
+		title = mbox_adj*", "*vbox_adj,
+		xlims = (0yr,400yr),
+		ylims = (1e-4/yr,1e-1/yr))
+	
+	plot!([Γ_adjoint,Γ_adjoint],
+		[1e-4,1e-2]/yr,
+		label="Γ")	
+	
+	plot!([Γ_adjoint + Δ_adjoint/2,
+		Γ_adjoint - Δ_adjoint/2],
+		[1e-4,1e-4]/yr,
+		width=4,
+		color=:grey,
+		label="Δ")
+	
+	plot!(τ,ttd1_adj,label="TTD 1",width=4*a1)
+	plot!(τ,ttd2_adj,label="TTD 2",width=4*a2)
+	plot!(τ,ttd_global_adjoint,label="Total TTD",width=4*a2,color=:black)
+	plot!(τ,ttd_inversegaussian_adjoint,label="Fitted inverse Gaussian")
+end
+
+# ╔═╡ 13d659ac-d820-404e-bdcb-c66b05381309
+md""" ## Residence time distributions """
+
+# ╔═╡ 42ca866d-9c14-4761-9d0f-131870e25d9e
+#md""" Select source $(@bind mbox_source Select(meridional_names()[1:2]))"""
+
+# ╔═╡ 0a62e096-f375-4053-bc88-7ef89ce1173a
+RTD(t) = residence_time(t,A,B)
+
+# ╔═╡ f6f550a5-d04d-4d2a-89e7-484734370416
+rtd11 = [RTD(τ[i])[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 8c2daa28-94f1-4540-b753-5cf1744d9d63
+rtd12 = [RTD(τ[i])[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 6d1b4753-aabb-4274-a5fb-de26270c4378
+rtd21 = [RTD(τ[i])[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 025e7a9d-d587-44d6-ba0c-1343ad18121a
+begin 
+	p_source = plot(τ,
+		normalized_exponential_decay.(τ,Tmax),
+		linestyle = :dash,
+		yscale = :log10,
+		ylabel = "R(τ)",
+		xlabel = "τ",
+		label = "Tmax",
+		legend = :topright,
+		titlefontsize = 6,
+		title = "1 High latitudes"*", "*" 1 Thermocline",
+		xlims = (0yr,400yr),
+		ylims = (1e-4/yr,1e-1/yr)) 
+	
+	#plot!([Γ_adjoint,Γ_adjoint],
+		#[1e-4,1e-2]/yr,
+		#label="Γ")	
+	
+	#plot!([Γ_adjoint + Δ_adjoint/2,
+		#Γ_adjoint - Δ_adjoint/2],
+		#[1e-4,1e-4]/yr,
+		#width=4,
+		#color=:grey,
+		#label="Δ")
+	
+	plot!(τ,rtd11,label="RTD box 1",width=4*a1)
+	plot!(τ,rtd21,label="RTD box 2",width=4*a2)
+end
+
+# ╔═╡ 35d26007-c24d-4f1c-9318-02d01a863095
+rtd22 = [RTD(τ[i])[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 34e7154d-adf2-4e10-9ea5-967b95de5482
+begin 
+	# to do: put plotting into functions
+	p_source2 = plot(τ,
+		normalized_exponential_decay.(τ,Tmax),
+		linestyle = :dash,
+		yscale = :log10,
+		ylabel = "R(τ)",
+		xlabel = "τ",
+		label = "Tmax",
+		legend = :topright,
+		titlefontsize = 6,
+		title = "2 Mid-latitudes"*", "*" 1 Thermocline",
+		xlims = (0yr,400yr),
+		ylims = (1e-4/yr,1e-1/yr))
+	
+	#plot!([Γ_adjoint,Γ_adjoint],
+		#[1e-4,1e-2]/yr,
+		#label="Γ")	
+	
+	#plot!([Γ_adjoint + Δ_adjoint/2,
+		#Γ_adjoint - Δ_adjoint/2],
+		#[1e-4,1e-4]/yr,
+		#width=4,
+		#color=:grey,
+		#label="Δ")
+	
+	plot!(τ,rtd12,label="RTD box 1",width=4*a1)
+	plot!(τ,rtd22,label="RTD box 2",width=4*a2)
+end
+
+# ╔═╡ 29c38299-d49f-422c-9065-2faa9d2db491
+# numerical values not matching MATLAB
+a_RTD = watermass_fraction(μ, V, B, alg=:residence)
+
+# ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
+sum(Matrix(a_RTD)[:]) # a test that all mass is taken into account
+
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
 # ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
@@ -500,6 +700,7 @@ end
 # ╠═0a9a45e2-a561-4a21-afb9-b96ec884de4a
 # ╠═2fe46717-3f77-4afa-9e74-1ddb594e40ea
 # ╠═cc363185-cdc4-47be-a926-5178e1535f0d
+# ╠═01f84c5f-8881-401f-a0a8-8ae69385f9fe
 # ╠═39045ccd-fd9a-4d87-a2d9-79171a3366dc
 # ╟─abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
 # ╟─b9f2165e-2d18-4179-a69f-ab0fc6ceb8b6
@@ -577,9 +778,16 @@ end
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
 # ╠═01484ca5-ed33-4b94-b188-780e9e3ef8c7
 # ╠═c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
+# ╠═e5841ad8-dfb9-47d5-bcb0-0f7448f43645
+# ╠═0071aa97-27c3-469f-b1bb-e07337489f0e
+# ╠═0b804941-fed3-4830-980b-8d383d473858
+# ╠═5786b2d4-d049-4119-8e1c-5ecf8e8c683e
 # ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
-# ╠═4021feb1-36ac-42f6-a5f6-391c0f064dc7
+# ╟─4021feb1-36ac-42f6-a5f6-391c0f064dc7
 # ╟─93c9614e-70a1-49ef-933b-b86fec342597
+# ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
+# ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67
+# ╠═e8fabe44-3a7d-47fc-84af-02baebf5f45a
 # ╠═cd492316-d6b2-4645-80ba-c5817ec5877c
 # ╠═4c258084-da30-4393-b844-c379c9e79efd
 # ╠═589ab455-2e9c-47d6-abd7-f89f367a5ed5
@@ -594,6 +802,27 @@ end
 # ╠═9537166f-054f-441e-a001-3ba59a4b59e0
 # ╠═fd907198-8e2e-4296-b640-c0aebbd0a796
 # ╠═1bb59934-17be-40d3-b227-b73bb1b9c4df
-# ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
-# ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67
-# ╟─e8fabe44-3a7d-47fc-84af-02baebf5f45a
+# ╟─7c725552-883e-4fb3-b22e-292518913dfd
+# ╟─4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
+# ╠═c7a4d285-25e3-42eb-8e5b-7967aad1a366
+# ╠═ab31341c-ff59-41bc-8a7f-752931bb8e9d
+# ╠═1df15962-dd41-4f07-82c8-37d2d60511fb
+# ╠═48449ccf-df3f-4b71-a160-53d39baa9a90
+# ╠═b3522980-6beb-4e05-901d-0859c7a8cb58
+# ╠═b719ab41-4226-40c7-9682-5385d076dc7a
+# ╠═257c6649-d003-42bc-9e17-0c33b7cd304c
+# ╠═cf82fade-07ac-4aa9-bd06-7a10820a724f
+# ╠═c6460013-d800-4280-97db-50c5aa84e709
+# ╠═4e0ce7d3-a1fd-4995-83d0-bdc74bc5e339
+# ╠═f861d37b-427b-4c12-b0ff-c55be4d82523
+# ╟─13d659ac-d820-404e-bdcb-c66b05381309
+# ╟─42ca866d-9c14-4761-9d0f-131870e25d9e
+# ╠═025e7a9d-d587-44d6-ba0c-1343ad18121a
+# ╠═34e7154d-adf2-4e10-9ea5-967b95de5482
+# ╠═0a62e096-f375-4053-bc88-7ef89ce1173a
+# ╠═f6f550a5-d04d-4d2a-89e7-484734370416
+# ╠═8c2daa28-94f1-4540-b753-5cf1744d9d63
+# ╠═6d1b4753-aabb-4274-a5fb-de26270c4378
+# ╠═35d26007-c24d-4f1c-9318-02d01a863095
+# ╠═29c38299-d49f-422c-9065-2faa9d2db491
+# ╠═58701b47-1669-484c-ab88-904f31fedb97

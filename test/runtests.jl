@@ -151,24 +151,48 @@ include("../src/config_units.jl")
                     matexp = MultipliableDimArray( exp(Matrix(μ*dt)), dims(μ), dims(μ))
                     t1 =  real.( V * (matexp * (V\C))) # matlab code has right divide (?)
 
-                    # move upstream to MultipliableDimArrays eventually
-                    eAt = MultipliableDimArray(exp(Matrix(A*dt)),dims(A),dims(A))
+                    # mostly handled by MultipliableDimArrays 
+                    #eAt = MultipliableDimArray(exp(Matrix(A*dt)),dims(A),dims(A))
+                    eAt = exp(A*dt)
                     t2 = real.( eAt*C) # matlab code has right divide (?)
                     t3 = vec(t1) - vec(t2)
+                    @test maximum(abs.(t3)) < 1e-8
                 end
                 Tmax = maximum_timescale(μ)
 
                 # water-mass fractions
-                a = watermass_fraction(μ, V, B)
+                a = watermass_fraction(μ, V, B, alg=:forward)
                 Matrix(a)
                 @test all(isapprox.(1.0,sum(a)))                
 
-                Γ = mean_age(μ, V, B)
+                a_adjoint = watermass_fraction(μ, V, B, alg=:adjoint)
+                Matrix(a_adjoint)
+                @test all(isapprox.(1.0,sum(a)))                
+
+                a_residence = watermass_fraction(μ, V, B, alg=:residence)
+                Matrix(a_residence)
+                @test all(isapprox.(1.0,sum(a)))                
+
+                Γ = mean_age(μ, V, B, alg=:forward)
                 @test all(Γ .≥ 0.0yr)
+
+                Γ_adjoint = mean_age(μ, V, B, alg=:adjoint)
+                @test all(Γ_adjoint .≥ 0.0yr)
+
+                Γ_residence = mean_age(μ, V, B, alg=:residence)
+                @test 258yr < Γ_residence < 259yr
 
                 # very similar values; is this correct?
                 Δ = ttd_width(μ, V, B)
+                @test 90yr < Δ[2,2] < 91yr # compare to MATLAB point value
                 @test all(Δ .≥ 0.0yr)
+
+                Δ_adjoint = ttd_width(μ, V, B, alg=:adjoint)
+                @test 90yr < Δ_adjoint[2,2] < 91yr # compare to MATLAB point value
+                @test all(Δ_adjoint .≥ 0.0yr)
+
+                Δ_residence = ttd_width(μ, V, B, alg=:residence)
+                @test 129yr < Δ_residence < 130yr # compare to MATLAB point value
 
                 @testset "green's function" begin
                     Δτ = 0.25yr
@@ -177,9 +201,27 @@ include("../src/config_units.jl")
                     G(t) = greens_function(t,A) # a closure that captures A
                     @test all(Matrix(G(ttest)) .≥ 0.0)
 
-                    G′(t) = forward_boundary_propagator(t,A,B)
+                    # add test: normalization of Green's function
+                    
+                    G′(t) = boundary_propagator(t,A,B, alg=:forward)
                     @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
-                
+
+                    # † is invalid in Julia as an identifier 
+                    G′dagger(t) = boundary_propagator(t,A,B, alg=:adjoint)
+                    @test all(Matrix(G′dagger(ttest)) .≥ 0.0/yr)
+
+                    𝒢(t) = global_ttd(t,A,B,alg=:forward)
+
+                    𝒢dagger(t) = global_ttd(t,A,B,alg=:adjoint)
+                    𝒢dagger(1yr)
+
+                    RTD(t) = residence_time(t,A,B)
+                    RTD(1yr)
+                    
+                    # residence times
+                    # numerical values quite different from MATLAB
+                    a_residence = watermass_fraction(μ, V, B, alg=:residence)
+                    @test isapprox(sum(Matrix(a_residence)),1.0) 
                 end
 
                 @testset "read tracer histories" begin
@@ -195,18 +237,14 @@ include("../src/config_units.jl")
                     ti = 1980.0yr
                     tf = 1981.0yr
                     source_history_func(tf)
-                    tester = integrate_forcing(ti, tf, μ, V, B, source_history_func)
-
-                    # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;
+                    func_test(t) = OceanGreensFunctionMethods.forcing_integrand(t, tf, μ, V, B, source_history_func)
+                    tester = integrate_forcing(ti, tf, μ, V, B, source_history_func) # does it run?
 
                     C₀ = zeros(model_dims)
                     tlist = (1980.0:1981.0)yr
-                    # tmp = Array{DimArray}(undef,size(tlist))
-                    # Cevolve = DimArray(tmp,Ti(tlist))
-
                     Cevolve = evolve_concentration(C₀, A, B, tlist, source_history_func; halflife = nothing)
-
-                    sss =  [Cevolve[t][3,1] for t in eachindex(tlist)]
+                    Ct =  [Cevolve[t][3,1] for t in eachindex(tlist)]
+                    @test Ct[end] > Ct[begin] 
                 end
             end
         end

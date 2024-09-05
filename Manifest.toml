@@ -1,6 +1,6 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.4"
+julia_version = "1.10.5"
 manifest_format = "2.0"
 project_hash = "bea73a2ff3269e93b1a527f242fbbce162f9f7d9"
 
@@ -405,11 +405,11 @@ version = "2023.1.10"
 
 [[deps.MultipliableDimArrays]]
 deps = ["DimensionalData", "LinearAlgebra", "Revise", "Unitful", "UnitfulLinearAlgebra"]
-git-tree-sha1 = "8832c508536ee6f40aaa490453bfd2f8952b3f18"
+git-tree-sha1 = "7bae5ee50ba66e1483954653993e788c68f5c8fb"
 repo-rev = "main"
 repo-url = "https://github.com/ggebbie/MultipliableDimArrays.jl"
 uuid = "3e2a59ee-8dc2-49ed-b08b-35477f91d0a4"
-version = "0.1.2"
+version = "0.1.6"
 
 [[deps.NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
@@ -722,7 +722,7 @@ version = "1.1.2+0"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.8.0+1"
+version = "5.11.0+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]

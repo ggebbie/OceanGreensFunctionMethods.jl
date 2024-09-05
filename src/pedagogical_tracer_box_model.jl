@@ -9,10 +9,10 @@ pmol = u"pmol"
 fmol = u"fmol"
 nmol = u"nmol"
 
-@dim Eigenmode "eigenmode"
 @dim Tracer "tracer"
 @dim Meridional "meridional location"
 @dim Vertical "vertical location"
+@dim Global "global quantity"
 
 struct Fluxes{T,N} 
     poleward::DimArray{T,N}
@@ -31,9 +31,6 @@ dims(F::Fluxes) = dims(F.poleward)
 
 meridional_names() = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
 vertical_names() = ["1 Thermocline", "2 Deep", "3 Abyssal"]
-
-# meridional_locs = ["1 High latitudes", "2 Mid-latitudes", "3 Low latitudes"]
-# vertical_locs = ["1 Thermocline", "2 Deep", "3 Abyssal"]
 model_dimensions() = (Meridional(meridional_names()),Vertical(vertical_names())) 
 
 function boundary_dimensions()
@@ -208,73 +205,163 @@ function linear_probe(funk::Function,C::DimArray{T,N},args...) where T <: Number
     return DimArray(A, dims(C))
 end
 
-function eigen(A::DimArray{<:DimArray})
-
-    uniform(A) ? uA = unit(first(first(A))) : error("No eigendecomposition for a non-uniform matrix")
-    A_matrix = MultipliableDimArrays.Matrix(A)
-    F = eigen(ustrip.(A_matrix))
-
-    eigen_dims = Eigenmode(1:size(A_matrix,2))
-    model_dims = dims(A)
-
-    values = MultipliableDimArray(uA * F.values, eigen_dims)
-    μ = DiagonalDimArray(values, dims(values))
-
-    vectors = MultipliableDimArray(F.vectors,
-            model_dims, eigen_dims)    
-
-    return μ, vectors
-    # ideally, would return an Eigen factorization, in spirit like:
-    #    return Eigen(QuantityArray(F.values, dimension(A)), F.vectors)
-end
-
 allequal(x) = all(y -> y == first(x), x)
-
-# eigenstructure only exists if A is uniform
-function uniform(A::DimArray{<:DimArray})
-    ulist = unit.(MultipliableDimArrays.Matrix(A))
-    return allequal(ulist)
-end
 
 maximum_timescale(μ) = -1/real(last(last(μ)))
 
-# ustrip inidicates upstream problem with left divide and units
-# can be simplified with upstream fix
-watermass_fraction(μ, V, B) = - (unit(first(first(B))) * real.(V * (μ \ (V \ ustrip.(B)))))
-
-function mean_age(μ, V, B)
-
-    fix_units = unit(first(first(B))) # upstream issue to be fixed
-
-    μ_diag = diag(μ)
-    μ_neg2_diag = μ_diag.^-2
-    μ_neg2 = DiagonalDimArray(μ_neg2_diag,dims(μ))
-    
-    # use  real to get rid of very small complex parts
-    # ideally, would check that complex parts are small
-    boundary_dims = dims(B)
-    return Γ = fix_units * real.(V * (μ_neg2 * (V \ ustrip.(B* ones(boundary_dims)))))
+function watermass_fraction(μ, V, B; alg=:forward)
+    if alg == :forward
+        return watermass_fraction_forward(μ, V, B)
+    elseif alg == :adjoint 
+        return watermass_fraction_adjoint(μ, V, B)
+    elseif alg == :residence
+        return watermass_fraction_residence(μ, V, B)
+    else
+        error("not yet implemented")
+    end
 end
 
-function ttd_width(μ, V, B)
+watermass_fraction_forward(μ, V, B) = - real.(V / μ / V * B)
+watermass_fraction_adjoint(μ, V, B) = - real.(transpose(B) * V / μ / V)
 
-    fix_units = unit(first(first(B))) # upstream issue to be fixed
-
+function watermass_fraction_residence(μ, V, B)
+    # MATLAB: real(    B'*V/(D.^2)/V*B)
     μ_diag = diag(μ)
-    μ_neg3_diag = μ_diag.^-3 
-    μ_neg3 = DiagonalDimArray(μ_neg3_diag,dims(μ))
-    
+    μ2_diag = μ_diag.^2
+    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
+
+    Nb = size(V) # number of boxes
+    return real.( transpose(B) * V / μ2 / V * B) ./ Nb
+end
+
+function mean_age(μ, V, B; alg=:forward)
+    if alg == :forward
+        return mean_age_forward(μ, V, B)
+    elseif alg == :adjoint 
+        return mean_age_adjoint(μ, V, B)
+    elseif alg == :residence
+        return mean_age_residence(μ, V, B)
+    else
+        error("not yet implemented")
+    end
+end
+
+function mean_age_forward(μ, V, B)
+    μ_diag = diag(μ)
+    μ2_diag = μ_diag.^2
+    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
+
     # use  real to get rid of very small complex parts
     # ideally, would check that complex parts are small
     boundary_dims = dims(B)
-    Δ² = fix_units * (-real.(V * (μ_neg3 * (V \ ustrip.(B* ones(boundary_dims))))))
+    return real.(V / μ2 / V * B) * ones(boundary_dims)
+end
 
-    Γ = mean_age(μ, V, B)
+function mean_age_adjoint(μ, V, B)
+    # MATLAB: [1, 1]*real(    B'*V/(D.^2)/V)
+    μ_diag = diag(μ)
+    μ2_diag = μ_diag.^2
+    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
+
+    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
+    
+    a_tmp = ones_row_vector * real.(transpose(B) * V / μ2 / V) 
+
+    # undo the extra complication of a Global dimension
+    return DimArray(reshape(transpose(Matrix(a_tmp)),size(a_tmp)),dims(a_tmp))
+end
+#function mean_age_adjoint(A, B)
+    # previous working method 
+    #μ, V = eigen(transpose(A))
+    #return mean_age(μ, V, B)
+#end
+
+function mean_age_residence(μ, V, B)
+    # MATLAB: [1, 1]*real(-2.*B'*V/(D.^3)/V*B)*[1; 1]./boxModel.no_boxes
+    μ_diag = diag(μ)
+    μ3_diag = μ_diag.^3 
+    μ3 = DiagonalDimArray(μ3_diag,dims(μ))
+
+    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
+    tmp = -2 .* ones_row_vector * real.(transpose(B) * V / μ3 / V * B) * transpose(ones_row_vector) 
+
+    Nb = length(V) # number of boxes
+
+    # get rid of DimArrays for this global quantity (think about improving code design here)
+    return first(first(tmp)) / Nb
+end
+
+function ttd_width(μ, V, B; alg=:forward)
+    if alg == :forward
+        return ttd_width_forward(μ, V, B)
+    elseif alg == :adjoint 
+        return ttd_width_adjoint(μ, V, B)
+    elseif alg == :residence
+        return ttd_width_residence(μ, V, B)
+    else
+        error("not yet implemented")
+    end
+end
+
+function ttd_width_forward(μ, V, B)
+
+    # MATLAB: sqrt((real(-2.*V/(D.^3)/V*B)*[1; 1] - (Solution.fwd_mean_ages).^2)./2) ;
+    μ_diag = diag(μ)
+    μ3_diag = μ_diag.^3 
+    μ3 = DiagonalDimArray(μ3_diag,dims(μ))
+    
+    Δ² =  -real.(V / μ3 / V * B) * ones(dims(B))
+    Γ = mean_age(μ, V, B, alg=:forward)
     Δ² -= ((1//2) .* Γ.^2)
     return .√(Δ²)
 end
 
+function ttd_width_adjoint(μ, V, B)
+    # MATLAB: sqrt(([1, 1]*real(-2.*B'*V/(D.^3)/V) - (Solution.adj_mean_ages).^2)./2)
+    μ_diag = diag(μ)
+    μ3_diag = μ_diag.^3 
+    μ3 = DiagonalDimArray(μ3_diag,dims(μ))
+
+    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
+    
+    Δ_tmp = -2 .* ones_row_vector * real.(transpose(B) * V / μ3 / V) 
+
+    Δ2 =  DimArray(reshape(transpose(Matrix(Δ_tmp)),size(Δ_tmp)),dims(Δ_tmp))
+
+    Γ = mean_age(μ, V, B, alg=:adjoint)
+    Δ2 .-= Γ.^2 
+   
+    Δ² = (1//2) .* Δ2
+    return .√(Δ²)
+end
+
+function ttd_width_residence(μ, V, B)
+# MATLAB: sqrt(([1, 1]*real( 6.*B'*V/(D.^4)/V*B)*[1; 1]./boxModel.no_boxes - Solution.RTD_mean_rt^2)/2) ;
+
+    μ_diag = diag(μ)
+    μ4_diag = μ_diag.^4 
+    μ4 = DiagonalDimArray(μ4_diag,dims(μ))
+
+    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
+
+    Nb = size(V) # number of boxes
+    tmp = (6 ./ Nb) .* ones_row_vector * real.(transpose(B) * V / μ4 / V * B) * transpose(ones_row_vector) 
+    Γ = mean_age(μ, V, B, alg=:residence)
+
+    return .√((1//2) .* (first(first(tmp)) - Γ^2 ))
+end
+
 normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
+
+# older working method
+# function adjoint_ttd_width(A, B)
+#     μ, V = eigen(transpose(A))
+#     return ttd_width(μ, V, B)
+# end
 
 location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
 #https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat
@@ -374,38 +461,22 @@ function timestep_initial_condition(C, μ, V, ti, tf)
 end
 
 # MATLAB: integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
-function forcing_integrand(t, tf, μ, V, B, source_history)
 
-    matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
-
-    # annoying finding: parentheses matter in next line
-    return real.( V * (matexp * (V \ (B*source_history(t))))) 
-end
-
+forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(μ*(tf-t)) / V * B * source_history(t))
+# previous working version (less efficient)
+#function forcing_integrand(t, tf, μ, V, B, source_history)
+    # matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
+    # # annoying finding: parentheses matter in next line
+    # return real.( V * (matexp * (V \ (B*source_history(t)))))
+#end
+    
 function integrate_forcing(t0, tf, μ, V, B, source_history)
-
-    Bunit = unit(first(first(B)))
-    forcing_func(t) = Bunit * forcing_integrand(t, tf, μ, V, ustrip.(B), source_history)
+    forcing_func(t) = forcing_integrand(t, tf, μ, V, B, source_history)
 
     # MATLAB: integral(integrand,ti,tf,'ArrayValued',true)
     integral, err = quadgk(forcing_func, t0, tf)
-
     (err < 1e-5) ? (return integral) : error("integration error too large")
 end
-
-function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
-
-    # A must be uniform (check type signature someday)
-    !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
-    eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
-
-    return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
-end
-
-forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
-
-global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
-
 
 function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
 
@@ -428,3 +499,39 @@ function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
     return [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
 
 end
+
+greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*t)
+
+function boundary_propagator(t,A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+if alg == :forward 
+    return boundary_propagator_forward(t, A, B)
+elseif alg == :adjoint
+    return boundary_propagator_adjoint(t, A, B)
+end
+    error("boundary propagator method not implemented")
+end
+
+boundary_propagator_forward(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+boundary_propagator_adjoint(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
+
+function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+    if alg == :forward 
+        return global_ttd_forward(t, A, B)
+    elseif alg == :adjoint
+        return global_ttd_adjoint(t, A, B)
+    else
+        error("global ttd method not implemented")
+    end
+end
+
+global_ttd_forward(t, A::DimMatrix{DM}, B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+function global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
+    tmp = ones_row_vector *  boundary_propagator_adjoint(t,A,B)
+
+    # undo the extra complication of a Global dimension
+    return DimArray(reshape(transpose(Matrix(tmp)),size(tmp)),dims(tmp))
+end
+
+# not normalized by number of boxes: consistent with manuscript?
+residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
