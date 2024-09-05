@@ -39,8 +39,7 @@ export adjoint_ttd_width
 export residence_time
 export read_tracer_histories, tracer_source_history
 export greens_function
-export forward_boundary_propagator
-export adjoint_boundary_propagator
+export boundary_propagator
 export global_ttd, adjoint_global_ttd
 export watermass_fraction
 export tracer_units

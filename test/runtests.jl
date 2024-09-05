@@ -161,12 +161,23 @@ include("../src/config_units.jl")
                 Tmax = maximum_timescale(μ)
 
                 # water-mass fractions
-                a = watermass_fraction(μ, V, B)
+                a = watermass_fraction(μ, V, B, alg=:forward)
                 Matrix(a)
                 @test all(isapprox.(1.0,sum(a)))                
 
-                Γ = mean_age(μ, V, B)
+                a_adjoint = watermass_fraction(μ, V, B, alg=:adjoint)
+                Matrix(a_adjoint)
+                @test all(isapprox.(1.0,sum(a)))                
+
+                a_residence = watermass_fraction(μ, V, B, alg=:residence)
+                Matrix(a_residence)
+                @test all(isapprox.(1.0,sum(a)))                
+
+                Γ = mean_age(μ, V, B, alg=:forward)
                 @test all(Γ .≥ 0.0yr)
+
+                Γ_adjoint = mean_age(μ, V, B, alg=:adjoint)
+                @test all(Γ_adjoint .≥ 0.0yr)
 
                 # very similar values; is this correct?
                 Δ = ttd_width(μ, V, B)
@@ -182,11 +193,11 @@ include("../src/config_units.jl")
 
                     # add test: normalization of Green's function
                     
-                    G′(t) = forward_boundary_propagator(t,A,B)
+                    G′(t) = boundary_propagator(t,A,B, alg=:forward)
                     @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
 
                     # † is invalid in Julia as an identifier 
-                    G′dagger(t) = adjoint_boundary_propagator(t,A,B)
+                    G′dagger(t) = boundary_propagator(t,A,B, alg=:adjoint)
                     @test all(Matrix(G′dagger(ttest)) .≥ 0.0/yr)
 
                     # residence times

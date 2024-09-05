@@ -241,7 +241,7 @@ function watermass_fraction(μ, V, B; alg=:forward)
     elseif alg == :adjoint 
         return watermass_fraction_adjoint(μ, V, B)
     elseif alg == :residence
-        return watermass_fraction_residence_time(μ, V, B)
+        return watermass_fraction_residence(μ, V, B)
     else
         error("not yet implemented")
     end
@@ -249,21 +249,32 @@ end
 
 watermass_fraction_forward(μ, V, B) = - real.(V / μ / V * B)
 
-function watermass_fraction_residence_time(μ, V, B)
-    # real(    B'*V/(D.^2)/V*B)
-    tmp = transpose(B) * V # complex conjugate not implemented, ok b.c. B real 
+watermass_fraction_adjoint(μ, V, B) = - real.(transpose(B) * V / μ / V)
 
-    fix_units = unit(first(first(B)))
-    tmp = V \ ustrip.(B)
-    μ_diag = diag(μ)
-    μ_neg2_diag = μ_diag.^-2
-    μ_neg2 = DiagonalDimArray(μ_neg2_diag,dims(μ))
+# function watermass_fraction_residence(μ, V, B)
+#     # real(    B'*V/(D.^2)/V*B)
+#     tmp = transpose(B) * V # complex conjugate not implemented, ok b.c. B real 
+
+#     fix_units = unit(first(first(B)))
+#     tmp = V \ ustrip.(B)
+#     μ_diag = diag(μ)
+#     μ_neg2_diag = μ_diag.^-2
+#     μ_neg2 = DiagonalDimArray(μ_neg2_diag,dims(μ))
 
     
-    Nb = prod(size(first(B)))
-    # not quite correct, should be complex conjugate not transpose
-    return real.(transpose(tmp)*(μ_neg2* tmp)) ./ Nb .* fix_units^2
-#       ./boxModel.no_boxes ;
+#     Nb = prod(size(first(B)))
+#     # not quite correct, should be complex conjugate not transpose
+#     return real.(transpose(tmp)*(μ_neg2* tmp)) ./ Nb .* fix_units^2
+# #       ./boxModel.no_boxes ;
+# end
+function watermass_fraction_residence(μ, V, B)
+    # real(    B'*V/(D.^2)/V*B)
+    μ_diag = diag(μ)
+    μ2_diag = μ_diag.^2
+    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
+
+    Nb = size(V) # number of boxes
+    return real.( transpose(B) * V / μ2 / V * B) ./ Nb
 end
 
 function mean_age(μ, V, B; alg=:forward)
@@ -279,8 +290,6 @@ function mean_age(μ, V, B; alg=:forward)
 end
 
 function mean_age_forward(μ, V, B)
-
-    # MATLAB: real(    V/(D.^2)/V*B)*[1; 1]
     μ_diag = diag(μ)
     μ2_diag = μ_diag.^2
     μ2 = DiagonalDimArray(μ2_diag,dims(μ))
@@ -298,8 +307,19 @@ function mean_age_adjoint(μ, V, B)
     μ2_diag = μ_diag.^2
     μ2 = DiagonalDimArray(μ2_diag,dims(μ))
 
-    return transpose(ones(dims(B))) * real.(transpose(B) * V / μ2 / V) 
+    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
     
+    a_tmp = ones_row_vector * real.(transpose(B) * V / μ2 / V) 
+
+    # undo the extra complication of a Global dimension
+    a_unit = unit(first(first(a_tmp)))
+    a_array = zeros(size(a_tmp))*a_unit
+    for i in eachindex(a_tmp)
+       a_array[i] = a_tmp[i][begin]
+    end
+    return DimArray(a_array,dims(a_tmp))
+
     # previous working method 
     #μ, V = eigen(transpose(A))
     #return mean_age(μ, V, B)
@@ -470,26 +490,24 @@ function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
 
 end
 
-# function greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity 
-
-#     # A must be uniform (check type signature someday)
-#     !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
-#     eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
-
-#     return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
-# end
 greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*t)
-#     # A must be uniform (check type signature someday)
-#     !uniform(A) && error("A must be uniform to be consistent with matrix exponential")
-#     eAt = exp(Matrix(A*t)) # move upstream to MultipliableDimArrays eventually
-#     return MultipliableDimArray(eAt,dims(A),dims(A)) # wrap with same labels and format as A
+
+function boundary_propagator(t,A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+if alg == :forward 
+    return forward_boundary_propagator(t, A, B)
+elseif alg == :adjoint
+    return adjoint_boundary_propagator(t, A, B)
+end
+    error("boundary propagator method not implemented")
+end
 
 forward_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
 
-global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
-
 # note: Matrix(B') not yet implemented, use transpose for now
 adjoint_boundary_propagator(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
+
+global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+
 
 adjoint_global_ttd(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(adjoint_boundary_propagator(t,A,B)) * ones(dims(B))
 
