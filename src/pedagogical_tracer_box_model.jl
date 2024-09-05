@@ -285,11 +285,12 @@ function mean_age_residence(μ, V, B)
 
     # use a 1 x 2 matrix to avoid ambiguity with transpose operator
     ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
-
     tmp = -2 .* ones_row_vector * real.(transpose(B) * V / μ3 / V * B) * transpose(ones_row_vector) 
 
-    Nb = size(V) # number of boxes
-    return tmp ./ Nb
+    Nb = length(V) # number of boxes
+
+    # get rid of DimArrays for this global quantity (think about improving code design here)
+    return first(first(tmp)) / Nb
 end
 
 function ttd_width(μ, V, B; alg=:forward)
@@ -351,8 +352,7 @@ function ttd_width_residence(μ, V, B)
     tmp = (6 ./ Nb) .* ones_row_vector * real.(transpose(B) * V / μ4 / V * B) * transpose(ones_row_vector) 
     Γ = mean_age(μ, V, B, alg=:residence)
 
-    # get rid of DimArrays for this global quantity (think about improving code design here)
-    return .√((1//2) .* (first(first(tmp)) - first(first(Γ))^2 ))
+    return .√((1//2) .* (first(first(tmp)) - Γ^2 ))
 end
 
 normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))

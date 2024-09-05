@@ -180,8 +180,7 @@ include("../src/config_units.jl")
                 @test all(Γ_adjoint .≥ 0.0yr)
 
                 Γ_residence = mean_age(μ, V, B, alg=:residence)
-                Matrix(Γ_residence)
-                @test all(Γ_residence .≥ 0.0yr)
+                @test 258yr < Γ_residence < 259yr
 
                 # very similar values; is this correct?
                 Δ = ttd_width(μ, V, B)
@@ -231,7 +230,7 @@ include("../src/config_units.jl")
                     tf = 1981.0yr
                     source_history_func(tf)
                     func_test(t) = OceanGreensFunctionMethods.forcing_integrand(t, tf, μ, V, B, source_history_func)
-                    tester = integrate_forcing(ti, tf, μ, V, B, source_history_func) # does it run?,
+                    tester = integrate_forcing(ti, tf, μ, V, B, source_history_func) # does it run?
 
                     C₀ = zeros(model_dims)
                     tlist = (1980.0:1981.0)yr
