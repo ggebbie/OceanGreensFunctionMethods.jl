@@ -210,6 +210,11 @@ include("../src/config_units.jl")
                     G′dagger(t) = boundary_propagator(t,A,B, alg=:adjoint)
                     @test all(Matrix(G′dagger(ttest)) .≥ 0.0/yr)
 
+                    𝒢(t) = global_ttd(t,A,B,alg=:forward)
+
+                    𝒢dagger(t) = global_ttd(t,A,B,alg=:adjoint)
+                    𝒢dagger(1yr)
+                    
                     # residence times
                     # numerical values quite different from MATLAB
                     a_residence = watermass_fraction(μ, V, B, alg=:residence)

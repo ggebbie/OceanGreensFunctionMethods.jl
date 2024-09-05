@@ -455,7 +455,7 @@ md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_name
 G(t) = greens_function(t,A) # a closure that captures A
 
 # ╔═╡ c122abb6-185c-4894-a2c4-8ab6224e83d2
-G′(t) = forward_boundary_propagator(t,A,B) # type G + \prime + TAB
+G′(t) = boundary_propagator(t,A,B,alg=:forward) # type G + \prime + TAB
 
 # ╔═╡ 595fba3f-65ec-461f-a257-92456d4f94a0
 # global (or total) TTD
@@ -531,7 +531,7 @@ md""" $(@bind mbox_adj Select(meridional_names())) $(@bind vbox_adj Select(verti
 
 # ╔═╡ ab31341c-ff59-41bc-8a7f-752931bb8e9d
 # † is invalid in Julia as an identifier 
-G′dagger(t) = adjoint_boundary_propagator(t,A,B) # type G + \prime + TAB
+G′dagger(t) = boundary_propagator(t,A,B,alg=:adjoint) # type G + \prime + TAB
 
 # ╔═╡ 1df15962-dd41-4f07-82c8-37d2d60511fb
 ttd1_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
@@ -541,7 +541,10 @@ ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Mer
 
 # ╔═╡ b3522980-6beb-4e05-901d-0859c7a8cb58
 # global adjoint TTD
-𝒢dagger(t) = adjoint_global_ttd(t,A,B)
+𝒢dagger(t) = global_ttd(t,A,B,alg=:adjoint)
+
+# ╔═╡ b719ab41-4226-40c7-9682-5385d076dc7a
+𝒢dagger(1yr)
 
 # ╔═╡ 257c6649-d003-42bc-9e17-0c33b7cd304c
 ttd_global_adjoint = [𝒢dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)] for i in eachindex(τ)] 
@@ -551,7 +554,7 @@ ttd_global_adjoint = [𝒢dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox
 Γ_adjoint = mean_age(μ, V, B, alg=:adjoint)[At(mbox_adj),At(vbox_adj)]
 
 # ╔═╡ c6460013-d800-4280-97db-50c5aa84e709
-Δ_adjoint = adjoint_ttd_width(A,B)[At(mbox_adj),At(vbox_adj)]
+Δ_adjoint = ttd_width(μ, V, B,alg=:adjoint)[At(mbox_adj),At(vbox_adj)]
 
 # ╔═╡ 4e0ce7d3-a1fd-4995-83d0-bdc74bc5e339
 G_inversegaussian_adjoint = TracerInverseGaussian(Γ_adjoint, Δ_adjoint)
@@ -806,6 +809,7 @@ sum(Matrix(a_RTD)[:])
 # ╠═1df15962-dd41-4f07-82c8-37d2d60511fb
 # ╠═48449ccf-df3f-4b71-a160-53d39baa9a90
 # ╠═b3522980-6beb-4e05-901d-0859c7a8cb58
+# ╠═b719ab41-4226-40c7-9682-5385d076dc7a
 # ╠═257c6649-d003-42bc-9e17-0c33b7cd304c
 # ╠═cf82fade-07ac-4aa9-bd06-7a10820a724f
 # ╠═c6460013-d800-4280-97db-50c5aa84e709

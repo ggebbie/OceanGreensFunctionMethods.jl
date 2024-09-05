@@ -525,7 +525,13 @@ function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where D
 end
 
 global_ttd_forward(t, A::DimMatrix{DM}, B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
-global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(ones(dims(B))) *  boundary_propagator_adjoint(t,A,B)
+function global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
+    tmp = ones_row_vector *  boundary_propagator_adjoint(t,A,B)
+
+    # undo the extra complication of a Global dimension
+    return DimArray(reshape(transpose(Matrix(tmp)),size(tmp)),dims(tmp))
+end
 
 # not normalized by number of boxes: consistent with manuscript?
 residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
