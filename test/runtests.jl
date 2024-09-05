@@ -213,8 +213,8 @@ include("../src/config_units.jl")
 
                     # residence times
                     # numerical values quite different from MATLAB
-                    a_RTD = residence_time_watermass_fractions(μ, V, B)
-                    @test isapprox(sum(Matrix(a_RTD)[:]),1.0) # fails due to missing complex conjugate
+                    a_residence = watermass_fraction(μ, V, B, alg=:residence)
+                    @test isapprox(sum(Matrix(a_residence)),1.0) 
                 end
 
                 @testset "read tracer histories" begin
@@ -230,6 +230,9 @@ include("../src/config_units.jl")
                     ti = 1980.0yr
                     tf = 1981.0yr
                     source_history_func(tf)
+                    func_test(t) = OceanGreensFunctionMethods.forcing_integrand(t, tf, μ, V, B, source_history_func)
+                    func_test(ti)
+
                     tester = integrate_forcing(ti, tf, μ, V, B, source_history_func)
 
                     # goal: source_history(t,tracerHistory,radio_tracer,Tracer.(radio_tracer).box2_box1_ratio) ;

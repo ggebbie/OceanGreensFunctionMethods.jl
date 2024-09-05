@@ -222,11 +222,10 @@ function watermass_fraction(μ, V, B; alg=:forward)
 end
 
 watermass_fraction_forward(μ, V, B) = - real.(V / μ / V * B)
-
 watermass_fraction_adjoint(μ, V, B) = - real.(transpose(B) * V / μ / V)
 
 function watermass_fraction_residence(μ, V, B)
-    # real(    B'*V/(D.^2)/V*B)
+    # MATLAB: real(    B'*V/(D.^2)/V*B)
     μ_diag = diag(μ)
     μ2_diag = μ_diag.^2
     μ2 = DiagonalDimArray(μ2_diag,dims(μ))
@@ -462,18 +461,20 @@ function timestep_initial_condition(C, μ, V, ti, tf)
 end
 
 # MATLAB: integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
-function forcing_integrand(t, tf, μ, V, B, source_history)
 
-    matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
-
-    # annoying finding: parentheses matter in next line
-    return real.( V * (matexp * (V \ (B*source_history(t))))) 
-end
-
+forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(μ*(tf-t)) / V * B * source_history(t))
+# previous working version (less efficient)
+#function forcing_integrand(t, tf, μ, V, B, source_history)
+    # matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
+    # # annoying finding: parentheses matter in next line
+    # return real.( V * (matexp * (V \ (B*source_history(t)))))
+#end
+    
 function integrate_forcing(t0, tf, μ, V, B, source_history)
 
-    Bunit = unit(first(first(B)))
-    forcing_func(t) = Bunit * forcing_integrand(t, tf, μ, V, ustrip.(B), source_history)
+#    Bunit = unit(first(first(B)))
+ #   forcing_func(t) = Bunit * forcing_integrand(t, tf, μ, V, ustrip.(B), source_history)
+    forcing_func(t) = forcing_integrand(t, tf, μ, V, B, source_history)
 
     # MATLAB: integral(integrand,ti,tf,'ArrayValued',true)
     integral, err = quadgk(forcing_func, t0, tf)
