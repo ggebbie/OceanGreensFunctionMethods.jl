@@ -251,22 +251,6 @@ watermass_fraction_forward(μ, V, B) = - real.(V / μ / V * B)
 
 watermass_fraction_adjoint(μ, V, B) = - real.(transpose(B) * V / μ / V)
 
-# function watermass_fraction_residence(μ, V, B)
-#     # real(    B'*V/(D.^2)/V*B)
-#     tmp = transpose(B) * V # complex conjugate not implemented, ok b.c. B real 
-
-#     fix_units = unit(first(first(B)))
-#     tmp = V \ ustrip.(B)
-#     μ_diag = diag(μ)
-#     μ_neg2_diag = μ_diag.^-2
-#     μ_neg2 = DiagonalDimArray(μ_neg2_diag,dims(μ))
-
-    
-#     Nb = prod(size(first(B)))
-#     # not quite correct, should be complex conjugate not transpose
-#     return real.(transpose(tmp)*(μ_neg2* tmp)) ./ Nb .* fix_units^2
-# #       ./boxModel.no_boxes ;
-# end
 function watermass_fraction_residence(μ, V, B)
     # real(    B'*V/(D.^2)/V*B)
     μ_diag = diag(μ)
@@ -354,9 +338,7 @@ function ttd_width_forward(μ, V, B)
     μ3_diag = μ_diag.^3 
     μ3 = DiagonalDimArray(μ3_diag,dims(μ))
     
-    boundary_dims = dims(B)
     Δ² =  -real.(V / μ3 / V * B) * ones(dims(B))
-
     Γ = mean_age(μ, V, B, alg=:forward)
     Δ² -= ((1//2) .* Γ.^2)
     return .√(Δ²)
@@ -380,6 +362,24 @@ function ttd_width_adjoint(μ, V, B)
    
     Δ² = (1//2) .* Δ2
     return .√(Δ²)
+end
+
+function ttd_width_residence(μ, V, B)
+# MATLAB: sqrt(([1, 1]*real( 6.*B'*V/(D.^4)/V*B)*[1; 1]./boxModel.no_boxes - Solution.RTD_mean_rt^2)/2) ;
+
+    μ_diag = diag(μ)
+    μ4_diag = μ_diag.^4 
+    μ4 = DiagonalDimArray(μ4_diag,dims(μ))
+
+    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
+
+    Nb = size(V) # number of boxes
+    tmp = (6 ./ Nb) .* ones_row_vector * real.(transpose(B) * V / μ4 / V * B) * transpose(ones_row_vector) 
+    Γ = mean_age(μ, V, B, alg=:residence)
+
+    # get rid of DimArrays for this global quantity (think about improving code design here)
+    return .√((1//2) .* (first(first(tmp)) - first(first(Γ))^2 ))
 end
 
 normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
