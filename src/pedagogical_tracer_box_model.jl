@@ -283,7 +283,7 @@ function mean_age(μ, V, B; alg=:forward)
     elseif alg == :adjoint 
         return mean_age_adjoint(μ, V, B)
     elseif alg == :residence
-        return mean_age_residence_time(μ, V, B)
+        return mean_age_residence(μ, V, B)
     else
         error("not yet implemented")
     end
@@ -300,7 +300,6 @@ function mean_age_forward(μ, V, B)
     return real.(V / μ2 / V * B) * ones(boundary_dims)
 end
 
-#function mean_age_adjoint(A, B)
 function mean_age_adjoint(μ, V, B)
     # MATLAB: [1, 1]*real(    B'*V/(D.^2)/V)
     μ_diag = diag(μ)
@@ -313,43 +312,68 @@ function mean_age_adjoint(μ, V, B)
     a_tmp = ones_row_vector * real.(transpose(B) * V / μ2 / V) 
 
     # undo the extra complication of a Global dimension
-    a_unit = unit(first(first(a_tmp)))
-    a_array = zeros(size(a_tmp))*a_unit
-    for i in eachindex(a_tmp)
-       a_array[i] = a_tmp[i][begin]
-    end
-    return DimArray(a_array,dims(a_tmp))
-
+    return DimArray(reshape(transpose(Matrix(a_tmp)),size(a_tmp)),dims(a_tmp))
+end
+#function mean_age_adjoint(A, B)
     # previous working method 
     #μ, V = eigen(transpose(A))
     #return mean_age(μ, V, B)
+#end
+
+function ttd_width(μ, V, B; alg=:forward)
+    if alg == :forward
+        return ttd_width_forward(μ, V, B)
+    elseif alg == :adjoint 
+        return ttd_width_adjoint(μ, V, B)
+    elseif alg == :residence
+        return ttd_width_residence(μ, V, B)
+    else
+        error("not yet implemented")
+    end
 end
 
-function ttd_width(μ, V, B)
+function ttd_width_forward(μ, V, B)
 
-    fix_units = unit(first(first(B))) # upstream issue to be fixed
-
+    # MATLAB: sqrt((real(-2.*V/(D.^3)/V*B)*[1; 1] - (Solution.fwd_mean_ages).^2)./2) ;
     μ_diag = diag(μ)
-    μ_neg3_diag = μ_diag.^-3 
-    μ_neg3 = DiagonalDimArray(μ_neg3_diag,dims(μ))
+    μ3_diag = μ_diag.^3 
+    μ3 = DiagonalDimArray(μ3_diag,dims(μ))
     
-    # use  real to get rid of very small complex parts
-    # ideally, would check that complex parts are small
     boundary_dims = dims(B)
-    Δ² = fix_units * (-real.(V * (μ_neg3 * (V \ ustrip.(B* ones(boundary_dims))))))
+    Δ² =  -real.(V / μ3 / V * B) * ones(dims(B))
 
-    Γ = mean_age(μ, V, B)
+    Γ = mean_age(μ, V, B, alg=:forward)
     Δ² -= ((1//2) .* Γ.^2)
+    return .√(Δ²)
+end
+
+function ttd_width_adjoint(μ, V, B)
+    # MATLAB: sqrt(([1, 1]*real(-2.*B'*V/(D.^3)/V) - (Solution.adj_mean_ages).^2)./2)
+    μ_diag = diag(μ)
+    μ3_diag = μ_diag.^3 
+    μ3 = DiagonalDimArray(μ3_diag,dims(μ))
+
+    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
+    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
+    
+    Δ_tmp = -2 .* ones_row_vector * real.(transpose(B) * V / μ3 / V) 
+
+    Δ2 =  DimArray(reshape(transpose(Matrix(Δ_tmp)),size(Δ_tmp)),dims(Δ_tmp))
+
+    Γ = mean_age(μ, V, B, alg=:adjoint)
+    Δ2 .-= Γ.^2 
+   
+    Δ² = (1//2) .* Δ2
     return .√(Δ²)
 end
 
 normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
 
-
-function adjoint_ttd_width(A, B)
-    μ, V = eigen(transpose(A))
-    return ttd_width(μ, V, B)
-end
+# older working method
+# function adjoint_ttd_width(A, B)
+#     μ, V = eigen(transpose(A))
+#     return ttd_width(μ, V, B)
+# end
 
 location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
 #https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat

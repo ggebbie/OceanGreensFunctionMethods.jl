@@ -184,6 +184,10 @@ include("../src/config_units.jl")
                 @test 90yr < Δ[2,2] < 91yr # compare to MATLAB point value
                 @test all(Δ .≥ 0.0yr)
 
+                Δ_adjoint = ttd_width(μ, V, B, alg=:adjoint)
+                @test 90yr < Δ_adjoint[2,2] < 91yr # compare to MATLAB point value
+                @test all(Δ_adjoint .≥ 0.0yr)
+
                 @testset "green's function" begin
                     Δτ = 0.25yr
                     τ = 0yr:Δτ:2000yr
