@@ -206,7 +206,7 @@ C = rand(model_dims) # first generate a uniform U(0,1) tracer distribution
 C[Meridional=At("Mid-latitudes")]
 
 # ╔═╡ df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
-Plots.heatmap(transpose(C),yflip=true)
+Plots.heatmap(transpose(C),xflip=true)
 
 # ╔═╡ 5dfddc9c-6313-4679-a994-15a771ee4a90
 # then solve for tracer fluxes
@@ -265,7 +265,7 @@ Matrix(A)
 
 # ╔═╡ 6a25a144-0ccc-4604-85a7-b724eaa4cfed
 # select of column of A corresponding to a tracer location
-A[Vertical=At("3 Abyssal"),Meridional=At("Mid-latitudes")] # still displayed with info about spatial-locations
+A[Vertical=At("Abyssal"),Meridional=At("Mid-latitudes")] # still displayed with info about spatial-locations
 
 # ╔═╡ 382db56a-d39b-4835-bf13-6dd0088b0b39
 # select an entry of A, caution: first index=column, second index=row
@@ -400,7 +400,7 @@ begin
 	Plots.heatmap(transpose(a[At(msource1),At(vsource1)]),
 		title="Water mass fraction: "*msource1*" "*vsource1,
 		titlefontsize=6,
-		yflip=true,
+		xflip=true,
 		color=:heat,
 		clims=(0.25,0.75))
 end
@@ -415,7 +415,7 @@ begin
 	Plots.heatmap(transpose(a[At(msource2),At(vsource2)]),
 		title="Water mass fraction: "*msource2*" "*vsource2,
 		titlefontsize=6,
-		yflip=true,
+		xflip=true,
 		color=:heat,
 		clims=(0.25,0.75))
 end
@@ -427,7 +427,7 @@ begin
 	Plots.heatmap(transpose(Γ),
 		title="Mean Age ["*string(unit(first(Γ)))*"]",
 		titlefontsize=6,
-		yflip=true,
+		xflip=true,
 		color=:heat,
 		clims=(0yr,200yr))
 end
