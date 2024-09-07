@@ -185,12 +185,12 @@ deldotFm[2,2]
 
 # ╔═╡ fa9f454b-b7ca-4e37-a67c-a28ff91a5e11
 # or use the box names using the `At` notation
-deldotFm[At("2 Mid-latitudes"),At("2 Deep")]
+deldotFm[At("Mid-latitudes"),At("Deep")]
 
 # ╔═╡ 17bf7f50-78a7-4c7c-bc2f-4d9086dd2181
 # it's ok if you don't remember the order of the dimensions
 # here, get the three boxes in the Mid-latitudes
-deldotFm[Meridional=At("2 Mid-latitudes")]
+deldotFm[Meridional=At("Mid-latitudes")]
 
 # ╔═╡ 08464a04-7652-4f24-978d-cd329e7fe0a7
 # Given a tracer distribution C and volume fluxes Fv, find the tracer fluxes
@@ -203,10 +203,10 @@ C = rand(model_dims) # first generate a uniform U(0,1) tracer distribution
 
 # ╔═╡ 18f8bdce-9ce9-4e27-bf8e-53be37dc3fd0
 # or extracer tracer using dimensional labels
-C[Meridional=At("2 Mid-latitudes")]
+C[Meridional=At("Mid-latitudes")]
 
 # ╔═╡ df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
-Plots.heatmap(transpose(C),yflip=true)
+Plots.heatmap(transpose(C),xflip=true)
 
 # ╔═╡ 5dfddc9c-6313-4679-a994-15a771ee4a90
 # then solve for tracer fluxes
@@ -219,7 +219,7 @@ J.poleward'
 
 # ╔═╡ 1e92642c-396f-4353-aa5c-8849cf26af1d
 # greatest poleward fluxes in Thermocline
-J.poleward[Meridional=At("2 Mid-latitudes")] # hit rightward arrow above to see flux values
+J.poleward[Meridional=At("Mid-latitudes")] # hit rightward arrow above to see flux values
 
 # ╔═╡ 86076566-a96b-4faf-bdef-93b95733dcff
 deldotJ = convergence(J) # tracer flux convergence
@@ -265,7 +265,7 @@ Matrix(A)
 
 # ╔═╡ 6a25a144-0ccc-4604-85a7-b724eaa4cfed
 # select of column of A corresponding to a tracer location
-A[Vertical=At("3 Abyssal"),Meridional=At("2 Mid-latitudes")] # still displayed with info about spatial-locations
+A[Vertical=At("Abyssal"),Meridional=At("Mid-latitudes")] # still displayed with info about spatial-locations
 
 # ╔═╡ 382db56a-d39b-4835-bf13-6dd0088b0b39
 # select an entry of A, caution: first index=column, second index=row
@@ -273,7 +273,7 @@ A[5][5]
 
 # ╔═╡ 1312b135-a267-4736-8e56-ff44bc7be59b
 # or get the same information about one element using labels, but it gets long
-A[Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")][Vertical=At("2 Deep"),Meridional=At("2 Mid-latitudes")] 
+A[Vertical=At("Deep"),Meridional=At("Mid-latitudes")][Vertical=At("Deep"),Meridional=At("Mid-latitudes")] 
 
 # ╔═╡ 59b47e9c-784a-4ed5-aeb6-79b5c756fff6
 md""" ## Construct boundary matrix """
@@ -395,12 +395,12 @@ a
 
 # ╔═╡ 0071aa97-27c3-469f-b1bb-e07337489f0e
 begin
-	msource1 = "1 High latitudes"
-	vsource1 = "1 Thermocline"
+	msource1 = "High latitudes"
+	vsource1 = "Thermocline"
 	Plots.heatmap(transpose(a[At(msource1),At(vsource1)]),
 		title="Water mass fraction: "*msource1*" "*vsource1,
 		titlefontsize=6,
-		yflip=true,
+		xflip=true,
 		color=:heat,
 		clims=(0.25,0.75))
 end
@@ -410,12 +410,12 @@ end
 
 # ╔═╡ 5786b2d4-d049-4119-8e1c-5ecf8e8c683e
 begin
-	msource2 = "2 Mid-latitudes"
-	vsource2 = "1 Thermocline"
+	msource2 = "Mid-latitudes"
+	vsource2 = "Thermocline"
 	Plots.heatmap(transpose(a[At(msource2),At(vsource2)]),
 		title="Water mass fraction: "*msource2*" "*vsource2,
 		titlefontsize=6,
-		yflip=true,
+		xflip=true,
 		color=:heat,
 		clims=(0.25,0.75))
 end
@@ -427,7 +427,7 @@ begin
 	Plots.heatmap(transpose(Γ),
 		title="Mean Age ["*string(unit(first(Γ)))*"]",
 		titlefontsize=6,
-		yflip=true,
+		xflip=true,
 		color=:heat,
 		clims=(0yr,200yr))
 end
@@ -463,11 +463,11 @@ G′(t) = boundary_propagator(t,A,B,alg=:forward) # type G + \prime + TAB
 
 # ╔═╡ 00902450-ceb7-4c33-be7e-906502990813
 # a list comprehension
-ttd1 = [G′(τ[i])[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)]
+ttd1 = [G′(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)]
 
 # ╔═╡ c2a38bc2-ef10-4fe5-8642-857f9acdadd7
 # could be written as a for loop instead
-ttd2 = [G′(τ[i])[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)] 
+ttd2 = [G′(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)] 
 
 # ╔═╡ 8d69c375-6a0c-400e-af85-3013a364fa1d
 ttd_global = [𝒢(τ[i])[Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)] 
@@ -479,10 +479,10 @@ ttd_global = [𝒢(τ[i])[Meridional=At(mbox),Vertical=At(vbox)] for i in eachin
 Δ_ = Δ[Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ a183e31d-8bab-46e0-a6b1-0a181c5f0f69
-a1 = a[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
+a1 = a[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ 9537166f-054f-441e-a001-3ba59a4b59e0
-a2 = a[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
+a2 = a[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ fd907198-8e2e-4296-b640-c0aebbd0a796
 G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
@@ -534,10 +534,10 @@ md""" $(@bind mbox_adj Select(meridional_names())) $(@bind vbox_adj Select(verti
 G′dagger(t) = boundary_propagator(t,A,B,alg=:adjoint) # type G + \prime + TAB
 
 # ╔═╡ 1df15962-dd41-4f07-82c8-37d2d60511fb
-ttd1_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+ttd1_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ 48449ccf-df3f-4b71-a160-53d39baa9a90
-ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ b3522980-6beb-4e05-901d-0859c7a8cb58
 # global adjoint TTD
@@ -605,13 +605,13 @@ md""" ## Residence time distributions """
 RTD(t) = residence_time(t,A,B)
 
 # ╔═╡ f6f550a5-d04d-4d2a-89e7-484734370416
-rtd11 = [RTD(τ[i])[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+rtd11 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ 8c2daa28-94f1-4540-b753-5cf1744d9d63
-rtd12 = [RTD(τ[i])[Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")][Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+rtd12 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ 6d1b4753-aabb-4274-a5fb-de26270c4378
-rtd21 = [RTD(τ[i])[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At("1 High latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+rtd21 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ 025e7a9d-d587-44d6-ba0c-1343ad18121a
 begin 
@@ -624,7 +624,7 @@ begin
 		label = "Tmax",
 		legend = :topright,
 		titlefontsize = 6,
-		title = "1 High latitudes"*", "*" 1 Thermocline",
+		title = "High latitudes"*", "*" Thermocline",
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr)) 
 	
@@ -644,7 +644,7 @@ begin
 end
 
 # ╔═╡ 35d26007-c24d-4f1c-9318-02d01a863095
-rtd22 = [RTD(τ[i])[Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")][Meridional=At("2 Mid-latitudes"),Vertical=At("1 Thermocline")] for i in eachindex(τ)]
+rtd22 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ 34e7154d-adf2-4e10-9ea5-967b95de5482
 begin 
@@ -658,7 +658,7 @@ begin
 		label = "Tmax",
 		legend = :topright,
 		titlefontsize = 6,
-		title = "2 Mid-latitudes"*", "*" 1 Thermocline",
+		title = "Mid-latitudes"*", "*" Thermocline",
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr))
 	
