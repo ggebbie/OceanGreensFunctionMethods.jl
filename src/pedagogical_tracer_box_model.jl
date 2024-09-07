@@ -31,13 +31,21 @@ dims(F::Fluxes) = dims(F.poleward)
 
 meridional_names() = ["High latitudes", "Mid-latitudes", "Low latitudes"]
 vertical_names() = ["Thermocline", "Deep", "Abyssal"]
-model_dimensions() = (Meridional(meridional_names()),Vertical(vertical_names())) 
 
-function boundary_dimensions()
-    meridional_boundary = meridional_names()[1:2]
-    vertical_boundary = [vertical_names()[1]] # add brackets to keep as vector
-    return  (Meridional(meridional_boundary), Vertical(vertical_boundary))
-end
+# make dimensions unordered so that changes in alphabetical order are eliminated
+model_dimensions() = (Meridional(meridional_names(); order=DimensionalData.Unordered()),
+    Vertical(vertical_names(); order=DimensionalData.Unordered())) 
+
+boundary_dimensions() = (Meridional(meridional_names()[1:2]; order=DimensionalData.Unordered()),
+    Vertical([vertical_names()[1]]; order=DimensionalData.Unordered())) 
+
+# boundary_dimensions()
+#         return (Meridional(["High latitudes","Mid-latitudes"]),Vertical(["Thermocline"])))
+
+#     # meridional_boundary = meridional_names()[1:2]
+#     # vertical_boundary = [vertical_names()[1]] # add brackets to keep as vector
+#     # return  (Meridional(meridional_boundary), Vertical(vertical_boundary))
+# end
 
 function abyssal_overturning(Ψ,model_dims)
 
