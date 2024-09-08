@@ -152,9 +152,8 @@ md""" mid-latitude boundary exchange $(@bind Fb_mid Slider((1:40)Sv,show_value =
 #Vol0 = 1e16m^3 |> km^3 # uniform value of volume for all boxes
 Vol0 = 300.0Sv*yr |> km^3 # use MATLAB value not manuscript value (5% difference)
 
-# ╔═╡ 1e91d3e1-c26f-4118-9630-d654d352da76
-# If your screen is big enough, you should see a labeled, 3 x 3 table of volume values
-Vol = DimArray(fill(Vol0, Ny, Nz), model_dims)
+# ╔═╡ c9c96f53-3fab-4591-91cd-911ba4c26329
+Vol = fill(Vol0, model_dims)
 
 # ╔═╡ 51d0e115-5859-4eab-8a91-b8193afd52b5
 Vol' # take transpose or complex conjugate transpose to view more intuitively
@@ -613,6 +612,18 @@ rtd12 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][
 # ╔═╡ 6d1b4753-aabb-4274-a5fb-de26270c4378
 rtd21 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
 
+# ╔═╡ 35d26007-c24d-4f1c-9318-02d01a863095
+rtd22 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 29c38299-d49f-422c-9065-2faa9d2db491
+a_residence = watermass_fraction(μ, V, B, alg=:residence)
+
+# ╔═╡ 7e8cd9ef-60cf-4909-93ef-643be08e4bc2
+Γ_residence = mean_age(μ, V, B, alg=:residence)
+
+# ╔═╡ 989f966a-2078-408d-b3ca-5f4fa332f8b6
+Δ_residence = ttd_width(μ, V, B, alg=:residence)
+
 # ╔═╡ 025e7a9d-d587-44d6-ba0c-1343ad18121a
 begin 
 	p_source = plot(τ,
@@ -627,24 +638,21 @@ begin
 		title = "High latitudes"*", "*" Thermocline",
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr)) 
+
+	plot!([Γ_residence,Γ_residence],
+		[1e-4,1e-2]/yr,
+		label="Γ")	
 	
-	#plot!([Γ_adjoint,Γ_adjoint],
-		#[1e-4,1e-2]/yr,
-		#label="Γ")	
-	
-	#plot!([Γ_adjoint + Δ_adjoint/2,
-		#Γ_adjoint - Δ_adjoint/2],
-		#[1e-4,1e-4]/yr,
-		#width=4,
-		#color=:grey,
-		#label="Δ")
-	
+	plot!([Γ_residence + Δ_residence/2,
+		Γ_residence - Δ_residence/2],
+		[1e-4,1e-4]/yr,
+		width=4,
+		color=:grey,
+		label="Δ")
+
 	plot!(τ,rtd11,label="RTD box 1",width=4*a1)
 	plot!(τ,rtd21,label="RTD box 2",width=4*a2)
 end
-
-# ╔═╡ 35d26007-c24d-4f1c-9318-02d01a863095
-rtd22 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ 34e7154d-adf2-4e10-9ea5-967b95de5482
 begin 
@@ -662,27 +670,23 @@ begin
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr))
 	
-	#plot!([Γ_adjoint,Γ_adjoint],
-		#[1e-4,1e-2]/yr,
-		#label="Γ")	
+	plot!([Γ_residence,Γ_residence],
+		[1e-4,1e-2]/yr,
+		label="Γ")	
 	
-	#plot!([Γ_adjoint + Δ_adjoint/2,
-		#Γ_adjoint - Δ_adjoint/2],
-		#[1e-4,1e-4]/yr,
-		#width=4,
-		#color=:grey,
-		#label="Δ")
+	plot!([Γ_residence + Δ_residence/2,
+		Γ_residence - Δ_residence/2],
+		[1e-4,1e-4]/yr,
+		width=4,
+		color=:grey,
+		label="Δ")
 	
 	plot!(τ,rtd12,label="RTD box 1",width=4*a1)
 	plot!(τ,rtd22,label="RTD box 2",width=4*a2)
 end
 
-# ╔═╡ 29c38299-d49f-422c-9065-2faa9d2db491
-# numerical values not matching MATLAB
-a_RTD = watermass_fraction(μ, V, B, alg=:residence)
-
 # ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
-sum(Matrix(a_RTD)[:]) # a test that all mass is taken into account
+sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
@@ -724,7 +728,7 @@ sum(Matrix(a_RTD)[:]) # a test that all mass is taken into account
 # ╠═00f69a96-d8d7-4e7c-905c-461f8132c565
 # ╠═852f36b7-170b-4d20-bd31-af6ae5c716a5
 # ╠═8306d2c4-8d50-4309-add1-6d1eef56cd4a
-# ╠═1e91d3e1-c26f-4118-9630-d654d352da76
+# ╠═c9c96f53-3fab-4591-91cd-911ba4c26329
 # ╠═51d0e115-5859-4eab-8a91-b8193afd52b5
 # ╠═cd6dc878-4442-430b-a263-3651719f2f11
 # ╠═ff24a30f-56ee-4095-8bb3-0c7e4a72fe87
@@ -825,4 +829,6 @@ sum(Matrix(a_RTD)[:]) # a test that all mass is taken into account
 # ╠═6d1b4753-aabb-4274-a5fb-de26270c4378
 # ╠═35d26007-c24d-4f1c-9318-02d01a863095
 # ╠═29c38299-d49f-422c-9065-2faa9d2db491
+# ╠═7e8cd9ef-60cf-4909-93ef-643be08e4bc2
+# ╠═989f966a-2078-408d-b3ca-5f4fa332f8b6
 # ╠═58701b47-1669-484c-ab88-904f31fedb97

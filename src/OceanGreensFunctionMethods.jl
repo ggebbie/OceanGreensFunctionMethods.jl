@@ -14,7 +14,7 @@ using Interpolations
 using QuadGK
 
 import Distributions: mean, median, quantile, std, var, cov, cor, shape, params, pdf, InverseGaussian
-import Base: +
+import Base: +, alignment
 import DimensionalData: dims
 import LinearAlgebra: eigen
 
@@ -67,6 +67,13 @@ srcdir() = joinpath(projectdir(),"src")
 srcdir(args...) = joinpath(srcdir(), args...)
 
 #include("config_units.jl")
+
+# credit to Rafael Schouten for properly aligning Unitful quantities 
+function Base.alignment(io::IO, x::Unitful.Quantity)
+    total = Base.alignment_from_show(io, x)[1]
+    parent = Base.alignment(io, ustrip(x))
+    return parent[1], parent[2] + total - sum(parent)
+end
 
 include("tracer_inverse_gaussian.jl")
 
