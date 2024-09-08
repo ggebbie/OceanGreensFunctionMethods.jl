@@ -152,9 +152,8 @@ md""" mid-latitude boundary exchange $(@bind Fb_mid Slider((1:40)Sv,show_value =
 #Vol0 = 1e16m^3 |> km^3 # uniform value of volume for all boxes
 Vol0 = 300.0Sv*yr |> km^3 # use MATLAB value not manuscript value (5% difference)
 
-# ╔═╡ 1e91d3e1-c26f-4118-9630-d654d352da76
-# If your screen is big enough, you should see a labeled, 3 x 3 table of volume values
-Vol = DimArray(fill(Vol0, Ny, Nz), model_dims)
+# ╔═╡ c9c96f53-3fab-4591-91cd-911ba4c26329
+Vol = fill(Vol0, model_dims)
 
 # ╔═╡ 51d0e115-5859-4eab-8a91-b8193afd52b5
 Vol' # take transpose or complex conjugate transpose to view more intuitively
@@ -724,7 +723,7 @@ sum(Matrix(a_RTD)[:]) # a test that all mass is taken into account
 # ╠═00f69a96-d8d7-4e7c-905c-461f8132c565
 # ╠═852f36b7-170b-4d20-bd31-af6ae5c716a5
 # ╠═8306d2c4-8d50-4309-add1-6d1eef56cd4a
-# ╠═1e91d3e1-c26f-4118-9630-d654d352da76
+# ╠═c9c96f53-3fab-4591-91cd-911ba4c26329
 # ╠═51d0e115-5859-4eab-8a91-b8193afd52b5
 # ╠═cd6dc878-4442-430b-a263-3651719f2f11
 # ╠═ff24a30f-56ee-4095-8bb3-0c7e4a72fe87
