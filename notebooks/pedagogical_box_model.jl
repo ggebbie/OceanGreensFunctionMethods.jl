@@ -598,25 +598,28 @@ end
 md""" ## Residence time distributions """
 
 # ╔═╡ 42ca866d-9c14-4761-9d0f-131870e25d9e
-#md""" Select source $(@bind mbox_source Select(meridional_names()[1:2]))"""
+md""" $(@bind mbox_destination Select(meridional_names()[1:2]))"""
+
+# ╔═╡ 80951878-adfd-4cb7-bf90-91670675e45f
+vbox_destination = "Thermocline" # all origins/destinations at Thermocline depth
 
 # ╔═╡ 0a62e096-f375-4053-bc88-7ef89ce1173a
 RTD(t) = residence_time(t,A,B)
 
 # ╔═╡ f6f550a5-d04d-4d2a-89e7-484734370416
-rtd11 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
-
-# ╔═╡ 8c2daa28-94f1-4540-b753-5cf1744d9d63
-rtd12 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+rtd1 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)] for i in eachindex(τ)]
 
 # ╔═╡ 6d1b4753-aabb-4274-a5fb-de26270c4378
-rtd21 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
-
-# ╔═╡ 35d26007-c24d-4f1c-9318-02d01a863095
-rtd22 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+rtd2 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)] for i in eachindex(τ)]
 
 # ╔═╡ 29c38299-d49f-422c-9065-2faa9d2db491
 a_residence = watermass_fraction(μ, V, B, alg=:residence)
+
+# ╔═╡ 31f0f55f-5e2c-42da-9598-9b0bc1ce262f
+a_residence1 = a_residence[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)]
+
+# ╔═╡ 9f82d814-f4fb-4184-8177-13f8fe7eceef
+a_residence2 = a_residence[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)]
 
 # ╔═╡ 7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 Γ_residence = mean_age(μ, V, B, alg=:residence)
@@ -635,7 +638,7 @@ begin
 		label = "Tmax",
 		legend = :topright,
 		titlefontsize = 6,
-		title = "High latitudes"*", "*" Thermocline",
+		title = mbox_destination*", "*" Thermocline",
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr)) 
 
@@ -650,39 +653,8 @@ begin
 		color=:grey,
 		label="Δ")
 
-	plot!(τ,rtd11,label="RTD box 1",width=4*a1)
-	plot!(τ,rtd21,label="RTD box 2",width=4*a2)
-end
-
-# ╔═╡ 34e7154d-adf2-4e10-9ea5-967b95de5482
-begin 
-	# to do: put plotting into functions
-	p_source2 = plot(τ,
-		normalized_exponential_decay.(τ,Tmax),
-		linestyle = :dash,
-		yscale = :log10,
-		ylabel = "R(τ)",
-		xlabel = "τ",
-		label = "Tmax",
-		legend = :topright,
-		titlefontsize = 6,
-		title = "Mid-latitudes"*", "*" Thermocline",
-		xlims = (0yr,400yr),
-		ylims = (1e-4/yr,1e-1/yr))
-	
-	plot!([Γ_residence,Γ_residence],
-		[1e-4,1e-2]/yr,
-		label="Γ")	
-	
-	plot!([Γ_residence + Δ_residence/2,
-		Γ_residence - Δ_residence/2],
-		[1e-4,1e-4]/yr,
-		width=4,
-		color=:grey,
-		label="Δ")
-	
-	plot!(τ,rtd12,label="RTD box 1",width=4*a1)
-	plot!(τ,rtd22,label="RTD box 2",width=4*a2)
+	plot!(τ,rtd1,label="RTD box 1",width=8*a_residence1)
+	plot!(τ,rtd2,label="RTD box 2",width=8*a_residence2)
 end
 
 # ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
@@ -821,14 +793,14 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╠═f861d37b-427b-4c12-b0ff-c55be4d82523
 # ╟─13d659ac-d820-404e-bdcb-c66b05381309
 # ╟─42ca866d-9c14-4761-9d0f-131870e25d9e
+# ╟─80951878-adfd-4cb7-bf90-91670675e45f
 # ╠═025e7a9d-d587-44d6-ba0c-1343ad18121a
-# ╠═34e7154d-adf2-4e10-9ea5-967b95de5482
 # ╠═0a62e096-f375-4053-bc88-7ef89ce1173a
 # ╠═f6f550a5-d04d-4d2a-89e7-484734370416
-# ╠═8c2daa28-94f1-4540-b753-5cf1744d9d63
 # ╠═6d1b4753-aabb-4274-a5fb-de26270c4378
-# ╠═35d26007-c24d-4f1c-9318-02d01a863095
 # ╠═29c38299-d49f-422c-9065-2faa9d2db491
+# ╠═31f0f55f-5e2c-42da-9598-9b0bc1ce262f
+# ╠═9f82d814-f4fb-4184-8177-13f8fe7eceef
 # ╠═7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 # ╠═989f966a-2078-408d-b3ca-5f4fa332f8b6
 # ╠═58701b47-1669-484c-ab88-904f31fedb97
