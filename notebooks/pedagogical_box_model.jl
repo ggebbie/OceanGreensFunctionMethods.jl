@@ -310,6 +310,9 @@ Tmax = maximum_timescale(μ)
 # ╔═╡ 6eac27ef-647c-4884-aaf3-69f6705da3a8
 md"""## Tracer histories """
 
+# ╔═╡ e9653ffb-4da5-4b45-948d-3656dbb6df66
+projectdir()
+
 # ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
 BD = read_tracer_histories() # Dirichlet boundary conditions
 
@@ -747,6 +750,7 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╠═c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # ╠═1e3f4bd2-94cf-43a1-af98-11373a4d8561
 # ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
+# ╠═e9653ffb-4da5-4b45-948d-3656dbb6df66
 # ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
 # ╟─6f979bb9-733d-4981-9a53-d75162cbd372
 # ╟─f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f

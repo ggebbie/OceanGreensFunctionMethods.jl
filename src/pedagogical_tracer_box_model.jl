@@ -380,9 +380,12 @@ function read_tracer_histories()
     # download tracer history input (make this lazy)
     url = OceanGreensFunctionMethods.location_tracer_histories()
     !isdir(datadir()) && mkpath(datadir())
-    matfile = Downloads.download(url,datadir("tracer_histories.mat"))
+    filename = datadir("tracer_histories.mat")
 
-    file = matopen(matfile)
+    # allow offline usage if data already downloaded
+    !isfile(filename) && Downloads.download(url,datadir("tracer_histories.mat"))
+
+    file = matopen(filename)
 
     # all matlab variables except Year
     varnames = Symbol.(filter(x -> x ≠ "Year", collect(keys(file))))

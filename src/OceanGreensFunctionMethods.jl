@@ -57,11 +57,22 @@ export # re-export from DimensionalData
 export # re-export from LinearAlgebra
     eigen
 
-projectdir() = dirname(Base.active_project())
+function projectdir()
+    localproject = dirname(Base.active_project())
+    if localproject[end-8:end] == "notebooks"
+       return localproject[begin:end-10]
+    else
+       return(localproject)
+    end
+end
+
 projectdir(args...) = joinpath(projectdir(), args...)
 
 datadir() = joinpath(projectdir(),"data")
 datadir(args...) = joinpath(datadir(), args...)
+
+notebookdatadir() = joinpath(projectdir(),"notebook","data")
+notebookdatadir(args...) = joinpath(notebookdatadir(), args...)
 
 srcdir() = joinpath(projectdir(),"src")
 srcdir(args...) = joinpath(srcdir(), args...)
