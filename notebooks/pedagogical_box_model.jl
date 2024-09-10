@@ -518,7 +518,7 @@ begin
 	
 	plot!(τ,ttd1,label="TTD 1",width=4*a1)
 	plot!(τ,ttd2,label="TTD 2",width=4*a2)
-	plot!(τ,ttd_global,label="Total TTD",width=4*a2,color=:black)
+	plot!(τ,ttd_global,label="Total TTD",width=4*(a1+a2),color=:black)
 	plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
 end
 
@@ -537,6 +537,12 @@ ttd1_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Mer
 
 # ╔═╡ 48449ccf-df3f-4b71-a160-53d39baa9a90
 ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ d7822a1b-a780-4df8-9f71-cc3de36ed4c0
+a1_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("High latitudes"),Vertical=At("Thermocline")]
+
+# ╔═╡ c6fd37b2-39cc-4c34-b021-6483285e6d56
+a2_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")]
 
 # ╔═╡ b3522980-6beb-4e05-901d-0859c7a8cb58
 # global adjoint TTD
@@ -588,9 +594,9 @@ begin
 		color=:grey,
 		label="Δ")
 	
-	plot!(τ,ttd1_adj,label="TTD 1",width=4*a1)
-	plot!(τ,ttd2_adj,label="TTD 2",width=4*a2)
-	plot!(τ,ttd_global_adjoint,label="Total TTD",width=4*a2,color=:black)
+	plot!(τ,ttd1_adj,label="TTD 1",width=4*a1_adj)
+	plot!(τ,ttd2_adj,label="TTD 2",width=4*a2_adj)
+	plot!(τ,ttd_global_adjoint,label="Total TTD",width=4*(a1_adj+a2_adj),color=:black)
 	plot!(τ,ttd_inversegaussian_adjoint,label="Fitted inverse Gaussian")
 end
 
@@ -784,6 +790,8 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╠═ab31341c-ff59-41bc-8a7f-752931bb8e9d
 # ╠═1df15962-dd41-4f07-82c8-37d2d60511fb
 # ╠═48449ccf-df3f-4b71-a160-53d39baa9a90
+# ╠═d7822a1b-a780-4df8-9f71-cc3de36ed4c0
+# ╠═c6fd37b2-39cc-4c34-b021-6483285e6d56
 # ╠═b3522980-6beb-4e05-901d-0859c7a8cb58
 # ╠═b719ab41-4226-40c7-9682-5385d076dc7a
 # ╠═257c6649-d003-42bc-9e17-0c33b7cd304c
