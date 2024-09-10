@@ -807,7 +807,7 @@ version = "1.2.0"
 deps = ["DimensionalData", "Distributions", "Downloads", "Interpolations", "LinearAlgebra", "MAT", "MultipliableDimArrays", "QuadGK", "Revise", "Unitful"]
 path = ".."
 uuid = "e3e8a769-591b-4840-946e-301c93ad313e"
-version = "1.0.7-DEV"
+version = "1.0.8-DEV"
 
 [[deps.OffsetArrays]]
 git-tree-sha1 = "1a27764e945a152f7ca7efa04de513d473e9542e"
