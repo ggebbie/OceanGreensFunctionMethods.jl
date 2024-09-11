@@ -461,25 +461,19 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
         # total
         C[tt] = Ci + Cf
     end # tt
-    return real.(C) #real.(Ci + Cf)  # Cut imaginary part which is zero to machine precision.
+    return real.(C) # Cut imaginary part which is zero to machine precision.
 end
 
 # MATLAB: concsI(:,tt) =      V*expm(D.*(tf-ti))/V*(concsI(:,tt-1) + concsF(:,tt-1)) ;    % Initial condition contribution
-function timestep_initial_condition(C, μ, V, ti, tf)
+# function 
 
-    matexp = MultipliableDimArray( exp(Matrix(μ*(tf-ti))), dims(μ), dims(μ))
-    return real.( V * (matexp * (V\C))) # matlab code has right divide (?)
-end
+#     matexp = MultipliableDimArray( exp(Matrix(μ*(tf-ti))), dims(μ), dims(μ))
+#     return real.( V * (matexp * (V\C))) # matlab code has right divide (?)
+# end
+timestep_initial_condition(C, μ, V, ti, tf) = real.( V * exp(μ*(tf-ti)) / V * C )
 
-# MATLAB: integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
-
+    # MATLAB: integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
 forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(μ*(tf-t)) / V * B * source_history(t))
-# previous working version (less efficient)
-#function forcing_integrand(t, tf, μ, V, B, source_history)
-    # matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
-    # # annoying finding: parentheses matter in next line
-    # return real.( V * (matexp * (V \ (B*source_history(t)))))
-#end
     
 function integrate_forcing(t0, tf, μ, V, B, source_history)
     forcing_func(t) = forcing_integrand(t, tf, μ, V, B, source_history)
