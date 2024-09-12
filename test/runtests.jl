@@ -226,11 +226,21 @@ include("../src/config_units.jl")
 
                 @testset "read tracer histories" begin
 
-                    BD = read_tracer_histories()
+                    BD = read_transient_tracer_histories()
                     tracername = :CFC11NH
                     box2_box1_ratio = 0.75
-                    source_history_func(x) =  tracer_source_history(x, tracername, BD, box2_box1_ratio)
-                
+
+                    tracer_source_history(1990yr,
+                        tracername,
+                        box2_box1_ratio,
+                        BD)
+                    
+                    source_history_func(t) =  tracer_source_history(t,
+                        tracername,
+                        box2_box1_ratio,
+                        BD,
+                    )
+                    
                     tt = 1973.0yr
                     source_history_func(tt)
 
@@ -245,6 +255,17 @@ include("../src/config_units.jl")
                     Cevolve = evolve_concentration(C₀, A, B, tlist, source_history_func; halflife = nothing)
                     Ct =  [Cevolve[t][3,1] for t in eachindex(tlist)]
                     @test Ct[end] > Ct[begin] 
+
+                    # argon-39
+                    tracername = :argon39
+                    box2_box1_ratio = 1 
+                    source_history_func(t) =  tracer_source_history(t,
+                        tracername,
+                        box2_box1_ratio,
+                    )
+                    tt = 1973.0yr
+                    # always returns 1 
+                    @test isequal(first(source_history_func(2000yr*randn())),1.0)
                 end
             end
         end

@@ -320,22 +320,48 @@ BD = read_tracer_histories() # Dirichlet boundary conditions
 md""" Choose tracers """
 
 # ╔═╡ f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
-md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12 $(@bind use_SF6 CheckBox(default=true)) SF₆ """
+md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12  $(@bind use_SF6 CheckBox(default=true)) SF₆ $(@bind use_argon39 CheckBox(default=true)) ³⁹Ar """
 
 # ╔═╡ cf38b164-4414-4344-824e-68a09cc38f6b
 md""" Source history """
 
+# ╔═╡ ea2e8fe1-94cc-4cb6-bb88-05c708eac5a3
+md""" $(@bind mbound Select(meridional_names()[1:2])) $(@bind vbound Select([vertical_names()[1]]))""" 
+
+
 # ╔═╡ e34ae847-d82e-49f4-aa22-6753596c4ea0
 begin
+	tlims = (1930yr,2015yr)
+	tvals = tlims[1]:1yr:tlims[2]
 	source_plot = plot(xlims=(1930yr,2015yr),
 		yscale=:log10,
 		ylims = (1e-1,1e3),
-		legend = :topleft,
+		legend = :outerbottomright,
 		titlelabel="")	
 
-	use_CFC11 && plot!(BD[Tracer=At(:CFC11NH)],label="CFC-11")
-	use_CFC12 && plot!(BD[Tracer=At(:CFC12NH)],label="CFC-12")
-	use_SF6 && plot!(BD[Tracer=At(:SF6NH)],label="SF₆")
+	if use_CFC11 
+		plot!(tvals,
+			[tracer_source_history(t,:CFC11NH, 0.75, BD)[At(mbound),At(vbound)] for t in tvals],
+			label="CFC-11")
+	end
+	
+	if use_CFC12 
+		plot!(tvals,
+			[tracer_source_history(t,:CFC12NH, 0.75, BD)[At(mbound),At(vbound)] for t in tvals],
+			label="CFC-12")
+	end
+	
+	if use_SF6
+		plot!(tvals,
+			[tracer_source_history(t,:SF6NH, 0.75, BD)[At(mbound),At(vbound)] for t in tvals],
+			label="SF₆")
+	end
+	
+	if use_argon39
+		plot!(tvals,
+			[tracer_source_history(t,:argon39, 1)[At(mbound),At(vbound)] for t in tvals],
+			label="³⁹Ar")
+	end
 	title!("")
 	source_plot
 end
@@ -353,7 +379,7 @@ begin
 	transient_tracer_plot = plot(xlims=(1930yr,2015yr),
 		yscale=:log10,
 		ylims = (1e-1,1e3),
-		legend = :topleft,
+		legend = :outerbottomright,
 		title = mbox1*", "*vbox1,
 		titlefontsize=6)
 
@@ -755,10 +781,11 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╟─6f979bb9-733d-4981-9a53-d75162cbd372
 # ╟─f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
 # ╟─cf38b164-4414-4344-824e-68a09cc38f6b
+# ╟─ea2e8fe1-94cc-4cb6-bb88-05c708eac5a3
 # ╟─e34ae847-d82e-49f4-aa22-6753596c4ea0
 # ╟─897deef3-d754-4ca4-8c6f-00b67313a5a0
 # ╟─1ecd9ce2-cea7-417e-b965-24784cd0f563
-# ╟─ec1439f9-7f02-439a-ac70-d67869cdae35
+# ╠═ec1439f9-7f02-439a-ac70-d67869cdae35
 # ╟─11eb59cf-de62-4fb4-9963-defe594e6b92
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413

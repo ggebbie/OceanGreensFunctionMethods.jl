@@ -371,14 +371,26 @@ normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
 #     return ttd_width(μ, V, B)
 # end
 
-location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
-#https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat
-#download_tracer_histories() = Downloads.Download(url_tracer_histories())
+location_transient_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
 
-function read_tracer_histories()
+location_iodine129_history() = 
+ "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/From John Smith/Input Function 129I Eastern Norwegian Sea.csv"
+
+function read_iodine129_history()
+    url = location_iodine129_history()
+    !isdir(datadir()) && mkpath(datadir())
+    filename = datadir("tracer_histories.mat")
+
+    # allow offline usage if data already downloaded
+    !isfile(filename) && Downloads.download(url,datadir("iodine129_history.mat"))
+
+    # use CSV to open
+end 
+
+function read_transient_tracer_histories()
 
     # download tracer history input (make this lazy)
-    url = OceanGreensFunctionMethods.location_tracer_histories()
+    url = location_transient_tracer_histories()
     !isdir(datadir()) && mkpath(datadir())
     filename = datadir("tracer_histories.mat")
 
@@ -406,12 +418,28 @@ tracer_units() = Dict(
     :CFC11SH => NoUnits,
     :CFC12NH => NoUnits,
     :CFC12SH => NoUnits,
+    :argon39 => NoUnits,
+    :iodine129 => NoUnits,
     :SF6NH => NoUnits,
     :SF6SH => NoUnits,
     :N2ONH => nmol/kg,
     :N2OSH => nmol/kg
     )
-    
+
+    # for non-transient tracers
+function tracer_point_source_history(tracername)
+
+    if tracername == :argon39
+        return x -> 1.0 * tracer_units()[tracername]
+    elseif tracername == :iodine129
+        error("not implemented yet")
+    end
+
+    #    return linear_interpolation(
+    #        first(DimensionalData.index(dims(tracer_timeseries))),
+    #        tracer_timeseries)
+end
+
 function tracer_point_source_history(tracername, BD)
 
     tracer_timeseries = BD[Tracer=At(tracername)] * tracer_units()[tracername]
@@ -421,9 +449,14 @@ function tracer_point_source_history(tracername, BD)
         tracer_timeseries)
 end
 
-function tracer_source_history(t, tracername, BD, box2_box1_ratio)
+function tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
 
-    source_func = tracer_point_source_history(tracername, BD)
+    if tracername == :argon39
+        source_func = tracer_point_source_history(tracername)
+    else
+        source_func = tracer_point_source_history(tracername, BD)
+    end
+
     box1 = source_func(t)
     box2 = box2_box1_ratio * box1
     
@@ -464,15 +497,8 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
     return real.(C) # Cut imaginary part which is zero to machine precision.
 end
 
-# MATLAB: concsI(:,tt) =      V*expm(D.*(tf-ti))/V*(concsI(:,tt-1) + concsF(:,tt-1)) ;    % Initial condition contribution
-# function 
-
-#     matexp = MultipliableDimArray( exp(Matrix(μ*(tf-ti))), dims(μ), dims(μ))
-#     return real.( V * (matexp * (V\C))) # matlab code has right divide (?)
-# end
 timestep_initial_condition(C, μ, V, ti, tf) = real.( V * exp(μ*(tf-ti)) / V * C )
 
-    # MATLAB: integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
 forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(μ*(tf-t)) / V * B * source_history(t))
     
 function integrate_forcing(t0, tf, μ, V, B, source_history)
@@ -491,9 +517,10 @@ function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
 	
     source_history_func(t) =  tracer_source_history(t,
 	tracername,
+	box2_box1_ratio,
 	BD,
-	box2_box1_ratio)
-
+    )
+    
     Cevolve = evolve_concentration(C₀, 
 	A,
 	B,

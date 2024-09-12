@@ -35,7 +35,7 @@ export linear_probe, mass #, uniform
 export maximum_timescale, mean_age
 export ttd_width, normalized_exponential_decay
 export residence_time
-export read_tracer_histories, tracer_source_history
+export read_transient_tracer_histories, tracer_source_history
 export greens_function
 export boundary_propagator
 export global_ttd
