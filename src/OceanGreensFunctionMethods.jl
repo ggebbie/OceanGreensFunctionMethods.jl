@@ -45,7 +45,7 @@ export integrate_forcing
 export evolve_concentration
 export timestep_initial_condition
 export Tracer, Meridional, Vertical, Global 
-export transient_tracer_timeseries
+export tracer_timeseries
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export # re-export from Distributions

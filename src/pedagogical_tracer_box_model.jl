@@ -39,14 +39,6 @@ model_dimensions() = (Meridional(meridional_names(); order=DimensionalData.Unord
 boundary_dimensions() = (Meridional(meridional_names()[1:2]; order=DimensionalData.Unordered()),
     Vertical([vertical_names()[1]]; order=DimensionalData.Unordered())) 
 
-# boundary_dimensions()
-#         return (Meridional(["High latitudes","Mid-latitudes"]),Vertical(["Thermocline"])))
-
-#     # meridional_boundary = meridional_names()[1:2]
-#     # vertical_boundary = [vertical_names()[1]] # add brackets to keep as vector
-#     # return  (Meridional(meridional_boundary), Vertical(vertical_boundary))
-# end
-
 function abyssal_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -163,8 +155,7 @@ function boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
     return Jb
 end
 
-# tracer_tendency(C::DimArray{T,N}, Fv::Fluxes{T,N}) where T <: Number where N = 
-#         convergence(advective_diffusive_flux(C, Fv))
+radioactive_decay(C::DimArray, halflife::Number) = -(log(2)/halflife)*C 
 
 tracer_tendency(
     C::DimArray{<:Number,N},
@@ -176,7 +167,7 @@ tracer_tendency(
     boundary_flux(f, C, Fb)) ./
     mass(V)) .|> yr^-1 
 
-    # for use with finding B boundary matrix
+# for use with finding B boundary matrix
 tracer_tendency(
     f::DimArray{<:Number,N},
     C::DimArray{<:Number,N},
@@ -184,6 +175,11 @@ tracer_tendency(
     V::DimArray{<:Number,N}) where N = 
     (boundary_flux(f, C, Fb) ./
     mass(V)) .|> yr^-1 
+
+# for use with finding A perturbation with radioactive decay
+tracer_tendency(C::DimArray{<:Number,N},
+    halflife::Number) where N =
+    radioactive_decay(C, halflife) .|> yr^-1 
 
 """
 function linear_probe(x₀,M)
@@ -434,10 +430,6 @@ function tracer_point_source_history(tracername)
     elseif tracername == :iodine129
         error("not implemented yet")
     end
-
-    #    return linear_interpolation(
-    #        first(DimensionalData.index(dims(tracer_timeseries))),
-    #        tracer_timeseries)
 end
 
 function tracer_point_source_history(tracername, BD)
@@ -469,7 +461,12 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
 # % Integrate forcing vector over time to compute the concentration history.
 # % Find propagator by analytical expression using eigen-methods.
 
-    μ, V = eigen(A)
+    if isnothing(halflife)
+        μ, V = eigen(A)
+    else
+        Aλ =  linear_probe(tracer_tendency, C₀, halflife)
+        μ, V = eigen(A+Aλ)
+    end 
 
     # initial condition contribution
     Ci = deepcopy(C₀)
@@ -509,8 +506,18 @@ function integrate_forcing(t0, tf, μ, V, B, source_history)
     (err < 1e-5) ? (return integral) : error("integration error too large")
 end
 
-function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
+function tracer_timeseries(tracername, A, B, tlist, mbox1, vbox1; BD=nothing, halflife=nothing)
 
+    if isnothing(halflife) && !isnothing(BD)
+        return transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1)
+    elseif tracername == :argon39
+        return radioactive_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
+    elseif tracername == :iodine129 && !isnothing(BD)
+        return radioactive_tracer_timeseries(tracername, A, B, BD, halflife, tlist, mbox1, vbox1)
+    end
+end
+
+function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1)
     # fixed parameters for transient tracers
     box2_box1_ratio = 0.75
     C₀ = zeros(model_dimensions())
@@ -525,9 +532,35 @@ function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
 	A,
 	B,
 	tlist, 
-	source_history_func;
-	halflife = nothing)
-	
+	source_history_func)
+    	
+    return [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
+
+end
+
+function radioactive_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
+
+    C₀ = zeros(model_dimensions()) # initial conditions
+
+    if tracername == :argon39
+        box2_box1_ratio = 1 
+    
+        source_history_func(t) =  tracer_source_history(t,
+	    tracername,
+	    box2_box1_ratio
+        )
+
+        Cevolve = evolve_concentration(C₀, 
+	    A,
+	    B,
+	    tlist, 
+	    source_history_func;
+	    halflife = halflife)
+
+    else
+        error("only implemented for argon-39")
+    end
+    
     return [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
 
 end

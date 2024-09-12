@@ -367,16 +367,16 @@ begin
 end
 
 # ╔═╡ 897deef3-d754-4ca4-8c6f-00b67313a5a0
-md""" Interior history """
+md""" Interior evolution """
 
 # ╔═╡ 1ecd9ce2-cea7-417e-b965-24784cd0f563
 md""" $(@bind mbox1 Select(meridional_names())) $(@bind vbox1 Select(vertical_names())) """
 
 # ╔═╡ ec1439f9-7f02-439a-ac70-d67869cdae35
 begin 
-	tlist = (1900.25:0.25:2015.0)yr
+	
 
-	transient_tracer_plot = plot(xlims=(1930yr,2015yr),
+	tracer_plot = plot(xlims=(1930yr,2015yr),
 		yscale=:log10,
 		ylims = (1e-1,1e3),
 		legend = :outerbottomright,
@@ -384,19 +384,27 @@ begin
 		titlefontsize=6)
 
 	if use_CFC11 
-		ct = transient_tracer_timeseries(:CFC11NH, BD, A, B, tlist, mbox1, vbox1)
+		tlist = (1900.25:0.25:2015.0)yr
+		ct = tracer_timeseries(:CFC11NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="CFC-11")
 	end
 	if use_CFC12 
-		ct = transient_tracer_timeseries(:CFC12NH, BD, A, B, tlist, mbox1, vbox1)
+		tlist = (1900.25:0.25:2015.0)yr
+		ct = tracer_timeseries(:CFC12NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="CFC-12")
 	end
 	if use_SF6 
-		ct = transient_tracer_timeseries(:SF6NH, BD, A, B, tlist, mbox1, vbox1)
+		tlist = (1900.25:0.25:2015.0)yr
+		ct = tracer_timeseries(:SF6NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="SF₆")
 	end
+	if use_argon39 
+		tlist = (1515.0:0.25:2015.0)yr
+		ct = tracer_timeseries(:argon39, A, B, tlist, mbox1, vbox1, halflife = 269yr)
+		plot!(tlist, ct, label="³⁹Ar")
+	end
 	
-	transient_tracer_plot
+	tracer_plot
 end
 
 

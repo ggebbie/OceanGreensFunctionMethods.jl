@@ -134,8 +134,9 @@ include("../src/config_units.jl")
                 # probe for B (boundary matrix)
                 dCdt_boundary = tracer_tendency(f, Crand, Fb, Vol)
                 B =  linear_probe(tracer_tendency, f, Crand, Fb, Vol)
-                Matrix(B)
-
+                Aλ =  linear_probe(tracer_tendency, Crand, 269yr)
+                # Matrix(B)
+                # Matrix(Aλ)
                 mass(Vol)
 
                 # Find eigenvalues of A. 
