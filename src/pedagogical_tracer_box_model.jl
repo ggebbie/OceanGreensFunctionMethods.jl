@@ -361,27 +361,32 @@ end
 
 normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
 
-# older working method
-# function adjoint_ttd_width(A, B)
-#     μ, V = eigen(transpose(A))
-#     return ttd_width(μ, V, B)
-# end
-
 location_transient_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
 
 location_iodine129_history() = 
- "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/From John Smith/Input Function 129I Eastern Norwegian Sea.csv"
+    "https://raw.githubusercontent.com/ThomasHaine/Pedagogical-Tracer-Box-Model/main/MATLAB/From%20John%20Smith/Input%20Function%20129I%20Eastern%20Norwegian%20Sea.csv"
 
 function read_iodine129_history()
     url = location_iodine129_history()
     !isdir(datadir()) && mkpath(datadir())
-    filename = datadir("tracer_histories.mat")
+    filename = datadir("iodine129_history.nc")
 
     # allow offline usage if data already downloaded
-    !isfile(filename) && Downloads.download(url,datadir("iodine129_history.mat"))
+    !isfile(filename) && Downloads.download(url,filename)
 
     # use CSV to open
-    return CSV.read(filename, DataFrame)
+    ds = CSV.File(filename)# , DataFrame)
+
+    source_iodine = vcat(0.0,0.0,parse.(Float64,ds.Column2[4:end]))
+    t_iodine = vcat(0.0,1957.0,parse.(Float64,ds.var"Atlantic Water in Eastern Norwegian Sea entering Barents Sea and West Spitzbergen Current"[4:end]))
+
+    tracerdim = Tracer([:iodine129])
+    timedim = Ti((t_iodine)yr)
+
+    BD = zeros(tracerdim,timedim)
+    BD[Tracer=At(:iodine129)] = source_iodine # note that this does NOT introduce a variable ``varname`` into scope
+
+    return BD
 end 
 
 function read_transient_tracer_histories()
@@ -512,15 +517,26 @@ function tracer_timeseries(tracername, A, B, tlist, mbox1, vbox1; BD=nothing, ha
     if isnothing(halflife) && !isnothing(BD)
         return transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1)
     elseif tracername == :argon39
-        return radioactive_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
+        return steady_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
     elseif tracername == :iodine129 && !isnothing(BD)
-        return radioactive_tracer_timeseries(tracername, A, B, BD, halflife, tlist, mbox1, vbox1)
+        return transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1, halflife = halflife)
     end
 end
 
-function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1)
+function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1; halflife = nothing)
+
     # fixed parameters for transient tracers
-    box2_box1_ratio = 0.75
+    if tracername == :iodine129
+        box2_box1_ratio = 0.25
+    elseif  (tracername == :CFC11NH) ||
+        (tracername == :CFC12NH) ||
+        (tracername == :SF6NH)
+        box2_box1_ratio = 0.75
+    else
+        error("transient tracer not implemented")
+    end
+
+    # all tracers start with zero boundary conditions
     C₀ = zeros(model_dimensions())
 	
     source_history_func(t) =  tracer_source_history(t,
@@ -533,13 +549,14 @@ function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1)
 	A,
 	B,
 	tlist, 
-	source_history_func)
+	source_history_func,
+        halflife = halflife)
     	
     return [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
 
 end
 
-function radioactive_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
+function steady_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
 
     C₀ = zeros(model_dimensions()) # initial conditions
 

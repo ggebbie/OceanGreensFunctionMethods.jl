@@ -65,6 +65,9 @@ md"""## Activate a reproducible project environment
 
 Uses Julia's built-in package manager `Pkg.jl` """
 
+# ╔═╡ c4353642-abb6-4e76-af5c-0328dcb69621
+Pkg.update("OceanGreensFunctionMethods")
+
 # ╔═╡ 28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
 Pkg.instantiate()
 
@@ -316,11 +319,14 @@ projectdir()
 # ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
 BD = read_tracer_histories() # Dirichlet boundary conditions
 
+# ╔═╡ 96ab52bc-1863-4056-ba32-894747f6ae0e
+BD_iodine129 = read_iodine129_history() # iodine-129
+
 # ╔═╡ 6f979bb9-733d-4981-9a53-d75162cbd372
 md""" Choose tracers """
 
 # ╔═╡ f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
-md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12  $(@bind use_SF6 CheckBox(default=true)) SF₆ $(@bind use_argon39 CheckBox(default=true)) ³⁹Ar """
+md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12  $(@bind use_SF6 CheckBox(default=true)) SF₆ $(@bind use_argon39 CheckBox(default=true)) ³⁹Ar $(@bind use_iodine129 CheckBox(default=true)) ¹²⁹I"""
 
 # ╔═╡ cf38b164-4414-4344-824e-68a09cc38f6b
 md""" Source history """
@@ -362,6 +368,13 @@ begin
 			[tracer_source_history(t,:argon39, 1)[At(mbound),At(vbound)] for t in tvals],
 			label="³⁹Ar")
 	end
+
+	if use_iodine129
+		plot!(tvals,
+			[tracer_source_history(t,:iodine129, 0.25, BD_iodine129)[At(mbound),At(vbound)] for t in tvals],
+			label="¹²⁹I")
+	end
+	
 	title!("")
 	source_plot
 end
@@ -707,6 +720,7 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
 # ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
 # ╠═8f520c8b-19d7-48a8-be9f-3f167f07d188
+# ╠═c4353642-abb6-4e76-af5c-0328dcb69621
 # ╠═c536e9f3-0457-499e-958c-384d6e388ef9
 # ╠═28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
 # ╟─07f01269-cfd8-4d3d-8d85-0b1132ff2005
@@ -786,11 +800,12 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
 # ╠═e9653ffb-4da5-4b45-948d-3656dbb6df66
 # ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
+# ╠═96ab52bc-1863-4056-ba32-894747f6ae0e
 # ╟─6f979bb9-733d-4981-9a53-d75162cbd372
 # ╟─f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
 # ╟─cf38b164-4414-4344-824e-68a09cc38f6b
 # ╟─ea2e8fe1-94cc-4cb6-bb88-05c708eac5a3
-# ╟─e34ae847-d82e-49f4-aa22-6753596c4ea0
+# ╠═e34ae847-d82e-49f4-aa22-6753596c4ea0
 # ╟─897deef3-d754-4ca4-8c6f-00b67313a5a0
 # ╟─1ecd9ce2-cea7-417e-b965-24784cd0f563
 # ╠═ec1439f9-7f02-439a-ac70-d67869cdae35
