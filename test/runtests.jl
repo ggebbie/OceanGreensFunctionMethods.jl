@@ -267,6 +267,26 @@ include("../src/config_units.jl")
                     tt = 1973.0yr
                     # always returns 1 
                     @test isequal(first(source_history_func(2000yr*randn())),1.0)
+
+                    # iodine-129
+                    BD_iodine129 = read_iodine129_history()
+                    tracername = :iodine129
+                    box2_box1_ratio = 0.25
+
+                    tracer_source_history(1990yr,
+                        tracername,
+                        box2_box1_ratio,
+                        BD_iodine129)
+                    
+                    source_history_func(t) =  tracer_source_history(t,
+                        tracername,
+                        box2_box1_ratio,
+                        BD_iodine129,
+                    )
+                    
+                    tt = 1873.0yr
+                    source_history_func(tt)
+                    
                 end
             end
         end

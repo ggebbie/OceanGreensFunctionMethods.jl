@@ -316,11 +316,14 @@ projectdir()
 # ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
 BD = read_tracer_histories() # Dirichlet boundary conditions
 
+# ╔═╡ 96ab52bc-1863-4056-ba32-894747f6ae0e
+BD_iodine129 = read_iodine129_history() # iodine-129
+
 # ╔═╡ 6f979bb9-733d-4981-9a53-d75162cbd372
 md""" Choose tracers """
 
 # ╔═╡ f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
-md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12  $(@bind use_SF6 CheckBox(default=true)) SF₆ $(@bind use_argon39 CheckBox(default=true)) ³⁹Ar """
+md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12  $(@bind use_SF6 CheckBox(default=true)) SF₆ $(@bind use_argon39 CheckBox(default=true)) ³⁹Ar $(@bind use_iodine129 CheckBox(default=true)) ¹²⁹I"""
 
 # ╔═╡ cf38b164-4414-4344-824e-68a09cc38f6b
 md""" Source history """
@@ -362,6 +365,13 @@ begin
 			[tracer_source_history(t,:argon39, 1)[At(mbound),At(vbound)] for t in tvals],
 			label="³⁹Ar")
 	end
+
+	if use_iodine129
+		plot!(tvals,
+			[tracer_source_history(t,:iodine129, 0.25, BD_iodine129)[At(mbound),At(vbound)] for t in tvals],
+			label="¹²⁹I")
+	end
+	
 	title!("")
 	source_plot
 end
@@ -388,20 +398,29 @@ begin
 		ct = tracer_timeseries(:CFC11NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="CFC-11")
 	end
+	
 	if use_CFC12 
 		tlist = (1900.25:0.25:2015.0)yr
 		ct = tracer_timeseries(:CFC12NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="CFC-12")
 	end
+	
 	if use_SF6 
 		tlist = (1900.25:0.25:2015.0)yr
 		ct = tracer_timeseries(:SF6NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="SF₆")
 	end
+	
 	if use_argon39 
-		tlist = (1515.0:0.25:2015.0)yr
+		tlist = (1750.0:0.25:2015.0)yr # start early enough to get equilibrium
 		ct = tracer_timeseries(:argon39, A, B, tlist, mbox1, vbox1, halflife = 269yr)
 		plot!(tlist, ct, label="³⁹Ar")
+	end
+
+	if use_iodine129 
+		tlist = (1957.5:0.25:2015.0)yr
+		ct = tracer_timeseries(:iodine129, A, B, tlist, mbox1, vbox1, BD = BD_iodine129, halflife = 1.57e7yr)
+		plot!(tlist, ct, label="¹²⁹I")
 	end
 	
 	tracer_plot
@@ -786,11 +805,12 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
 # ╠═e9653ffb-4da5-4b45-948d-3656dbb6df66
 # ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
+# ╠═96ab52bc-1863-4056-ba32-894747f6ae0e
 # ╟─6f979bb9-733d-4981-9a53-d75162cbd372
 # ╟─f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
 # ╟─cf38b164-4414-4344-824e-68a09cc38f6b
 # ╟─ea2e8fe1-94cc-4cb6-bb88-05c708eac5a3
-# ╟─e34ae847-d82e-49f4-aa22-6753596c4ea0
+# ╠═e34ae847-d82e-49f4-aa22-6753596c4ea0
 # ╟─897deef3-d754-4ca4-8c6f-00b67313a5a0
 # ╟─1ecd9ce2-cea7-417e-b965-24784cd0f563
 # ╠═ec1439f9-7f02-439a-ac70-d67869cdae35
