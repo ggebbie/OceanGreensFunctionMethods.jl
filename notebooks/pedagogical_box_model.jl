@@ -310,6 +310,9 @@ Tmax = maximum_timescale(μ)
 # ╔═╡ 6eac27ef-647c-4884-aaf3-69f6705da3a8
 md"""## Tracer histories """
 
+# ╔═╡ e9653ffb-4da5-4b45-948d-3656dbb6df66
+projectdir()
+
 # ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
 BD = read_tracer_histories() # Dirichlet boundary conditions
 
@@ -317,57 +320,91 @@ BD = read_tracer_histories() # Dirichlet boundary conditions
 md""" Choose tracers """
 
 # ╔═╡ f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
-md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12 $(@bind use_SF6 CheckBox(default=true)) SF₆ """
+md""" $(@bind use_CFC11 CheckBox(default=true)) CFC-11 $(@bind use_CFC12 CheckBox(default=true)) CFC-12  $(@bind use_SF6 CheckBox(default=true)) SF₆ $(@bind use_argon39 CheckBox(default=true)) ³⁹Ar """
 
 # ╔═╡ cf38b164-4414-4344-824e-68a09cc38f6b
 md""" Source history """
 
+# ╔═╡ ea2e8fe1-94cc-4cb6-bb88-05c708eac5a3
+md""" $(@bind mbound Select(meridional_names()[1:2])) $(@bind vbound Select([vertical_names()[1]]))""" 
+
+
 # ╔═╡ e34ae847-d82e-49f4-aa22-6753596c4ea0
 begin
+	tlims = (1930yr,2015yr)
+	tvals = tlims[1]:1yr:tlims[2]
 	source_plot = plot(xlims=(1930yr,2015yr),
 		yscale=:log10,
 		ylims = (1e-1,1e3),
-		legend = :topleft,
+		legend = :outerbottomright,
 		titlelabel="")	
 
-	use_CFC11 && plot!(BD[Tracer=At(:CFC11NH)],label="CFC-11")
-	use_CFC12 && plot!(BD[Tracer=At(:CFC12NH)],label="CFC-12")
-	use_SF6 && plot!(BD[Tracer=At(:SF6NH)],label="SF₆")
+	if use_CFC11 
+		plot!(tvals,
+			[tracer_source_history(t,:CFC11NH, 0.75, BD)[At(mbound),At(vbound)] for t in tvals],
+			label="CFC-11")
+	end
+	
+	if use_CFC12 
+		plot!(tvals,
+			[tracer_source_history(t,:CFC12NH, 0.75, BD)[At(mbound),At(vbound)] for t in tvals],
+			label="CFC-12")
+	end
+	
+	if use_SF6
+		plot!(tvals,
+			[tracer_source_history(t,:SF6NH, 0.75, BD)[At(mbound),At(vbound)] for t in tvals],
+			label="SF₆")
+	end
+	
+	if use_argon39
+		plot!(tvals,
+			[tracer_source_history(t,:argon39, 1)[At(mbound),At(vbound)] for t in tvals],
+			label="³⁹Ar")
+	end
 	title!("")
 	source_plot
 end
 
 # ╔═╡ 897deef3-d754-4ca4-8c6f-00b67313a5a0
-md""" Interior history """
+md""" Interior evolution """
 
 # ╔═╡ 1ecd9ce2-cea7-417e-b965-24784cd0f563
 md""" $(@bind mbox1 Select(meridional_names())) $(@bind vbox1 Select(vertical_names())) """
 
 # ╔═╡ ec1439f9-7f02-439a-ac70-d67869cdae35
 begin 
-	tlist = (1900.25:0.25:2015.0)yr
+	
 
-	transient_tracer_plot = plot(xlims=(1930yr,2015yr),
+	tracer_plot = plot(xlims=(1930yr,2015yr),
 		yscale=:log10,
 		ylims = (1e-1,1e3),
-		legend = :topleft,
+		legend = :outerbottomright,
 		title = mbox1*", "*vbox1,
 		titlefontsize=6)
 
 	if use_CFC11 
-		ct = transient_tracer_timeseries(:CFC11NH, BD, A, B, tlist, mbox1, vbox1)
+		tlist = (1900.25:0.25:2015.0)yr
+		ct = tracer_timeseries(:CFC11NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="CFC-11")
 	end
 	if use_CFC12 
-		ct = transient_tracer_timeseries(:CFC12NH, BD, A, B, tlist, mbox1, vbox1)
+		tlist = (1900.25:0.25:2015.0)yr
+		ct = tracer_timeseries(:CFC12NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="CFC-12")
 	end
 	if use_SF6 
-		ct = transient_tracer_timeseries(:SF6NH, BD, A, B, tlist, mbox1, vbox1)
+		tlist = (1900.25:0.25:2015.0)yr
+		ct = tracer_timeseries(:SF6NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="SF₆")
 	end
+	if use_argon39 
+		tlist = (1515.0:0.25:2015.0)yr
+		ct = tracer_timeseries(:argon39, A, B, tlist, mbox1, vbox1, halflife = 269yr)
+		plot!(tlist, ct, label="³⁹Ar")
+	end
 	
-	transient_tracer_plot
+	tracer_plot
 end
 
 
@@ -518,7 +555,7 @@ begin
 	
 	plot!(τ,ttd1,label="TTD 1",width=4*a1)
 	plot!(τ,ttd2,label="TTD 2",width=4*a2)
-	plot!(τ,ttd_global,label="Total TTD",width=4*a2,color=:black)
+	plot!(τ,ttd_global,label="Total TTD",width=4*(a1+a2),color=:black)
 	plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
 end
 
@@ -537,6 +574,12 @@ ttd1_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Mer
 
 # ╔═╡ 48449ccf-df3f-4b71-a160-53d39baa9a90
 ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ d7822a1b-a780-4df8-9f71-cc3de36ed4c0
+a1_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("High latitudes"),Vertical=At("Thermocline")]
+
+# ╔═╡ c6fd37b2-39cc-4c34-b021-6483285e6d56
+a2_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")]
 
 # ╔═╡ b3522980-6beb-4e05-901d-0859c7a8cb58
 # global adjoint TTD
@@ -588,9 +631,9 @@ begin
 		color=:grey,
 		label="Δ")
 	
-	plot!(τ,ttd1_adj,label="TTD 1",width=4*a1)
-	plot!(τ,ttd2_adj,label="TTD 2",width=4*a2)
-	plot!(τ,ttd_global_adjoint,label="Total TTD",width=4*a2,color=:black)
+	plot!(τ,ttd1_adj,label="TTD 1",width=4*a1_adj)
+	plot!(τ,ttd2_adj,label="TTD 2",width=4*a2_adj)
+	plot!(τ,ttd_global_adjoint,label="Total TTD",width=4*(a1_adj+a2_adj),color=:black)
 	plot!(τ,ttd_inversegaussian_adjoint,label="Fitted inverse Gaussian")
 end
 
@@ -598,25 +641,28 @@ end
 md""" ## Residence time distributions """
 
 # ╔═╡ 42ca866d-9c14-4761-9d0f-131870e25d9e
-#md""" Select source $(@bind mbox_source Select(meridional_names()[1:2]))"""
+md""" $(@bind mbox_destination Select(meridional_names()[1:2]))"""
+
+# ╔═╡ 80951878-adfd-4cb7-bf90-91670675e45f
+vbox_destination = "Thermocline" # all origins/destinations at Thermocline depth
 
 # ╔═╡ 0a62e096-f375-4053-bc88-7ef89ce1173a
 RTD(t) = residence_time(t,A,B)
 
 # ╔═╡ f6f550a5-d04d-4d2a-89e7-484734370416
-rtd11 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
-
-# ╔═╡ 8c2daa28-94f1-4540-b753-5cf1744d9d63
-rtd12 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+rtd1 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)] for i in eachindex(τ)]
 
 # ╔═╡ 6d1b4753-aabb-4274-a5fb-de26270c4378
-rtd21 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
-
-# ╔═╡ 35d26007-c24d-4f1c-9318-02d01a863095
-rtd22 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+rtd2 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)] for i in eachindex(τ)]
 
 # ╔═╡ 29c38299-d49f-422c-9065-2faa9d2db491
 a_residence = watermass_fraction(μ, V, B, alg=:residence)
+
+# ╔═╡ 31f0f55f-5e2c-42da-9598-9b0bc1ce262f
+a_residence1 = a_residence[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)]
+
+# ╔═╡ 9f82d814-f4fb-4184-8177-13f8fe7eceef
+a_residence2 = a_residence[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)]
 
 # ╔═╡ 7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 Γ_residence = mean_age(μ, V, B, alg=:residence)
@@ -635,7 +681,7 @@ begin
 		label = "Tmax",
 		legend = :topright,
 		titlefontsize = 6,
-		title = "High latitudes"*", "*" Thermocline",
+		title = mbox_destination*", "*" Thermocline",
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr)) 
 
@@ -650,39 +696,8 @@ begin
 		color=:grey,
 		label="Δ")
 
-	plot!(τ,rtd11,label="RTD box 1",width=4*a1)
-	plot!(τ,rtd21,label="RTD box 2",width=4*a2)
-end
-
-# ╔═╡ 34e7154d-adf2-4e10-9ea5-967b95de5482
-begin 
-	# to do: put plotting into functions
-	p_source2 = plot(τ,
-		normalized_exponential_decay.(τ,Tmax),
-		linestyle = :dash,
-		yscale = :log10,
-		ylabel = "R(τ)",
-		xlabel = "τ",
-		label = "Tmax",
-		legend = :topright,
-		titlefontsize = 6,
-		title = "Mid-latitudes"*", "*" Thermocline",
-		xlims = (0yr,400yr),
-		ylims = (1e-4/yr,1e-1/yr))
-	
-	plot!([Γ_residence,Γ_residence],
-		[1e-4,1e-2]/yr,
-		label="Γ")	
-	
-	plot!([Γ_residence + Δ_residence/2,
-		Γ_residence - Δ_residence/2],
-		[1e-4,1e-4]/yr,
-		width=4,
-		color=:grey,
-		label="Δ")
-	
-	plot!(τ,rtd12,label="RTD box 1",width=4*a1)
-	plot!(τ,rtd22,label="RTD box 2",width=4*a2)
+	plot!(τ,rtd1,label="RTD box 1",width=8*a_residence1)
+	plot!(τ,rtd2,label="RTD box 2",width=8*a_residence2)
 end
 
 # ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
@@ -769,14 +784,16 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╠═c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # ╠═1e3f4bd2-94cf-43a1-af98-11373a4d8561
 # ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
+# ╠═e9653ffb-4da5-4b45-948d-3656dbb6df66
 # ╠═a45c8594-9fc7-46c2-833d-c44ece6648e5
 # ╟─6f979bb9-733d-4981-9a53-d75162cbd372
 # ╟─f53b4b2f-cda2-45a2-96f8-2dd348bc3c1f
 # ╟─cf38b164-4414-4344-824e-68a09cc38f6b
+# ╟─ea2e8fe1-94cc-4cb6-bb88-05c708eac5a3
 # ╟─e34ae847-d82e-49f4-aa22-6753596c4ea0
 # ╟─897deef3-d754-4ca4-8c6f-00b67313a5a0
 # ╟─1ecd9ce2-cea7-417e-b965-24784cd0f563
-# ╟─ec1439f9-7f02-439a-ac70-d67869cdae35
+# ╠═ec1439f9-7f02-439a-ac70-d67869cdae35
 # ╟─11eb59cf-de62-4fb4-9963-defe594e6b92
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
@@ -812,6 +829,8 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╠═ab31341c-ff59-41bc-8a7f-752931bb8e9d
 # ╠═1df15962-dd41-4f07-82c8-37d2d60511fb
 # ╠═48449ccf-df3f-4b71-a160-53d39baa9a90
+# ╠═d7822a1b-a780-4df8-9f71-cc3de36ed4c0
+# ╠═c6fd37b2-39cc-4c34-b021-6483285e6d56
 # ╠═b3522980-6beb-4e05-901d-0859c7a8cb58
 # ╠═b719ab41-4226-40c7-9682-5385d076dc7a
 # ╠═257c6649-d003-42bc-9e17-0c33b7cd304c
@@ -821,14 +840,14 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╠═f861d37b-427b-4c12-b0ff-c55be4d82523
 # ╟─13d659ac-d820-404e-bdcb-c66b05381309
 # ╟─42ca866d-9c14-4761-9d0f-131870e25d9e
+# ╟─80951878-adfd-4cb7-bf90-91670675e45f
 # ╠═025e7a9d-d587-44d6-ba0c-1343ad18121a
-# ╠═34e7154d-adf2-4e10-9ea5-967b95de5482
 # ╠═0a62e096-f375-4053-bc88-7ef89ce1173a
 # ╠═f6f550a5-d04d-4d2a-89e7-484734370416
-# ╠═8c2daa28-94f1-4540-b753-5cf1744d9d63
 # ╠═6d1b4753-aabb-4274-a5fb-de26270c4378
-# ╠═35d26007-c24d-4f1c-9318-02d01a863095
 # ╠═29c38299-d49f-422c-9065-2faa9d2db491
+# ╠═31f0f55f-5e2c-42da-9598-9b0bc1ce262f
+# ╠═9f82d814-f4fb-4184-8177-13f8fe7eceef
 # ╠═7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 # ╠═989f966a-2078-408d-b3ca-5f4fa332f8b6
 # ╠═58701b47-1669-484c-ab88-904f31fedb97

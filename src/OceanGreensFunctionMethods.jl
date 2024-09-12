@@ -35,7 +35,7 @@ export linear_probe, mass #, uniform
 export maximum_timescale, mean_age
 export ttd_width, normalized_exponential_decay
 export residence_time
-export read_tracer_histories, tracer_source_history
+export read_transient_tracer_histories, tracer_source_history
 export greens_function
 export boundary_propagator
 export global_ttd
@@ -45,7 +45,7 @@ export integrate_forcing
 export evolve_concentration
 export timestep_initial_condition
 export Tracer, Meridional, Vertical, Global 
-export transient_tracer_timeseries
+export tracer_timeseries
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export # re-export from Distributions
@@ -57,11 +57,22 @@ export # re-export from DimensionalData
 export # re-export from LinearAlgebra
     eigen
 
-projectdir() = dirname(Base.active_project())
+function projectdir()
+    localproject = dirname(Base.active_project())
+    if localproject[end-8:end] == "notebooks"
+       return localproject[begin:end-10]
+    else
+       return(localproject)
+    end
+end
+
 projectdir(args...) = joinpath(projectdir(), args...)
 
 datadir() = joinpath(projectdir(),"data")
 datadir(args...) = joinpath(datadir(), args...)
+
+notebookdatadir() = joinpath(projectdir(),"notebook","data")
+notebookdatadir(args...) = joinpath(notebookdatadir(), args...)
 
 srcdir() = joinpath(projectdir(),"src")
 srcdir(args...) = joinpath(srcdir(), args...)

@@ -39,14 +39,6 @@ model_dimensions() = (Meridional(meridional_names(); order=DimensionalData.Unord
 boundary_dimensions() = (Meridional(meridional_names()[1:2]; order=DimensionalData.Unordered()),
     Vertical([vertical_names()[1]]; order=DimensionalData.Unordered())) 
 
-# boundary_dimensions()
-#         return (Meridional(["High latitudes","Mid-latitudes"]),Vertical(["Thermocline"])))
-
-#     # meridional_boundary = meridional_names()[1:2]
-#     # vertical_boundary = [vertical_names()[1]] # add brackets to keep as vector
-#     # return  (Meridional(meridional_boundary), Vertical(vertical_boundary))
-# end
-
 function abyssal_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -163,8 +155,7 @@ function boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
     return Jb
 end
 
-# tracer_tendency(C::DimArray{T,N}, Fv::Fluxes{T,N}) where T <: Number where N = 
-#         convergence(advective_diffusive_flux(C, Fv))
+radioactive_decay(C::DimArray, halflife::Number) = -(log(2)/halflife)*C 
 
 tracer_tendency(
     C::DimArray{<:Number,N},
@@ -176,7 +167,7 @@ tracer_tendency(
     boundary_flux(f, C, Fb)) ./
     mass(V)) .|> yr^-1 
 
-    # for use with finding B boundary matrix
+# for use with finding B boundary matrix
 tracer_tendency(
     f::DimArray{<:Number,N},
     C::DimArray{<:Number,N},
@@ -184,6 +175,11 @@ tracer_tendency(
     V::DimArray{<:Number,N}) where N = 
     (boundary_flux(f, C, Fb) ./
     mass(V)) .|> yr^-1 
+
+# for use with finding A perturbation with radioactive decay
+tracer_tendency(C::DimArray{<:Number,N},
+    halflife::Number) where N =
+    radioactive_decay(C, halflife) .|> yr^-1 
 
 """
 function linear_probe(x₀,M)
@@ -371,18 +367,33 @@ normalized_exponential_decay(t,Tmax) = (1/Tmax)*exp(-(t/Tmax))
 #     return ttd_width(μ, V, B)
 # end
 
-location_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
-#https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat
-#download_tracer_histories() = Downloads.Download(url_tracer_histories())
+location_transient_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
 
-function read_tracer_histories()
+location_iodine129_history() = 
+ "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/From John Smith/Input Function 129I Eastern Norwegian Sea.csv"
+
+function read_iodine129_history()
+    url = location_iodine129_history()
+    !isdir(datadir()) && mkpath(datadir())
+    filename = datadir("tracer_histories.mat")
+
+    # allow offline usage if data already downloaded
+    !isfile(filename) && Downloads.download(url,datadir("iodine129_history.mat"))
+
+    # use CSV to open
+end 
+
+function read_transient_tracer_histories()
 
     # download tracer history input (make this lazy)
-    url = OceanGreensFunctionMethods.location_tracer_histories()
+    url = location_transient_tracer_histories()
     !isdir(datadir()) && mkpath(datadir())
-    matfile = Downloads.download(url,datadir("tracer_histories.mat"))
+    filename = datadir("tracer_histories.mat")
 
-    file = matopen(matfile)
+    # allow offline usage if data already downloaded
+    !isfile(filename) && Downloads.download(url,datadir("tracer_histories.mat"))
+
+    file = matopen(filename)
 
     # all matlab variables except Year
     varnames = Symbol.(filter(x -> x ≠ "Year", collect(keys(file))))
@@ -403,12 +414,24 @@ tracer_units() = Dict(
     :CFC11SH => NoUnits,
     :CFC12NH => NoUnits,
     :CFC12SH => NoUnits,
+    :argon39 => NoUnits,
+    :iodine129 => NoUnits,
     :SF6NH => NoUnits,
     :SF6SH => NoUnits,
     :N2ONH => nmol/kg,
     :N2OSH => nmol/kg
     )
-    
+
+    # for non-transient tracers
+function tracer_point_source_history(tracername)
+
+    if tracername == :argon39
+        return x -> 1.0 * tracer_units()[tracername]
+    elseif tracername == :iodine129
+        error("not implemented yet")
+    end
+end
+
 function tracer_point_source_history(tracername, BD)
 
     tracer_timeseries = BD[Tracer=At(tracername)] * tracer_units()[tracername]
@@ -418,9 +441,14 @@ function tracer_point_source_history(tracername, BD)
         tracer_timeseries)
 end
 
-function tracer_source_history(t, tracername, BD, box2_box1_ratio)
+function tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
 
-    source_func = tracer_point_source_history(tracername, BD)
+    if tracername == :argon39
+        source_func = tracer_point_source_history(tracername)
+    else
+        source_func = tracer_point_source_history(tracername, BD)
+    end
+
     box1 = source_func(t)
     box2 = box2_box1_ratio * box1
     
@@ -433,7 +461,12 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
 # % Integrate forcing vector over time to compute the concentration history.
 # % Find propagator by analytical expression using eigen-methods.
 
-    μ, V = eigen(A)
+    if isnothing(halflife)
+        μ, V = eigen(A)
+    else
+        Aλ =  linear_probe(tracer_tendency, C₀, halflife)
+        μ, V = eigen(A+Aλ)
+    end 
 
     # initial condition contribution
     Ci = deepcopy(C₀)
@@ -458,25 +491,12 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
         # total
         C[tt] = Ci + Cf
     end # tt
-    return real.(C) #real.(Ci + Cf)  # Cut imaginary part which is zero to machine precision.
+    return real.(C) # Cut imaginary part which is zero to machine precision.
 end
 
-# MATLAB: concsI(:,tt) =      V*expm(D.*(tf-ti))/V*(concsI(:,tt-1) + concsF(:,tt-1)) ;    % Initial condition contribution
-function timestep_initial_condition(C, μ, V, ti, tf)
-
-    matexp = MultipliableDimArray( exp(Matrix(μ*(tf-ti))), dims(μ), dims(μ))
-    return real.( V * (matexp * (V\C))) # matlab code has right divide (?)
-end
-
-# MATLAB: integrand    = @(t) V*expm(D.*(tf-t ))/V*B*source_history(t) ;
+timestep_initial_condition(C, μ, V, ti, tf) = real.( V * exp(μ*(tf-ti)) / V * C )
 
 forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(μ*(tf-t)) / V * B * source_history(t))
-# previous working version (less efficient)
-#function forcing_integrand(t, tf, μ, V, B, source_history)
-    # matexp = MultipliableDimArray( exp(Matrix(μ*(tf-t))), dims(μ), dims(μ))
-    # # annoying finding: parentheses matter in next line
-    # return real.( V * (matexp * (V \ (B*source_history(t)))))
-#end
     
 function integrate_forcing(t0, tf, μ, V, B, source_history)
     forcing_func(t) = forcing_integrand(t, tf, μ, V, B, source_history)
@@ -486,24 +506,61 @@ function integrate_forcing(t0, tf, μ, V, B, source_history)
     (err < 1e-5) ? (return integral) : error("integration error too large")
 end
 
-function transient_tracer_timeseries(tracername, BD, A, B, tlist, mbox1, vbox1)
+function tracer_timeseries(tracername, A, B, tlist, mbox1, vbox1; BD=nothing, halflife=nothing)
 
+    if isnothing(halflife) && !isnothing(BD)
+        return transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1)
+    elseif tracername == :argon39
+        return radioactive_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
+    elseif tracername == :iodine129 && !isnothing(BD)
+        return radioactive_tracer_timeseries(tracername, A, B, BD, halflife, tlist, mbox1, vbox1)
+    end
+end
+
+function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1)
     # fixed parameters for transient tracers
     box2_box1_ratio = 0.75
     C₀ = zeros(model_dimensions())
 	
     source_history_func(t) =  tracer_source_history(t,
 	tracername,
+	box2_box1_ratio,
 	BD,
-	box2_box1_ratio)
-
+    )
+    
     Cevolve = evolve_concentration(C₀, 
 	A,
 	B,
 	tlist, 
-	source_history_func;
-	halflife = nothing)
-	
+	source_history_func)
+    	
+    return [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
+
+end
+
+function radioactive_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
+
+    C₀ = zeros(model_dimensions()) # initial conditions
+
+    if tracername == :argon39
+        box2_box1_ratio = 1 
+    
+        source_history_func(t) =  tracer_source_history(t,
+	    tracername,
+	    box2_box1_ratio
+        )
+
+        Cevolve = evolve_concentration(C₀, 
+	    A,
+	    B,
+	    tlist, 
+	    source_history_func;
+	    halflife = halflife)
+
+    else
+        error("only implemented for argon-39")
+    end
+    
     return [Cevolve[t][At(mbox1),At(vbox1)] for t in eachindex(tlist)]
 
 end
