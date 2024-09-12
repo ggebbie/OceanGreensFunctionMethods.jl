@@ -558,7 +558,7 @@ end
 
 function steady_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
 
-    C₀ = zeros(model_dimensions()) # initial conditions
+    C₀ = ones(model_dimensions()) # initial conditions: faster spinup
 
     if tracername == :argon39
         box2_box1_ratio = 1 

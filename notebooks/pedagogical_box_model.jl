@@ -65,9 +65,6 @@ md"""## Activate a reproducible project environment
 
 Uses Julia's built-in package manager `Pkg.jl` """
 
-# ╔═╡ c4353642-abb6-4e76-af5c-0328dcb69621
-Pkg.update("OceanGreensFunctionMethods")
-
 # ╔═╡ 28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
 Pkg.instantiate()
 
@@ -401,20 +398,29 @@ begin
 		ct = tracer_timeseries(:CFC11NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="CFC-11")
 	end
+	
 	if use_CFC12 
 		tlist = (1900.25:0.25:2015.0)yr
 		ct = tracer_timeseries(:CFC12NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="CFC-12")
 	end
+	
 	if use_SF6 
 		tlist = (1900.25:0.25:2015.0)yr
 		ct = tracer_timeseries(:SF6NH, A, B, tlist, mbox1, vbox1, BD = BD)
 		plot!(tlist, ct, label="SF₆")
 	end
+	
 	if use_argon39 
-		tlist = (1515.0:0.25:2015.0)yr
+		tlist = (1750.0:0.25:2015.0)yr # start early enough to get equilibrium
 		ct = tracer_timeseries(:argon39, A, B, tlist, mbox1, vbox1, halflife = 269yr)
 		plot!(tlist, ct, label="³⁹Ar")
+	end
+
+	if use_iodine129 
+		tlist = (1957.5:0.25:2015.0)yr
+		ct = tracer_timeseries(:iodine129, A, B, tlist, mbox1, vbox1, BD = BD_iodine129, halflife = 1.57e7yr)
+		plot!(tlist, ct, label="¹²⁹I")
 	end
 	
 	tracer_plot
@@ -720,7 +726,6 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
 # ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
 # ╠═8f520c8b-19d7-48a8-be9f-3f167f07d188
-# ╠═c4353642-abb6-4e76-af5c-0328dcb69621
 # ╠═c536e9f3-0457-499e-958c-384d6e388ef9
 # ╠═28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
 # ╟─07f01269-cfd8-4d3d-8d85-0b1132ff2005
