@@ -47,6 +47,7 @@ export tracer_units
 export integrate_forcing
 export evolve_concentration
 export timestep_initial_condition
+export path_density
 export Tracer, Meridional, Vertical, Global 
 export tracer_timeseries
 export # re-export from Distributions

@@ -53,9 +53,6 @@ module UnitfulOcean; using Unitful;
 @unit sverdrup "Sv" Sverdrup (10^6)u"m^3/s" false;
 end
 
-# ╔═╡ b5aff470-c7ca-43a2-a44d-8b99165300bb
-using MultipliableDimArrays
-
 # ╔═╡ 10b07d8a-aee4-4b64-b9eb-f22f408877ba
 md"""
 # Pedagogical Box Model 
@@ -267,7 +264,7 @@ Matrix(A)
 
 # ╔═╡ 6a25a144-0ccc-4604-85a7-b724eaa4cfed
 # select of column of A corresponding to a tracer location
-A[Vertical=At("Abyssal"),Meridional=At("Mid-latitudes")] # still displayed with info about spatial-locations
+A[Vertical=At("Abyssal"),Meridional=At("Mid-latitudes")] # still displayed with info about spatial-locations even if out of order
 
 # ╔═╡ 382db56a-d39b-4835-bf13-6dd0088b0b39
 # select an entry of A, caution: first index=column, second index=row
@@ -592,16 +589,16 @@ md""" $(@bind mbox_adj Select(meridional_names())) $(@bind vbox_adj Select(verti
 G′dagger(t) = boundary_propagator(t,A,B,alg=:adjoint) # type G + \prime + TAB
 
 # ╔═╡ 1df15962-dd41-4f07-82c8-37d2d60511fb
-ttd1_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+ttd1_adj = [G′dagger(τ[i])[At(mbox_adj),At(vbox_adj)][At("High latitudes"),At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ 48449ccf-df3f-4b71-a160-53d39baa9a90
-ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+ttd2_adj = [G′dagger(τ[i])[At(mbox_adj),At(vbox_adj)][At("Mid-latitudes"),At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ d7822a1b-a780-4df8-9f71-cc3de36ed4c0
-a1_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("High latitudes"),Vertical=At("Thermocline")]
+a1_adj = watermass_fraction(μ, V, B, alg=:adjoint)[At(mbox_adj),At(vbox_adj)][At("High latitudes"),At("Thermocline")]
 
 # ╔═╡ c6fd37b2-39cc-4c34-b021-6483285e6d56
-a2_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")]
+a2_adj = watermass_fraction(μ, V, B, alg=:adjoint)[At(mbox_adj),At(vbox_adj)][At("Mid-latitudes"),At("Thermocline")]
 
 # ╔═╡ b3522980-6beb-4e05-901d-0859c7a8cb58
 # global adjoint TTD
@@ -611,7 +608,7 @@ a2_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vert
 𝒢dagger(1yr)
 
 # ╔═╡ 257c6649-d003-42bc-9e17-0c33b7cd304c
-ttd_global_adjoint = [𝒢dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)] for i in eachindex(τ)] 
+ttd_global_adjoint = [𝒢dagger(τ[i])[At(mbox_adj),At(vbox_adj)] for i in eachindex(τ)] 
 
 # ╔═╡ cf82fade-07ac-4aa9-bd06-7a10820a724f
 #Γ_adjoint = adjoint_mean_age(A,B)[At(mbox_adj),At(vbox_adj)]
@@ -672,19 +669,19 @@ vbox_destination = "Thermocline" # all origins/destinations at Thermocline depth
 RTD(t) = residence_time(t,A,B)
 
 # ╔═╡ f6f550a5-d04d-4d2a-89e7-484734370416
-rtd1 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)] for i in eachindex(τ)]
+rtd1 = [RTD(τ[i])[At("High latitudes"),At("Thermocline")][At(mbox_destination),At(vbox_destination)] for i in eachindex(τ)]
 
 # ╔═╡ 6d1b4753-aabb-4274-a5fb-de26270c4378
-rtd2 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)] for i in eachindex(τ)]
+rtd2 = [RTD(τ[i])[At("Mid-latitudes"),At("Thermocline")][At(mbox_destination),At(vbox_destination)] for i in eachindex(τ)]
 
 # ╔═╡ 29c38299-d49f-422c-9065-2faa9d2db491
 a_residence = watermass_fraction(μ, V, B, alg=:residence)
 
 # ╔═╡ 31f0f55f-5e2c-42da-9598-9b0bc1ce262f
-a_residence1 = a_residence[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)]
+a_residence1 = a_residence[At("High latitudes"),At("Thermocline")][At(mbox_destination),At(vbox_destination)]
 
 # ╔═╡ 9f82d814-f4fb-4184-8177-13f8fe7eceef
-a_residence2 = a_residence[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)]
+a_residence2 = a_residence[At("Mid-latitudes"),At("Thermocline")][At(mbox_destination),At(vbox_destination)]
 
 # ╔═╡ 7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 Γ_residence = mean_age(μ, V, B, alg=:residence)
@@ -728,43 +725,42 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╔═╡ 55325cc7-0b71-44c9-ac41-837f6451647b
 md""" ## Path density """
 
-# ╔═╡ 6f217d53-68a0-4a83-a091-ab31687132ce
-mbox_pdensity = "Mid-latitudes"
+# ╔═╡ 7550d6cf-9bfb-470c-b74f-880a298ab19e
+md""" $(@bind mbox_pdensity Select(meridional_names())) $(@bind vbox_pdensity Select(vertical_names())) """
 
-# ╔═╡ 39d83242-c838-4e1e-a94e-a97afdf45c7f
-vbox_pdensity = "Abyssal"
+# ╔═╡ 175e67c2-c458-4bde-87a1-1fdf49e923c5
+path_density_11 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("High latitudes"),At("Thermocline")][At("High latitudes"),At("Thermocline")] for i in eachindex(τ)]
 
-# ╔═╡ ed8666c2-b4bd-46ed-ad57-7de635c7037b
-OceanGreensFunctionMethods.path_density(μ, V, B, 100yr, mbox_pdensity, vbox_pdensity)
+# ╔═╡ 00ded914-2b67-42e8-a913-d936f4442da8
+path_density_12 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("High latitudes"),At("Thermocline")][At("Mid-latitudes"),At("Thermocline")] for i in eachindex(τ)]
 
-# ╔═╡ 2c62b529-e211-48a6-b595-6f41990697d7
-D_mat = MultipliableDimArray(zeros(length(V), length(V)),model_dimensions(),model_dimensions())
+# ╔═╡ 696608f7-49c1-45e9-8522-ab222b0da243
+path_density_21 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("Mid-latitudes"),At("Thermocline")][At("High latitudes"),At("Thermocline")] for i in eachindex(τ)]
 
+# ╔═╡ 7465a888-bdf4-4a9f-a111-d53fb23a63bc
+path_density_22 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("Mid-latitudes"),At("Thermocline")][At("Mid-latitudes"),At("Thermocline")] for i in eachindex(τ)]
 
-# ╔═╡ 8ded6f09-fc13-4964-81e6-d1e2b941a084
-D_mat[At(mbox_pdensity),At(vbox_pdensity)][At(mbox_pdensity),At(vbox_pdensity)] = 1
+# ╔═╡ d4504bca-c858-4434-ba95-df5bdae8d61c
+begin 
+	plot_pdensity = plot(τ,
+		normalized_exponential_decay.(τ,Tmax),
+		linestyle = :dash,
+		yscale = :log10,
+		ylabel = "η(τ)",
+		xlabel = "τ",
+		label = "Tmax",
+		legend = :topright,
+		titlefontsize = 6,
+		title = mbox_pdensity*", "*vbox_pdensity,
+		xlims = (0yr,400yr),
+		ylims = (1e-4/yr,1e-1/yr)) 
 
-# ╔═╡ 2bb7a695-eca1-4782-ab3b-b3761be7db37
-Matrix(D_mat)
-
-# ╔═╡ da4548f1-0b60-46df-93f0-adc1f820beab
-D_mat_overline = V\D_mat*V
-
-# ╔═╡ f2ca8286-4f02-4af4-99fa-80794bb9a4ef
-Matrix(real.(V * D_mat_overline))
-
-# ╔═╡ 94b15fc7-09e4-4ab0-a995-7ea0c3266b74
-Φ(τ) = OceanGreensFunctionMethods.phi_function(μ, τ) # a useful closure
-
-
-# ╔═╡ 17bae766-ccbd-45d1-acd8-9f47be7d74cf
-Matrix( D_mat_overline .* Φ(10yr))
-
-# ╔═╡ 030739df-6da9-4f9b-98b1-75d9bbc0cff2
-dims(Φ(10yr))
-
-# ╔═╡ 5ee4bf2e-3bfb-4d5f-a23a-8a29ad4e87c0
-Φ(10yr)
+	plot!(τ,path_density_11,label="1 to 1",width=2)
+	plot!(τ,path_density_12,label="1 to 2",width=2)
+	plot!(τ,path_density_21,label="2 to 1",width=2,linestyle= :dash)
+	plot!(τ,path_density_22,label="2 to 2",width=2, linestyle= :dash)
+	#plot!(τ,rtd2,label="RTD box 2",width=8*a_residence2)
+end
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
@@ -916,16 +912,9 @@ dims(Φ(10yr))
 # ╠═989f966a-2078-408d-b3ca-5f4fa332f8b6
 # ╠═58701b47-1669-484c-ab88-904f31fedb97
 # ╟─55325cc7-0b71-44c9-ac41-837f6451647b
-# ╠═6f217d53-68a0-4a83-a091-ab31687132ce
-# ╠═39d83242-c838-4e1e-a94e-a97afdf45c7f
-# ╠═ed8666c2-b4bd-46ed-ad57-7de635c7037b
-# ╠═b5aff470-c7ca-43a2-a44d-8b99165300bb
-# ╠═2c62b529-e211-48a6-b595-6f41990697d7
-# ╠═8ded6f09-fc13-4964-81e6-d1e2b941a084
-# ╠═2bb7a695-eca1-4782-ab3b-b3761be7db37
-# ╠═da4548f1-0b60-46df-93f0-adc1f820beab
-# ╠═17bae766-ccbd-45d1-acd8-9f47be7d74cf
-# ╠═030739df-6da9-4f9b-98b1-75d9bbc0cff2
-# ╠═f2ca8286-4f02-4af4-99fa-80794bb9a4ef
-# ╠═94b15fc7-09e4-4ab0-a995-7ea0c3266b74
-# ╠═5ee4bf2e-3bfb-4d5f-a23a-8a29ad4e87c0
+# ╟─7550d6cf-9bfb-470c-b74f-880a298ab19e
+# ╠═d4504bca-c858-4434-ba95-df5bdae8d61c
+# ╠═175e67c2-c458-4bde-87a1-1fdf49e923c5
+# ╠═00ded914-2b67-42e8-a913-d936f4442da8
+# ╠═696608f7-49c1-45e9-8522-ab222b0da243
+# ╠═7465a888-bdf4-4a9f-a111-d53fb23a63bc
