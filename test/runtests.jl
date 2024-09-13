@@ -6,7 +6,6 @@ using DimensionalData: @dim
 using Unitful
 using MultipliableDimArrays
 using LinearAlgebra
-# using OrdinaryDiffEq, ModelingToolkit, MethodOfLines, DomadinSets, Unitful
 using Test
 
 #include(srcdir("config_units.jl")) # not sure why it doesn't work
@@ -228,6 +227,15 @@ include("../src/config_units.jl")
                 @testset "path density" begin
                     Φ(τ) = OceanGreensFunctionMethods.phi_function(μ, τ) # a useful closure
                     Matrix(Φ(10yr))
+                    # add test that they are properly normalized 
+                end
+
+                @testset "ideal age" begin
+                    Γ_ideal = ideal_age(A, B, alg= :forward)
+                    # should be identical to mean age
+                                    
+                    Γ_ideal_adjoint = ideal_age(A, B, alg= :adjoint)
+
                 end
 
                 @testset "read tracer histories" begin

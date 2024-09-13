@@ -660,10 +660,7 @@ end
 md""" ## Residence time distributions """
 
 # ╔═╡ 42ca866d-9c14-4761-9d0f-131870e25d9e
-md""" $(@bind mbox_destination Select(meridional_names()[1:2]))"""
-
-# ╔═╡ 80951878-adfd-4cb7-bf90-91670675e45f
-vbox_destination = "Thermocline" # all origins/destinations at Thermocline depth
+md""" $(@bind mbox_destination Select(meridional_names()[1:2])) $(@bind vbox_destination Select([vertical_names()[1]]))"""
 
 # ╔═╡ 0a62e096-f375-4053-bc88-7ef89ce1173a
 RTD(t) = residence_time(t,A,B)
@@ -759,7 +756,6 @@ begin
 	plot!(τ,path_density_12,label="1 to 2",width=2)
 	plot!(τ,path_density_21,label="2 to 1",width=2,linestyle= :dash)
 	plot!(τ,path_density_22,label="2 to 2",width=2, linestyle= :dash)
-	#plot!(τ,rtd2,label="RTD box 2",width=8*a_residence2)
 end
 
 # ╔═╡ Cell order:
@@ -900,7 +896,6 @@ end
 # ╠═f861d37b-427b-4c12-b0ff-c55be4d82523
 # ╟─13d659ac-d820-404e-bdcb-c66b05381309
 # ╟─42ca866d-9c14-4761-9d0f-131870e25d9e
-# ╟─80951878-adfd-4cb7-bf90-91670675e45f
 # ╠═025e7a9d-d587-44d6-ba0c-1343ad18121a
 # ╠═0a62e096-f375-4053-bc88-7ef89ce1173a
 # ╠═f6f550a5-d04d-4d2a-89e7-484734370416

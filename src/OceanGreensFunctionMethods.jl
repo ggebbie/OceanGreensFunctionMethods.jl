@@ -49,6 +49,7 @@ export timestep_initial_condition
 export path_density
 export Tracer, Meridional, Vertical, Global 
 export tracer_timeseries
+export ideal_age
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export # re-export from Distributions
