@@ -6,7 +6,6 @@ using DimensionalData: @dim
 using Unitful
 using MultipliableDimArrays
 using LinearAlgebra
-# using OrdinaryDiffEq, ModelingToolkit, MethodOfLines, DomadinSets, Unitful
 using Test
 
 #include(srcdir("config_units.jl")) # not sure why it doesn't work

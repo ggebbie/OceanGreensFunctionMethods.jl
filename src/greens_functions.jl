@@ -233,10 +233,3 @@ ideal_age_forward(A, B) = - A \ (B*zeros(boundary_dimensions())yr + ones(model_d
 
 # doesn't work due to conflict with DimensionalData.transpose that I don't want to overload
 ideal_age_adjoint(A, B) = - transpose(A) \ (B*zeros(boundary_dimensions())yr + ones(model_dimensions()))
-
-# function ideal_age_adjoint(A, B)
-#     ones_row_vector = MultipliableDimArray(ones(1,length(A)),Global(["mean age"]),dims(A))
-#     zeros_row_vector = MultipliableDimArray(vec(B*zeros(boundary_dimensions())yr)),Global(["ideal age"]),dims(A))
-
-#     return -transpose(A) \ (zeros_row_vector + ones_row_vector)
-# end 
