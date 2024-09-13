@@ -264,7 +264,7 @@ Matrix(A)
 
 # ╔═╡ 6a25a144-0ccc-4604-85a7-b724eaa4cfed
 # select of column of A corresponding to a tracer location
-A[Vertical=At("Abyssal"),Meridional=At("Mid-latitudes")] # still displayed with info about spatial-locations
+A[Vertical=At("Abyssal"),Meridional=At("Mid-latitudes")] # still displayed with info about spatial-locations even if out of order
 
 # ╔═╡ 382db56a-d39b-4835-bf13-6dd0088b0b39
 # select an entry of A, caution: first index=column, second index=row
@@ -589,16 +589,16 @@ md""" $(@bind mbox_adj Select(meridional_names())) $(@bind vbox_adj Select(verti
 G′dagger(t) = boundary_propagator(t,A,B,alg=:adjoint) # type G + \prime + TAB
 
 # ╔═╡ 1df15962-dd41-4f07-82c8-37d2d60511fb
-ttd1_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("High latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+ttd1_adj = [G′dagger(τ[i])[At(mbox_adj),At(vbox_adj)][At("High latitudes"),At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ 48449ccf-df3f-4b71-a160-53d39baa9a90
-ttd2_adj = [G′dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")] for i in eachindex(τ)]
+ttd2_adj = [G′dagger(τ[i])[At(mbox_adj),At(vbox_adj)][At("Mid-latitudes"),At("Thermocline")] for i in eachindex(τ)]
 
 # ╔═╡ d7822a1b-a780-4df8-9f71-cc3de36ed4c0
-a1_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("High latitudes"),Vertical=At("Thermocline")]
+a1_adj = watermass_fraction(μ, V, B, alg=:adjoint)[At(mbox_adj),At(vbox_adj)][At("High latitudes"),At("Thermocline")]
 
 # ╔═╡ c6fd37b2-39cc-4c34-b021-6483285e6d56
-a2_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vertical=At(vbox_adj)][Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")]
+a2_adj = watermass_fraction(μ, V, B, alg=:adjoint)[At(mbox_adj),At(vbox_adj)][At("Mid-latitudes"),At("Thermocline")]
 
 # ╔═╡ b3522980-6beb-4e05-901d-0859c7a8cb58
 # global adjoint TTD
@@ -608,7 +608,7 @@ a2_adj = watermass_fraction(μ, V, B, alg=:adjoint)[Meridional=At(mbox_adj),Vert
 𝒢dagger(1yr)
 
 # ╔═╡ 257c6649-d003-42bc-9e17-0c33b7cd304c
-ttd_global_adjoint = [𝒢dagger(τ[i])[Meridional=At(mbox_adj),Vertical=At(vbox_adj)] for i in eachindex(τ)] 
+ttd_global_adjoint = [𝒢dagger(τ[i])[At(mbox_adj),At(vbox_adj)] for i in eachindex(τ)] 
 
 # ╔═╡ cf82fade-07ac-4aa9-bd06-7a10820a724f
 #Γ_adjoint = adjoint_mean_age(A,B)[At(mbox_adj),At(vbox_adj)]
@@ -669,19 +669,19 @@ vbox_destination = "Thermocline" # all origins/destinations at Thermocline depth
 RTD(t) = residence_time(t,A,B)
 
 # ╔═╡ f6f550a5-d04d-4d2a-89e7-484734370416
-rtd1 = [RTD(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)] for i in eachindex(τ)]
+rtd1 = [RTD(τ[i])[At("High latitudes"),At("Thermocline")][At(mbox_destination),At(vbox_destination)] for i in eachindex(τ)]
 
 # ╔═╡ 6d1b4753-aabb-4274-a5fb-de26270c4378
-rtd2 = [RTD(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)] for i in eachindex(τ)]
+rtd2 = [RTD(τ[i])[At("Mid-latitudes"),At("Thermocline")][At(mbox_destination),At(vbox_destination)] for i in eachindex(τ)]
 
 # ╔═╡ 29c38299-d49f-422c-9065-2faa9d2db491
 a_residence = watermass_fraction(μ, V, B, alg=:residence)
 
 # ╔═╡ 31f0f55f-5e2c-42da-9598-9b0bc1ce262f
-a_residence1 = a_residence[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)]
+a_residence1 = a_residence[At("High latitudes"),At("Thermocline")][At(mbox_destination),At(vbox_destination)]
 
 # ╔═╡ 9f82d814-f4fb-4184-8177-13f8fe7eceef
-a_residence2 = a_residence[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox_destination),Vertical=At(vbox_destination)]
+a_residence2 = a_residence[At("Mid-latitudes"),At("Thermocline")][At(mbox_destination),At(vbox_destination)]
 
 # ╔═╡ 7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 Γ_residence = mean_age(μ, V, B, alg=:residence)
@@ -721,6 +721,46 @@ end
 
 # ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
 sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
+
+# ╔═╡ 55325cc7-0b71-44c9-ac41-837f6451647b
+md""" ## Path density """
+
+# ╔═╡ 7550d6cf-9bfb-470c-b74f-880a298ab19e
+md""" $(@bind mbox_pdensity Select(meridional_names())) $(@bind vbox_pdensity Select(vertical_names())) """
+
+# ╔═╡ 175e67c2-c458-4bde-87a1-1fdf49e923c5
+path_density_11 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("High latitudes"),At("Thermocline")][At("High latitudes"),At("Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 00ded914-2b67-42e8-a913-d936f4442da8
+path_density_12 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("High latitudes"),At("Thermocline")][At("Mid-latitudes"),At("Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 696608f7-49c1-45e9-8522-ab222b0da243
+path_density_21 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("Mid-latitudes"),At("Thermocline")][At("High latitudes"),At("Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ 7465a888-bdf4-4a9f-a111-d53fb23a63bc
+path_density_22 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("Mid-latitudes"),At("Thermocline")][At("Mid-latitudes"),At("Thermocline")] for i in eachindex(τ)]
+
+# ╔═╡ d4504bca-c858-4434-ba95-df5bdae8d61c
+begin 
+	plot_pdensity = plot(τ,
+		normalized_exponential_decay.(τ,Tmax),
+		linestyle = :dash,
+		yscale = :log10,
+		ylabel = "η(τ)",
+		xlabel = "τ",
+		label = "Tmax",
+		legend = :topright,
+		titlefontsize = 6,
+		title = mbox_pdensity*", "*vbox_pdensity,
+		xlims = (0yr,400yr),
+		ylims = (1e-4/yr,1e-1/yr)) 
+
+	plot!(τ,path_density_11,label="1 to 1",width=2)
+	plot!(τ,path_density_12,label="1 to 2",width=2)
+	plot!(τ,path_density_21,label="2 to 1",width=2,linestyle= :dash)
+	plot!(τ,path_density_22,label="2 to 2",width=2, linestyle= :dash)
+	#plot!(τ,rtd2,label="RTD box 2",width=8*a_residence2)
+end
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
@@ -871,3 +911,10 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╠═7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 # ╠═989f966a-2078-408d-b3ca-5f4fa332f8b6
 # ╠═58701b47-1669-484c-ab88-904f31fedb97
+# ╟─55325cc7-0b71-44c9-ac41-837f6451647b
+# ╟─7550d6cf-9bfb-470c-b74f-880a298ab19e
+# ╠═d4504bca-c858-4434-ba95-df5bdae8d61c
+# ╠═175e67c2-c458-4bde-87a1-1fdf49e923c5
+# ╠═00ded914-2b67-42e8-a913-d936f4442da8
+# ╠═696608f7-49c1-45e9-8522-ab222b0da243
+# ╠═7465a888-bdf4-4a9f-a111-d53fb23a63bc

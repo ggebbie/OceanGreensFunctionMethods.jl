@@ -33,3 +33,38 @@ end
 
 # not normalized by number of boxes: consistent with manuscript?
 residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
+
+# path density for a given time and location 
+function path_density(μ, V, B, t, mbox, vbox)
+    Φ(τ) = phi_function(μ, τ) # a useful closure
+    D_mat = MultipliableDimArray(zeros(length(V), length(V)),model_dimensions(),model_dimensions())
+    D_mat[At(mbox),At(vbox)][At(mbox),At(vbox)] = 1 
+    D_mat_overline = V \ D_mat * V
+
+    # need to define element-by-element product for MultipliableDimArrays
+    elemental_product = MultipliableDimArray(Matrix(D_mat_overline).*Matrix(Φ(t)),
+        dims(D_mat_overline), dims(D_mat_overline))
+
+    #return real.( transpose(B) * V * (D_mat_overline .* Φ(t)) / V * B)
+    return real.( transpose(B) * V * elemental_product / V * B)
+end
+
+function phi_function(μ, t)
+    N = length(μ)
+    #ϕ = zeros(ComplexF64,model_dimensions())yr # \phi + TAB
+    eigen_dims = MultipliableDimArrays.Eigenmode(1:N)
+    ϕ = MultipliableDimArray(zeros(ComplexF64, N, N)yr, eigen_dims, eigen_dims)
+    μvals = diag(μ)
+    for rr in 1:N
+        for cc in 1:N
+            μ_rr = μvals[rr]
+            μ_cc = μvals[cc]
+            if μ_rr ≠ μ_cc
+                ϕ[cc][rr] = (exp(μ_cc*t) - exp(μ_rr*t))/(μ_cc - μ_rr)
+            else
+                ϕ[cc][rr] = t*exp(μ_rr*t)
+            end
+        end # cc
+    end # rr
+    return ϕ
+end
