@@ -218,3 +218,16 @@ function phi_function(μ, t)
     end # rr
     return ϕ
 end
+
+function ideal_age(A, B; alg= :forward)
+    if alg == :forward
+        return ideal_age_forward(A, B)
+    elseif alg == :adjoint 
+        return ideal_age_adjoint(A, B)
+    else
+        error("not yet implemented")
+    end
+end
+
+ideal_age_forward(A, B) = - A \ (B*zeros(boundary_dimensions())yr + ones(model_dimensions()))
+ideal_age_adjoint(A, B) = - transpose(A) \ (B*zeros(boundary_dimensions()) + transpose(ones(model_dimensions())/yr))
