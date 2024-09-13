@@ -225,6 +225,11 @@ include("../src/config_units.jl")
                     @test isapprox(sum(Matrix(a_residence)),1.0) 
                 end
 
+                @testset "path density" begin
+                    Φ(τ) = OceanGreensFunctionMethods.phi_function(μ, τ) # a useful closure
+                    Matrix(Φ(10yr))
+                end
+
                 @testset "read tracer histories" begin
 
                     BD = read_transient_tracer_histories()
@@ -288,6 +293,7 @@ include("../src/config_units.jl")
                     source_history_func(tt)
                     
                 end
+
             end
         end
     end

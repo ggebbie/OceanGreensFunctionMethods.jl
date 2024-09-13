@@ -53,6 +53,9 @@ module UnitfulOcean; using Unitful;
 @unit sverdrup "Sv" Sverdrup (10^6)u"m^3/s" false;
 end
 
+# ╔═╡ b5aff470-c7ca-43a2-a44d-8b99165300bb
+using MultipliableDimArrays
+
 # ╔═╡ 10b07d8a-aee4-4b64-b9eb-f22f408877ba
 md"""
 # Pedagogical Box Model 
@@ -722,6 +725,47 @@ end
 # ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
 sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 
+# ╔═╡ 55325cc7-0b71-44c9-ac41-837f6451647b
+md""" ## Path density """
+
+# ╔═╡ 6f217d53-68a0-4a83-a091-ab31687132ce
+mbox_pdensity = "Mid-latitudes"
+
+# ╔═╡ 39d83242-c838-4e1e-a94e-a97afdf45c7f
+vbox_pdensity = "Abyssal"
+
+# ╔═╡ ed8666c2-b4bd-46ed-ad57-7de635c7037b
+OceanGreensFunctionMethods.path_density(μ, V, B, 100yr, mbox_pdensity, vbox_pdensity)
+
+# ╔═╡ 2c62b529-e211-48a6-b595-6f41990697d7
+D_mat = MultipliableDimArray(zeros(length(V), length(V)),model_dimensions(),model_dimensions())
+
+
+# ╔═╡ 8ded6f09-fc13-4964-81e6-d1e2b941a084
+D_mat[At(mbox_pdensity),At(vbox_pdensity)][At(mbox_pdensity),At(vbox_pdensity)] = 1
+
+# ╔═╡ 2bb7a695-eca1-4782-ab3b-b3761be7db37
+Matrix(D_mat)
+
+# ╔═╡ da4548f1-0b60-46df-93f0-adc1f820beab
+D_mat_overline = V\D_mat*V
+
+# ╔═╡ f2ca8286-4f02-4af4-99fa-80794bb9a4ef
+Matrix(real.(V * D_mat_overline))
+
+# ╔═╡ 94b15fc7-09e4-4ab0-a995-7ea0c3266b74
+Φ(τ) = OceanGreensFunctionMethods.phi_function(μ, τ) # a useful closure
+
+
+# ╔═╡ 17bae766-ccbd-45d1-acd8-9f47be7d74cf
+Matrix( D_mat_overline .* Φ(10yr))
+
+# ╔═╡ 030739df-6da9-4f9b-98b1-75d9bbc0cff2
+dims(Φ(10yr))
+
+# ╔═╡ 5ee4bf2e-3bfb-4d5f-a23a-8a29ad4e87c0
+Φ(10yr)
+
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
 # ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
@@ -871,3 +915,17 @@ sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 # ╠═7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 # ╠═989f966a-2078-408d-b3ca-5f4fa332f8b6
 # ╠═58701b47-1669-484c-ab88-904f31fedb97
+# ╟─55325cc7-0b71-44c9-ac41-837f6451647b
+# ╠═6f217d53-68a0-4a83-a091-ab31687132ce
+# ╠═39d83242-c838-4e1e-a94e-a97afdf45c7f
+# ╠═ed8666c2-b4bd-46ed-ad57-7de635c7037b
+# ╠═b5aff470-c7ca-43a2-a44d-8b99165300bb
+# ╠═2c62b529-e211-48a6-b595-6f41990697d7
+# ╠═8ded6f09-fc13-4964-81e6-d1e2b941a084
+# ╠═2bb7a695-eca1-4782-ab3b-b3761be7db37
+# ╠═da4548f1-0b60-46df-93f0-adc1f820beab
+# ╠═17bae766-ccbd-45d1-acd8-9f47be7d74cf
+# ╠═030739df-6da9-4f9b-98b1-75d9bbc0cff2
+# ╠═f2ca8286-4f02-4af4-99fa-80794bb9a4ef
+# ╠═94b15fc7-09e4-4ab0-a995-7ea0c3266b74
+# ╠═5ee4bf2e-3bfb-4d5f-a23a-8a29ad4e87c0
