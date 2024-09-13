@@ -13,7 +13,6 @@ using MAT
 using Interpolations
 using QuadGK
 using CSV
-using DataFrames
 
 import Distributions: mean, median, quantile, std, var, cov, cor, shape, params, pdf, InverseGaussian
 import Base: +, alignment
