@@ -314,7 +314,7 @@ md"""## Tracer histories """
 projectdir()
 
 # ╔═╡ a45c8594-9fc7-46c2-833d-c44ece6648e5
-BD = read_tracer_histories() # Dirichlet boundary conditions
+BD = read_transient_tracer_histories() # Dirichlet boundary conditions
 
 # ╔═╡ 96ab52bc-1863-4056-ba32-894747f6ae0e
 BD_iodine129 = read_iodine129_history() # iodine-129
