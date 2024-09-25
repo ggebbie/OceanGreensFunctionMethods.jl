@@ -1,7 +1,7 @@
 name = "OceanGreensFunctionMethods"
 uuid = "e3e8a769-591b-4840-946e-301c93ad313e"
 authors = ["G Jake Gebbie <ggebbie@whoi.edu>"]
-version = "1.0.13-DEV"
+version = "1.0.14-DEV"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"

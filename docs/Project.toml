@@ -1,3 +1,4 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+MultipliableDimArrays = "3e2a59ee-8dc2-49ed-b08b-35477f91d0a4"
 OceanGreensFunctionMethods = "e3e8a769-591b-4840-946e-301c93ad313e"
