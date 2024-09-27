@@ -5,7 +5,7 @@
 [![Build Status](https://github.com/ggebbie/OceanGreensFunctionMethods.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/ggebbie/OceanGreensFunctionMethods.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/ggebbie/OceanGreensFunctionMethods.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/ggebbie/OceanGreensFunctionMethods.jl)
 
-Julia package to complement "A Review of Green's Function Methods in Ocean Circulation Models," by Haine et al. This package has two goal.
+Julia package to complement "A Review of Green's Function Methods in Ocean Circulation Models," by Haine et al. This package has two goals.
 
 1. One of the stated goals of the manuscript is to make Green's Function methods accessible for learning purposes. A computational notebook is provided with this package and detailed below.
 
@@ -26,7 +26,7 @@ A Pluto notebook is included (`notebooks/pedagogical_box_model.jl`). Suggested s
 2. Navigate to the notebook and open julia in the terminal or your favorite editor/IDE. Set up the computing environment.
 
 ```julia
-Pkg.activate(".") # activate the notebooks reproducible environment
+Pkg.activate(".") # activate the notebook's reproducible environment
 Pkg.instantiate() # download necessary packages if this has not been done before
 Pkg.status() # check the status of environment
 ```
