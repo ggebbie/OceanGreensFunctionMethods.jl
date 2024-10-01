@@ -545,6 +545,10 @@ G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
 # ╔═╡ 1bb59934-17be-40d3-b227-b73bb1b9c4df
 ttd_inversegaussian = pdf.(G_inversegaussian,τ)
 
+# ╔═╡ 1f163cd9-5db4-4b1b-a8df-a967156e6b59
+# label names for two boundary boxes
+boxname = ["("*meridional_names()[i][1:6]*","*vertical_names()[1][1:6]*")" for i in 1:2]
+
 # ╔═╡ e8fabe44-3a7d-47fc-84af-02baebf5f45a
 begin 
 	# to do: put plotting into functions
@@ -572,8 +576,8 @@ begin
 		color=:grey,
 		label="Δ")
 	
-	plot!(τ,ttd1,label="TTD 1",width=4*a1)
-	plot!(τ,ttd2,label="TTD 2",width=4*a2)
+	plot!(τ,ttd1,label="TTD "*boxname[1],width=4*a1)
+	plot!(τ,ttd2,label="TTD "*boxname[2],width=4*a2)
 	plot!(τ,ttd_global,label="Total TTD",width=4*(a1+a2),color=:black)
 	plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
 end
@@ -633,7 +637,7 @@ begin
 		ylabel = "G′†",
 		xlabel = "τ",
 		label = "Tmax",
-		legend = :topright,
+		legend = :right,
 		titlefontsize = 6,
 		title = mbox_adj*", "*vbox_adj,
 		xlims = (0yr,400yr),
@@ -650,8 +654,8 @@ begin
 		color=:grey,
 		label="Δ")
 	
-	plot!(τ,ttd1_adj,label="TTD 1",width=4*a1_adj)
-	plot!(τ,ttd2_adj,label="TTD 2",width=4*a2_adj)
+	plot!(τ,ttd1_adj,label="TTD "*boxname[1],width=4*a1_adj)
+	plot!(τ,ttd2_adj,label="TTD "*boxname[2],width=4*a2_adj)
 	plot!(τ,ttd_global_adjoint,label="Total TTD",width=4*(a1_adj+a2_adj),color=:black)
 	plot!(τ,ttd_inversegaussian_adjoint,label="Fitted inverse Gaussian")
 end
@@ -686,13 +690,6 @@ a_residence2 = a_residence[At("Mid-latitudes"),At("Thermocline")][At(mbox_destin
 # ╔═╡ 989f966a-2078-408d-b3ca-5f4fa332f8b6
 Δ_residence = ttd_width(μ, V, B, alg=:residence)
 
-# ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
-sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
-
-# ╔═╡ 1f163cd9-5db4-4b1b-a8df-a967156e6b59
-# label names for two boundary boxes
-boxname = ["("*meridional_names()[i][1:6]*","*vertical_names()[1][1:6]*")" for i in 1:2]
-
 # ╔═╡ 025e7a9d-d587-44d6-ba0c-1343ad18121a
 begin 
 	p_source = plot(τ,
@@ -726,6 +723,9 @@ begin
 		legendfontsize=6,
 		width=8*a_residence2)
 end
+
+# ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
+sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 
 # ╔═╡ 55325cc7-0b71-44c9-ac41-837f6451647b
 md""" ## Path density """
@@ -887,6 +887,7 @@ end
 # ╠═9537166f-054f-441e-a001-3ba59a4b59e0
 # ╠═fd907198-8e2e-4296-b640-c0aebbd0a796
 # ╠═1bb59934-17be-40d3-b227-b73bb1b9c4df
+# ╠═1f163cd9-5db4-4b1b-a8df-a967156e6b59
 # ╟─7c725552-883e-4fb3-b22e-292518913dfd
 # ╟─4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
 # ╠═c7a4d285-25e3-42eb-8e5b-7967aad1a366
@@ -914,7 +915,6 @@ end
 # ╠═7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 # ╠═989f966a-2078-408d-b3ca-5f4fa332f8b6
 # ╠═58701b47-1669-484c-ab88-904f31fedb97
-# ╠═1f163cd9-5db4-4b1b-a8df-a967156e6b59
 # ╟─55325cc7-0b71-44c9-ac41-837f6451647b
 # ╟─7550d6cf-9bfb-470c-b74f-880a298ab19e
 # ╠═d4504bca-c858-4434-ba95-df5bdae8d61c
