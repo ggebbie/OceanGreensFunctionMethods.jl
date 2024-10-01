@@ -63,7 +63,7 @@ Julia package to complement "A Review of Green's Function Methods in Ocean Circu
 # ╔═╡ 27b7af71-e396-45b3-8723-8b2fc804a77f
 md"""## Activate a reproducible project environment
 
-Uses Julia's built-in package manager `Pkg.jl` """
+Uses Julia's built-in package manager `Pkg.jl`  """
 
 # ╔═╡ 28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
 Pkg.instantiate()
@@ -660,7 +660,7 @@ end
 md""" ## Residence time distributions """
 
 # ╔═╡ 42ca866d-9c14-4761-9d0f-131870e25d9e
-md""" $(@bind mbox_destination Select(meridional_names()[1:2])) $(@bind vbox_destination Select([vertical_names()[1]]))"""
+md""" Destination box $(@bind mbox_destination Select(meridional_names()[1:2])) $(@bind vbox_destination Select([vertical_names()[1]]))"""
 
 # ╔═╡ 0a62e096-f375-4053-bc88-7ef89ce1173a
 RTD(t) = residence_time(t,A,B)
@@ -686,6 +686,13 @@ a_residence2 = a_residence[At("Mid-latitudes"),At("Thermocline")][At(mbox_destin
 # ╔═╡ 989f966a-2078-408d-b3ca-5f4fa332f8b6
 Δ_residence = ttd_width(μ, V, B, alg=:residence)
 
+# ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
+sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
+
+# ╔═╡ 1f163cd9-5db4-4b1b-a8df-a967156e6b59
+# label names for two boundary boxes
+boxname = ["("*meridional_names()[i][1:6]*","*vertical_names()[1][1:6]*")" for i in 1:2]
+
 # ╔═╡ 025e7a9d-d587-44d6-ba0c-1343ad18121a
 begin 
 	p_source = plot(τ,
@@ -697,7 +704,7 @@ begin
 		label = "Tmax",
 		legend = :topright,
 		titlefontsize = 6,
-		title = mbox_destination*", "*" Thermocline",
+		title = "Destination: "*mbox_destination*", "*" Thermocline",
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr)) 
 
@@ -712,12 +719,13 @@ begin
 		color=:grey,
 		label="Δ")
 
-	plot!(τ,rtd1,label="RTD box 1",width=8*a_residence1)
-	plot!(τ,rtd2,label="RTD box 2",width=8*a_residence2)
+	plot!(τ,rtd1,label="R: src "*boxname[1],
+		legendfontsize=6,
+		width=8*a_residence1)
+	plot!(τ,rtd2,label="R: src "*boxname[2],
+		legendfontsize=6,
+		width=8*a_residence2)
 end
-
-# ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
-sum(Matrix(a_residence)[:]) # a test that all mass is taken into account
 
 # ╔═╡ 55325cc7-0b71-44c9-ac41-837f6451647b
 md""" ## Path density """
@@ -746,21 +754,21 @@ begin
 		ylabel = "η(τ)",
 		xlabel = "τ",
 		label = "Tmax",
-		legend = :topright,
+		legend = :right,
 		titlefontsize = 6,
 		title = mbox_pdensity*", "*vbox_pdensity,
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr)) 
 
-	plot!(τ,path_density_11,label="1 to 1",width=2)
-	plot!(τ,path_density_12,label="1 to 2",width=2)
-	plot!(τ,path_density_21,label="2 to 1",width=2,linestyle= :dash)
-	plot!(τ,path_density_22,label="2 to 2",width=2, linestyle= :dash)
+	plot!(τ,path_density_11,label=boxname[1]*" to "*boxname[1],width=2)
+	plot!(τ,path_density_12,label=boxname[1]*" to "*boxname[2],width=2)
+	plot!(τ,path_density_21,label=boxname[2]*" to "*boxname[1],width=2,linestyle= :dash)
+	plot!(τ,path_density_22,label=boxname[2]*" to "*boxname[2],width=2, linestyle= :dash)
 end
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
-# ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
+# ╠═27b7af71-e396-45b3-8723-8b2fc804a77f
 # ╠═8f520c8b-19d7-48a8-be9f-3f167f07d188
 # ╠═c536e9f3-0457-499e-958c-384d6e388ef9
 # ╠═28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
@@ -906,6 +914,7 @@ end
 # ╠═7e8cd9ef-60cf-4909-93ef-643be08e4bc2
 # ╠═989f966a-2078-408d-b3ca-5f4fa332f8b6
 # ╠═58701b47-1669-484c-ab88-904f31fedb97
+# ╠═1f163cd9-5db4-4b1b-a8df-a967156e6b59
 # ╟─55325cc7-0b71-44c9-ac41-837f6451647b
 # ╟─7550d6cf-9bfb-470c-b74f-880a298ab19e
 # ╠═d4504bca-c858-4434-ba95-df5bdae8d61c
