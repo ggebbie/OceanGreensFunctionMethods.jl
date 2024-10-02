@@ -1,5 +1,6 @@
 # follows the design of Tom Haine's pedagaogical box model
 
+# define units
 kg = u"kg"
 m  = u"m"
 yr = u"yr"
@@ -9,11 +10,13 @@ pmol = u"pmol"
 fmol = u"fmol"
 nmol = u"nmol"
 
+# define dimensional labels
 @dim Tracer "tracer"
 @dim Meridional "meridional location"
 @dim Vertical "vertical location"
 @dim Global "global quantity"
 
+# define a structure for 2D fluxes in a yz domain
 struct Fluxes{T,N} 
     poleward::DimArray{T,N}
     equatorward::DimArray{T,N}
