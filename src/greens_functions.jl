@@ -1,4 +1,13 @@
-greens_function(t,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*t)
+@doc raw"""
+    greens_function(τ,A)
+
+Green's function for a box model (for steady transport given by the matrix 𝐀 for response at time t to a source at time t′ where τ = t - t′): the matrix exponential function of the elapsed time between the source time and field time.
+
+𝐆(t) = eᴬᵗ
+
+where 𝐆(t) is a  N × N matrix with the spatial locations of field points (boxes) down its N rows and source points (boxes) along its N columns. Thus, the element 𝐆{i,j}(τ) quantifies transfer from a source at time t′ in box j to receiver at time t in box i.
+"""
+greens_function(τ,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*τ)
 
 function boundary_propagator(t,A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
 if alg == :forward 

@@ -63,7 +63,7 @@ Julia package to complement "A Review of Green's Function Methods in Ocean Circu
 # ╔═╡ 27b7af71-e396-45b3-8723-8b2fc804a77f
 md"""## Activate a reproducible project environment
 
-Uses Julia's built-in package manager `Pkg.jl` """
+Uses Julia's built-in package manager `Pkg.jl`  """
 
 # ╔═╡ 28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
 Pkg.instantiate()
@@ -172,7 +172,7 @@ Fv_diffusion = vertical_diffusion(Fv_exchange, model_dims) # volume fluxes
 
 # ╔═╡ e17220c4-d45d-4d36-a05f-c245393b05ef
 # combine all of the volume fluxes
-Fv = Fv_abyssal + Fv_intermediate + Fv_diffusion
+Fv = Fv_abyssal + Fv_intermediate + Fv_diffusion 
 
 # ╔═╡ 75f344b4-e273-4369-89dc-5ebfdb675d21
 # do the volume fluxes conserve mass?
@@ -545,6 +545,10 @@ G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
 # ╔═╡ 1bb59934-17be-40d3-b227-b73bb1b9c4df
 ttd_inversegaussian = pdf.(G_inversegaussian,τ)
 
+# ╔═╡ 1f163cd9-5db4-4b1b-a8df-a967156e6b59
+# label names for two boundary boxes
+boxname = ["("*meridional_names()[i][1:6]*","*vertical_names()[1][1:6]*")" for i in 1:2]
+
 # ╔═╡ e8fabe44-3a7d-47fc-84af-02baebf5f45a
 begin 
 	# to do: put plotting into functions
@@ -572,8 +576,8 @@ begin
 		color=:grey,
 		label="Δ")
 	
-	plot!(τ,ttd1,label="TTD 1",width=4*a1)
-	plot!(τ,ttd2,label="TTD 2",width=4*a2)
+	plot!(τ,ttd1,label="TTD "*boxname[1],width=4*a1)
+	plot!(τ,ttd2,label="TTD "*boxname[2],width=4*a2)
 	plot!(τ,ttd_global,label="Total TTD",width=4*(a1+a2),color=:black)
 	plot!(τ,ttd_inversegaussian,label="Fitted inverse Gaussian")
 end
@@ -633,7 +637,7 @@ begin
 		ylabel = "G′†",
 		xlabel = "τ",
 		label = "Tmax",
-		legend = :topright,
+		legend = :right,
 		titlefontsize = 6,
 		title = mbox_adj*", "*vbox_adj,
 		xlims = (0yr,400yr),
@@ -650,8 +654,8 @@ begin
 		color=:grey,
 		label="Δ")
 	
-	plot!(τ,ttd1_adj,label="TTD 1",width=4*a1_adj)
-	plot!(τ,ttd2_adj,label="TTD 2",width=4*a2_adj)
+	plot!(τ,ttd1_adj,label="TTD "*boxname[1],width=4*a1_adj)
+	plot!(τ,ttd2_adj,label="TTD "*boxname[2],width=4*a2_adj)
 	plot!(τ,ttd_global_adjoint,label="Total TTD",width=4*(a1_adj+a2_adj),color=:black)
 	plot!(τ,ttd_inversegaussian_adjoint,label="Fitted inverse Gaussian")
 end
@@ -660,7 +664,7 @@ end
 md""" ## Residence time distributions """
 
 # ╔═╡ 42ca866d-9c14-4761-9d0f-131870e25d9e
-md""" $(@bind mbox_destination Select(meridional_names()[1:2])) $(@bind vbox_destination Select([vertical_names()[1]]))"""
+md""" Destination box $(@bind mbox_destination Select(meridional_names()[1:2])) $(@bind vbox_destination Select([vertical_names()[1]]))"""
 
 # ╔═╡ 0a62e096-f375-4053-bc88-7ef89ce1173a
 RTD(t) = residence_time(t,A,B)
@@ -697,7 +701,7 @@ begin
 		label = "Tmax",
 		legend = :topright,
 		titlefontsize = 6,
-		title = mbox_destination*", "*" Thermocline",
+		title = "Destination: "*mbox_destination*", "*" Thermocline",
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr)) 
 
@@ -712,8 +716,12 @@ begin
 		color=:grey,
 		label="Δ")
 
-	plot!(τ,rtd1,label="RTD box 1",width=8*a_residence1)
-	plot!(τ,rtd2,label="RTD box 2",width=8*a_residence2)
+	plot!(τ,rtd1,label="R: src "*boxname[1],
+		legendfontsize=6,
+		width=8*a_residence1)
+	plot!(τ,rtd2,label="R: src "*boxname[2],
+		legendfontsize=6,
+		width=8*a_residence2)
 end
 
 # ╔═╡ 58701b47-1669-484c-ab88-904f31fedb97
@@ -746,21 +754,21 @@ begin
 		ylabel = "η(τ)",
 		xlabel = "τ",
 		label = "Tmax",
-		legend = :topright,
+		legend = :right,
 		titlefontsize = 6,
 		title = mbox_pdensity*", "*vbox_pdensity,
 		xlims = (0yr,400yr),
 		ylims = (1e-4/yr,1e-1/yr)) 
 
-	plot!(τ,path_density_11,label="1 to 1",width=2)
-	plot!(τ,path_density_12,label="1 to 2",width=2)
-	plot!(τ,path_density_21,label="2 to 1",width=2,linestyle= :dash)
-	plot!(τ,path_density_22,label="2 to 2",width=2, linestyle= :dash)
+	plot!(τ,path_density_11,label=boxname[1]*" to "*boxname[1],width=2)
+	plot!(τ,path_density_12,label=boxname[1]*" to "*boxname[2],width=2)
+	plot!(τ,path_density_21,label=boxname[2]*" to "*boxname[1],width=2,linestyle= :dash)
+	plot!(τ,path_density_22,label=boxname[2]*" to "*boxname[2],width=2, linestyle= :dash)
 end
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
-# ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
+# ╠═27b7af71-e396-45b3-8723-8b2fc804a77f
 # ╠═8f520c8b-19d7-48a8-be9f-3f167f07d188
 # ╠═c536e9f3-0457-499e-958c-384d6e388ef9
 # ╠═28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
@@ -879,6 +887,7 @@ end
 # ╠═9537166f-054f-441e-a001-3ba59a4b59e0
 # ╠═fd907198-8e2e-4296-b640-c0aebbd0a796
 # ╠═1bb59934-17be-40d3-b227-b73bb1b9c4df
+# ╠═1f163cd9-5db4-4b1b-a8df-a967156e6b59
 # ╟─7c725552-883e-4fb3-b22e-292518913dfd
 # ╟─4bd0734f-d3f9-49e5-a7cb-ef719acb23f4
 # ╠═c7a4d285-25e3-42eb-8e5b-7967aad1a366

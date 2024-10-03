@@ -1,5 +1,6 @@
 # follows the design of Tom Haine's pedagaogical box model
 
+# define units
 kg = u"kg"
 m  = u"m"
 yr = u"yr"
@@ -9,11 +10,13 @@ pmol = u"pmol"
 fmol = u"fmol"
 nmol = u"nmol"
 
+# define dimensional labels
 @dim Tracer "tracer"
 @dim Meridional "meridional location"
 @dim Vertical "vertical location"
 @dim Global "global quantity"
 
+# define a structure for 2D fluxes in a yz domain
 struct Fluxes{T,N} 
     poleward::DimArray{T,N}
     equatorward::DimArray{T,N}
@@ -32,13 +35,27 @@ dims(F::Fluxes) = dims(F.poleward)
 meridional_names() = ["High latitudes", "Mid-latitudes", "Low latitudes"]
 vertical_names() = ["Thermocline", "Deep", "Abyssal"]
 
-# make dimensions unordered so that changes in alphabetical order are eliminated
+"""
+    model_dimensions()
+
+Define labels for the model's physical dimensions, as well as labels for the box names. Use the format of `DimensionalData.jl`. Permits numerical quantities to be bundled with their meta-data. Dimensions are `Unordered` to avoid issues related to the alphabetical order.
+"""
 model_dimensions() = (Meridional(meridional_names(); order=DimensionalData.Unordered()),
     Vertical(vertical_names(); order=DimensionalData.Unordered())) 
 
+"""
+    boundary_dimensions()
+
+Define labels for the boundary's physical dimensions, as well as labels for the box names, consistently with the model dimensions. Use the format of `DimensionalData.jl`. Permits numerical quantities to be bundled with their meta-data. Dimensions are `Unordered` to avoid issues related to the alphabetical order.
+"""
 boundary_dimensions() = (Meridional(meridional_names()[1:2]; order=DimensionalData.Unordered()),
     Vertical([vertical_names()[1]]; order=DimensionalData.Unordered())) 
 
+"""
+    abyssal_overturning(Ψ,model_dims)
+
+Set volume flux, Ψ, in an abyssal overturning loop that satisfies the conservation of volume. Return a structure of `Fluxes`.
+"""
 function abyssal_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -65,6 +82,11 @@ function abyssal_overturning(Ψ,model_dims)
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
+"""
+    intermediate_overturning(Ψ,model_dims)
+
+Set the volume flux, Ψ, in an intermediate overturning loop that satisfies the conservation of volume. Return a structure of `Fluxes`.
+"""
 function intermediate_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -88,6 +110,12 @@ function intermediate_overturning(Ψ,model_dims)
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
+
+"""
+    vertical_diffusion(Fv_exchange,model_dims)
+
+Set vertical diffusive-like exchange flux `Fv_exchange`. Return a structure of `Fluxes`.
+"""
 function vertical_diffusion(Fv_exchange,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -105,8 +133,32 @@ function vertical_diffusion(Fv_exchange,model_dims)
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
+"""
+    advective_diffusive_flux(C, Fv; ρ)
+
+Advective-diffusive flux of tracer `C` given volume fluxes `Fv` and optional density `ρ`.
+
+# Arguments
+- `C::DimArray`: tracer distribution
+- `Fv::DimArray`: volume fluxes
+- `ρ::Number=1035kg/m^3`: uniform density
+# Returns
+- `Fc::DimArray`: tracer flux
+"""
 advective_diffusive_flux(C::DimArray, Fv::DimArray ; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
 
+"""
+    advective_diffusive_flux(C, Fv; ρ)
+
+Advective-diffusive flux of tracer `C` given volume fluxes `Fv` and optional density `ρ`.
+
+# Arguments
+- `C::DimArray`: tracer distribution
+- `Fv::Fluxes`: volume fluxes
+- `ρ::Number=1035kg/m^3`: uniform density
+# Returns
+- `Fc::Fluxes`: tracer flux
+"""
 advective_diffusive_flux(C::DimArray, Fv::Fluxes ; ρ = 1035kg/m^3) =
     Fluxes(
         advective_diffusive_flux(C, Fv.poleward, ρ=ρ),
@@ -115,8 +167,18 @@ advective_diffusive_flux(C::DimArray, Fv::Fluxes ; ρ = 1035kg/m^3) =
         advective_diffusive_flux(C, Fv.down, ρ=ρ)
     )
 
-mass(V ; ρ = 1035kg/m^3) = ρ * V .|> u"Zg"
+"""    
+    mass(V; ρ)
 
+Seawater mass derived from the volume `V` and an optional input of density `ρ`.
+"""
+mass(V; ρ = 1035kg/m^3) = ρ * V .|> u"Zg"
+
+"""
+    convergence(J)
+
+Convergence of fluxes `J` of type `Fluxes`.
+"""
 function convergence(J::Fluxes)
 
     # all the fluxes leaving a box
@@ -141,6 +203,11 @@ function convergence(J::Fluxes)
     return deldotJ 
 end
 
+"""
+    mass_convergence(Fv) 
+
+Convergence of volume derived from a field of volume fluxes `Fv`, translated into a mass flux convergence with the assumption of uniform density.  
+"""
 mass_convergence(Fv) = convergence(advective_diffusive_flux(ones(dims(Fv)), Fv))
 
 function local_boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
@@ -148,6 +215,18 @@ function local_boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
     return Jb = advective_diffusive_flux(ΔC, Fb)
 end
 
+"""
+    boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
+
+Convergence or net effect of boundary fluxes.
+
+# Arguments
+- `f::DimArray`: Dirichlet boundary condition
+- `C::DimArray`: tracer distribution 
+- `Fb::DimArray`: boundary exchange volume flux
+# Returns
+- `Jb::Fluxes`: boundary tracer flux
+"""
 function boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
     Jlocal = local_boundary_flux(f, C, Fb)
     Jb = unit(first(Jlocal)) * zeros(dims(C)) # pre-allocate
@@ -155,8 +234,27 @@ function boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
     return Jb
 end
 
+"""
+    radioactive_decay(C, halflife)
+
+Radioactive decay rate of tracer `C` with half life of `halflife`.
+"""
 radioactive_decay(C::DimArray, halflife::Number) = -(log(2)/halflife)*C 
 
+"""
+   tracer_tendency(C, f, Fv, Fb, V)
+
+Tracer tendency ∂C/∂t for a tracer `C`, especially useful for finding a tracer transport matrix. 
+
+# Arguments
+- `C::DimArray`: tracer distribution
+- `f::DimArray`: Dirichlet boundary condition
+- `Fv::Fluxes`: volume fluxes
+- `Fb::Fluxes`: volume fluxes
+- `V::DimArray`: box volume
+# Returns
+- `dCdt::DimArray`: tracer tendency
+"""
 tracer_tendency(
     C::DimArray{<:Number,N},
     f::DimArray{<:Number,N},
@@ -167,7 +265,21 @@ tracer_tendency(
     boundary_flux(f, C, Fb)) ./
     mass(V)) .|> yr^-1 
 
-# for use with finding B boundary matrix
+
+"""
+   tracer_tendency(f, C, Fv, Fb, V)
+
+Tracer tendency ∂C/∂t for a boundary flux `f`, for use with finding B boundary matrix.
+
+# Arguments
+- `f::DimArray`: Dirichlet boundary condition
+- `C::DimArray`: tracer distribution
+- `Fv::Fluxes`: volume fluxes
+- `Fb::Fluxes`: volume fluxes
+- `V::DimArray`: box volume
+# Returns
+- `dCdt::DimArray`: tracer tendency
+"""
 tracer_tendency(
     f::DimArray{<:Number,N},
     C::DimArray{<:Number,N},
@@ -177,23 +289,35 @@ tracer_tendency(
     mass(V)) .|> yr^-1 
 
 # for use with finding A perturbation with radioactive decay
+"""
+   tracer_tendency(C)
+
+Tracer tendency ∂C/∂t for the radioactive decay of a tracer `C` with half life `halflife`, for use with finding the radioactive contribution to a tracer transport matrix.
+
+# Arguments
+- `C::DimArray`: tracer distribution
+- `halflife::Number`: radioactive half life
+# Returns
+- `dCdt::DimArray`: tracer tendency
+"""
 tracer_tendency(C::DimArray{<:Number,N},
     halflife::Number) where N =
     radioactive_decay(C, halflife) .|> yr^-1 
 
 """
-function linear_probe(x₀,M)
+    linear_probe(funk, x, args...)
 
-    Probe a function to determine its linear response in matrix form.
-    Assumes units are needed and available.
-    A simpler function to handle cases without units would be nice.
+Probe a function to determine its linear response in matrix form. Assumes units are needed and available. A simpler function to handle cases without units would be nice.
 
-    funk:: function to be probed
-    x:: input variable
-    args:: the arguments that follow x in `funk`
+# Arguments
+- `funk`: function to be probed
+- `x`: input (independent) variable
+- `halflife::Number`: radioactive half life
+- `args`: the arguments that follow `x` in `funk`
+# Returns
+- `A::DimArray{DimArray}`: labeled transport information used in matrix operations 
 """
 function linear_probe(funk::Function,C::DimArray{T,N},args...) where T <: Number where N
-    #function convolve(P::DimArray{T},M) where T<: AbstractDimArray
 
     dCdt0 = funk(C, args...)
     Trow = typeof(dCdt0)
@@ -211,11 +335,24 @@ end
 
 allequal(x) = all(y -> y == first(x), x)
 
+"""
+    location_transient_tracer_histories()
+
+URL of tracer source history file.
+"""
 location_transient_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
 
+"""
+    location_transient_tracer_histories()
+
+URL of iodine-129 source history file.
+"""
 location_iodine129_history() = 
     "https://raw.githubusercontent.com/ThomasHaine/Pedagogical-Tracer-Box-Model/main/MATLAB/From%20John%20Smith/Input%20Function%20129I%20Eastern%20Norwegian%20Sea.csv"
 
+"""
+    read_iodine129_history()
+"""
 function read_iodine129_history()
     url = location_iodine129_history()
     !isdir(datadir()) && mkpath(datadir())
@@ -239,6 +376,11 @@ function read_iodine129_history()
     return BD
 end 
 
+"""
+    read_transient_tracer_histories()
+
+Read transient tracer source histories and save as a `DimArray`. 
+"""
 function read_transient_tracer_histories()
 
     # download tracer history input (make this lazy)
@@ -288,6 +430,15 @@ function tracer_point_source_history(tracername)
     end
 end
 
+"""
+    tracer_point_source_history(tracername, BD)
+
+Return a function that yields transient tracer source history (such as CFCs) at given time.
+
+# Arguments
+- `tracername`: name of tracer in source history file
+- `BD::DimArray`: Dirichlet boundary condition compendium for many tracers
+"""
 function tracer_point_source_history(tracername, BD)
 
     tracer_timeseries = BD[Tracer=At(tracername)] * tracer_units()[tracername]
@@ -297,6 +448,17 @@ function tracer_point_source_history(tracername, BD)
         tracer_timeseries)
 end
 
+"""
+    tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
+
+Return source history values for all boundary points.
+
+# Arguments
+- `t`: time
+- `tracername`: name of tracer in source history file
+- `box2_box1_ratio`: ratio of boundary condition value in Mid-latitudes to High Latitudes
+- `BD::DimArray=nothing`: Dirichlet boundary condition compendium (optional)
+"""
 function tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
 
     if tracername == :argon39
@@ -313,9 +475,20 @@ function tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
     return DimArray(hcat([box1,box2]),boundary_dims)
 end
 
+"""
+    evolve_concentration(C₀, A, B, tlist, source_history; halflife = nothing)
+
+Integrate forcing vector over time to compute the concentration history. Find propagator by analytical expression using eigen-methods.
+
+# Arguments
+- `C₀`: initial tracer concentration
+- `A`: tracer transport information used in matrix calculations
+- `B`: boundary condition information used in matrix calculations
+- `tlist`: list of times to save tracer concentration
+- `source_history::Function`: returns Dirichlet boundary condition at a given time
+- `halflife=nothing`: radioactive half life (optional)
+"""
 function evolve_concentration(C₀, A, B, tlist, source_history; halflife = nothing)
-# % Integrate forcing vector over time to compute the concentration history.
-# % Find propagator by analytical expression using eigen-methods.
 
     if isnothing(halflife)
         μ, V = eigen(A)
@@ -350,10 +523,48 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
     return real.(C) # Cut imaginary part which is zero to machine precision.
 end
 
+"""
+   timestep_initial_condition(C, μ, V, ti, tf)
+
+# Arguments
+- `C::DimArray`: tracer distribution at `ti`
+- `μ`: eigenvalue diagonal matrix
+- `V`: eigenvector matrix
+- `ti`: initial time
+- `tf`: final time
+# Returns
+- `Cf::DimArray`: tracer distribution at `tf`
+"""
 timestep_initial_condition(C, μ, V, ti, tf) = real.( V * exp(μ*(tf-ti)) / V * C )
 
+"""
+    forcing_integrand(t, tf, μ, V, B, source_history)
+
+Integrand for boundary condition term in equation 10 (Haine et al., 2024).
+
+# Arguments
+- `t`: time
+- `tf`: final time 
+- `μ`: eigenvalue diagonal matrix
+- `V`: eigenvector matrix
+- `B`: boundary condition matrix
+- `source_history::Function`: returns Dirichlet boundary condition at a given time
+"""
 forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(μ*(tf-t)) / V * B * source_history(t))
     
+"""
+    integrate_forcing(t0, tf, μ, V, B, source_history)
+
+Integrate boundary condition term in equation 10 (Haine et al., 2024).
+
+# Arguments
+- `t0`: initial time
+- `tf`: final time 
+- `μ`: eigenvalue diagonal matrix
+- `V`: eigenvector matrix
+- `B`: boundary condition matrix
+- `source_history::Function`: returns Dirichlet boundary condition at a given time
+"""
 function integrate_forcing(t0, tf, μ, V, B, source_history)
     forcing_func(t) = forcing_integrand(t, tf, μ, V, B, source_history)
 
@@ -362,6 +573,21 @@ function integrate_forcing(t0, tf, μ, V, B, source_history)
     (err < 1e-5) ? (return integral) : error("integration error too large")
 end
 
+"""
+    tracer_timeseries(tracername, A, B, tlist, mbox1, vbox1; BD=nothing, halflife=nothing)
+
+Simulate tracers and return tracer timeseries from one box.
+
+# Arguments
+- `tracername`: name of tracer
+- `A`: tracer transport matrix
+- `B`: boundary condition matrix
+- `tlist`: list of times to save tracer concentration
+- `mbox`: name of meridional box of interest
+- `vbox`: name of vertical box of interest
+- `BD=nothing`: Dirichlet boundary condition
+- `halflife=nothing`: radioactive half life
+"""
 function tracer_timeseries(tracername, A, B, tlist, mbox1, vbox1; BD=nothing, halflife=nothing)
 
     if isnothing(halflife) && !isnothing(BD)
@@ -373,6 +599,21 @@ function tracer_timeseries(tracername, A, B, tlist, mbox1, vbox1; BD=nothing, ha
     end
 end
 
+"""
+    transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1; halflife = nothing)
+
+Simulate transient tracers and return tracer timeseries from one box.
+
+# Arguments
+- `tracername`: name of tracer
+- `A`: tracer transport matrix
+- `B`: boundary condition matrix
+- `BD`: Dirichlet boundary condition
+- `tlist`: list of times to save tracer concentration
+- `mbox`: name of meridional box of interest
+- `vbox`: name of vertical box of interest
+- `halflife=nothing`: radioactive half life
+"""
 function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1; halflife = nothing)
 
     # fixed parameters for transient tracers
@@ -406,6 +647,21 @@ function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1; 
 
 end
 
+"""
+    steady_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
+
+Simulate non-transient tracers and return tracer timeseries from one box.
+
+# Arguments
+- `tracername`: name of tracer
+- `A`: tracer transport matrix
+- `B`: boundary condition matrix
+- `halflife`: radioactive half life
+- `BD`: Dirichlet boundary condition
+- `tlist`: list of times to save tracer concentration
+- `mbox`: name of meridional box of interest
+- `vbox`: name of vertical box of interest
+"""
 function steady_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
 
     C₀ = ones(model_dimensions()) # initial conditions: faster spinup
