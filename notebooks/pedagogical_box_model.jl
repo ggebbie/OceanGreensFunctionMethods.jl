@@ -172,7 +172,7 @@ Fv_diffusion = vertical_diffusion(Fv_exchange, model_dims) # volume fluxes
 
 # ╔═╡ e17220c4-d45d-4d36-a05f-c245393b05ef
 # combine all of the volume fluxes
-Fv = Fv_abyssal + Fv_intermediate + Fv_diffusion
+Fv = Fv_abyssal + Fv_intermediate + Fv_diffusion 
 
 # ╔═╡ 75f344b4-e273-4369-89dc-5ebfdb675d21
 # do the volume fluxes conserve mass?

@@ -35,13 +35,27 @@ dims(F::Fluxes) = dims(F.poleward)
 meridional_names() = ["High latitudes", "Mid-latitudes", "Low latitudes"]
 vertical_names() = ["Thermocline", "Deep", "Abyssal"]
 
-# make dimensions unordered so that changes in alphabetical order are eliminated
+"""
+    model_dimensions()
+
+Define labels for the model's physical dimensions, as well as labels for the box names. Use the format of `DimensionalData.jl`. Permits numerical quantities to be bundled with their meta-data. Dimensions are `Unordered` to avoid issues related to the alphabetical order.
+"""
 model_dimensions() = (Meridional(meridional_names(); order=DimensionalData.Unordered()),
     Vertical(vertical_names(); order=DimensionalData.Unordered())) 
 
+"""
+    boundary_dimensions()
+
+Define labels for the boundary's physical dimensions, as well as labels for the box names, consistently with the model dimensions. Use the format of `DimensionalData.jl`. Permits numerical quantities to be bundled with their meta-data. Dimensions are `Unordered` to avoid issues related to the alphabetical order.
+"""
 boundary_dimensions() = (Meridional(meridional_names()[1:2]; order=DimensionalData.Unordered()),
     Vertical([vertical_names()[1]]; order=DimensionalData.Unordered())) 
 
+"""
+    abyssal_overturning(Ψ,model_dims)
+
+Set volume flux, Ψ, in an abyssal overturning loop that satisfies the conservation of volume. Return a structure of `Fluxes`.
+"""
 function abyssal_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -68,6 +82,11 @@ function abyssal_overturning(Ψ,model_dims)
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
+"""
+    intermediate_overturning(Ψ,model_dims)
+
+Set the volume flux, Ψ, in an intermediate overturning loop that satisfies the conservation of volume. Return a structure of `Fluxes`.
+"""
 function intermediate_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -91,6 +110,12 @@ function intermediate_overturning(Ψ,model_dims)
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
+
+"""
+    vertical_diffusion(Fv_exchange,model_dims)
+
+Set vertical diffusive-like exchange flux `Fv_exchange`. Return a structure of `Fluxes`.
+"""
 function vertical_diffusion(Fv_exchange,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
@@ -108,8 +133,32 @@ function vertical_diffusion(Fv_exchange,model_dims)
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
+"""
+    advective_diffusive_flux(C, Fv; ρ)
+
+Advective-diffusive flux of tracer `C` given volume fluxes `Fv` and optional density `ρ`.
+
+# Arguments
+- `C::DimArray`: tracer distribution
+- `Fv::DimArray`: volume fluxes
+- `ρ::Number=1035kg/m^3`: uniform density
+# Returns
+- `Fc::DimArray`: tracer flux
+"""
 advective_diffusive_flux(C::DimArray, Fv::DimArray ; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
 
+"""
+    advective_diffusive_flux(C, Fv; ρ)
+
+Advective-diffusive flux of tracer `C` given volume fluxes `Fv` and optional density `ρ`.
+
+# Arguments
+- `C::DimArray`: tracer distribution
+- `Fv::Fluxes`: volume fluxes
+- `ρ::Number=1035kg/m^3`: uniform density
+# Returns
+- `Fc::Fluxes`: tracer flux
+"""
 advective_diffusive_flux(C::DimArray, Fv::Fluxes ; ρ = 1035kg/m^3) =
     Fluxes(
         advective_diffusive_flux(C, Fv.poleward, ρ=ρ),
@@ -118,8 +167,18 @@ advective_diffusive_flux(C::DimArray, Fv::Fluxes ; ρ = 1035kg/m^3) =
         advective_diffusive_flux(C, Fv.down, ρ=ρ)
     )
 
-mass(V ; ρ = 1035kg/m^3) = ρ * V .|> u"Zg"
+"""    
+    mass(V; ρ)
 
+Seawater mass derived from the volume `V` and an optional input of density `ρ`.
+"""
+mass(V; ρ = 1035kg/m^3) = ρ * V .|> u"Zg"
+
+"""
+    function convergence(J)
+
+Convergence of fluxes. Accepts input `J` of type `Fluxes`.
+"""
 function convergence(J::Fluxes)
 
     # all the fluxes leaving a box
