@@ -175,9 +175,9 @@ Seawater mass derived from the volume `V` and an optional input of density `ρ`.
 mass(V; ρ = 1035kg/m^3) = ρ * V .|> u"Zg"
 
 """
-    function convergence(J)
+    convergence(J)
 
-Convergence of fluxes. Accepts input `J` of type `Fluxes`.
+Convergence of fluxes `J` of type `Fluxes`.
 """
 function convergence(J::Fluxes)
 
@@ -203,6 +203,11 @@ function convergence(J::Fluxes)
     return deldotJ 
 end
 
+"""
+    mass_convergence(Fv) 
+
+Convergence of volume derived from a field of volume fluxes `Fv`, translated into a mass flux convergence with the assumption of uniform density.  
+"""
 mass_convergence(Fv) = convergence(advective_diffusive_flux(ones(dims(Fv)), Fv))
 
 function local_boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
@@ -210,6 +215,18 @@ function local_boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
     return Jb = advective_diffusive_flux(ΔC, Fb)
 end
 
+"""
+    boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
+
+Convergence or net effect of boundary fluxes.
+
+# Arguments
+- `f::DimArray`: Dirichlet boundary condition
+- `C::DimArray`: tracer distribution 
+- `Fb::DimArray`: boundary exchange volume flux
+# Returns
+- `Jb::Fluxes`: boundary tracer flux
+"""
 function boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
     Jlocal = local_boundary_flux(f, C, Fb)
     Jb = unit(first(Jlocal)) * zeros(dims(C)) # pre-allocate
@@ -217,8 +234,27 @@ function boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
     return Jb
 end
 
+"""
+    radioactive_decay(C, halflife)
+
+Radioactive decay rate of tracer `C` with half life of `halflife`.
+"""
 radioactive_decay(C::DimArray, halflife::Number) = -(log(2)/halflife)*C 
 
+"""
+   tracer_tendency(C, f, Fv, Fb, V)
+
+Tracer tendency ∂C/∂t for a tracer `C`, especially useful for finding a tracer transport matrix. 
+
+# Arguments
+- `C::DimArray`: tracer distribution
+- `f::DimArray`: Dirichlet boundary condition
+- `Fv::Fluxes`: volume fluxes
+- `Fb::Fluxes`: volume fluxes
+- `V::DimArray`: box volume
+# Returns
+- `dCdt::DimArray`: tracer tendency
+"""
 tracer_tendency(
     C::DimArray{<:Number,N},
     f::DimArray{<:Number,N},
@@ -229,7 +265,21 @@ tracer_tendency(
     boundary_flux(f, C, Fb)) ./
     mass(V)) .|> yr^-1 
 
-# for use with finding B boundary matrix
+
+"""
+   tracer_tendency(f, C, Fv, Fb, V)
+
+Tracer tendency ∂C/∂t for a boundary flux `f`, for use with finding B boundary matrix.
+
+# Arguments
+- `f::DimArray`: Dirichlet boundary condition
+- `C::DimArray`: tracer distribution
+- `Fv::Fluxes`: volume fluxes
+- `Fb::Fluxes`: volume fluxes
+- `V::DimArray`: box volume
+# Returns
+- `dCdt::DimArray`: tracer tendency
+"""
 tracer_tendency(
     f::DimArray{<:Number,N},
     C::DimArray{<:Number,N},
@@ -239,23 +289,35 @@ tracer_tendency(
     mass(V)) .|> yr^-1 
 
 # for use with finding A perturbation with radioactive decay
+"""
+   tracer_tendency(C)
+
+Tracer tendency ∂C/∂t for the radioactive decay of a tracer `C` with half life `halflife`, for use with finding the radioactive contribution to a tracer transport matrix.
+
+# Arguments
+- `C::DimArray`: tracer distribution
+- `halflife::Number`: radioactive half life
+# Returns
+- `dCdt::DimArray`: tracer tendency
+"""
 tracer_tendency(C::DimArray{<:Number,N},
     halflife::Number) where N =
     radioactive_decay(C, halflife) .|> yr^-1 
 
 """
-function linear_probe(x₀,M)
+    linear_probe(funk, x, args...)
 
-    Probe a function to determine its linear response in matrix form.
-    Assumes units are needed and available.
-    A simpler function to handle cases without units would be nice.
+Probe a function to determine its linear response in matrix form. Assumes units are needed and available. A simpler function to handle cases without units would be nice.
 
-    funk:: function to be probed
-    x:: input variable
-    args:: the arguments that follow x in `funk`
+# Arguments
+- `funk`: function to be probed
+- `x`: input (independent) variable
+- `halflife::Number`: radioactive half life
+- `args`: the arguments that follow `x` in `funk`
+# Returns
+- `A::DimArray{DimArray}`: labeled transport information used in matrix operations 
 """
 function linear_probe(funk::Function,C::DimArray{T,N},args...) where T <: Number where N
-    #function convolve(P::DimArray{T},M) where T<: AbstractDimArray
 
     dCdt0 = funk(C, args...)
     Trow = typeof(dCdt0)
