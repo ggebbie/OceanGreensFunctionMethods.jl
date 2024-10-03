@@ -335,11 +335,24 @@ end
 
 allequal(x) = all(y -> y == first(x), x)
 
+"""
+    location_transient_tracer_histories()
+
+URL of tracer source history file.
+"""
 location_transient_tracer_histories() = "https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model/raw/main/MATLAB/tracer_gas_histories.mat"
 
+"""
+    location_transient_tracer_histories()
+
+URL of iodine-129 source history file.
+"""
 location_iodine129_history() = 
     "https://raw.githubusercontent.com/ThomasHaine/Pedagogical-Tracer-Box-Model/main/MATLAB/From%20John%20Smith/Input%20Function%20129I%20Eastern%20Norwegian%20Sea.csv"
 
+"""
+    read_iodine129_history()
+"""
 function read_iodine129_history()
     url = location_iodine129_history()
     !isdir(datadir()) && mkpath(datadir())
@@ -363,6 +376,11 @@ function read_iodine129_history()
     return BD
 end 
 
+"""
+    read_transient_tracer_histories()
+
+Read transient tracer source histories and save as a `DimArray`. 
+"""
 function read_transient_tracer_histories()
 
     # download tracer history input (make this lazy)
@@ -412,6 +430,15 @@ function tracer_point_source_history(tracername)
     end
 end
 
+"""
+    tracer_point_source_history(tracername, BD)
+
+Return a function that yields transient tracer source history (such as CFCs) at given time.
+
+# Arguments
+- `tracername`: name of tracer in source history file
+- `BD::DimArray`: Dirichlet boundary condition compendium for many tracers
+"""
 function tracer_point_source_history(tracername, BD)
 
     tracer_timeseries = BD[Tracer=At(tracername)] * tracer_units()[tracername]
@@ -421,6 +448,17 @@ function tracer_point_source_history(tracername, BD)
         tracer_timeseries)
 end
 
+"""
+    tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
+
+Return source history values for all boundary points.
+
+# Arguments
+- `t`: time
+- `tracername`: name of tracer in source history file
+- `box2_box1_ratio`: ratio of boundary condition value in Mid-latitudes to High Latitudes
+- `BD::DimArray=nothing`: Dirichlet boundary condition compendium (optional)
+"""
 function tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
 
     if tracername == :argon39
@@ -437,9 +475,20 @@ function tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
     return DimArray(hcat([box1,box2]),boundary_dims)
 end
 
+"""
+    evolve_concentration(C₀, A, B, tlist, source_history; halflife = nothing)
+
+Integrate forcing vector over time to compute the concentration history. Find propagator by analytical expression using eigen-methods.
+
+# Arguments
+- `C₀`: initial tracer concentration
+- `A`: tracer transport information used in matrix calculations
+- `B`: boundary condition information used in matrix calculations
+- `tlist`: list of times to save tracer concentration
+- `source_history::Function`: returns Dirichlet boundary condition at a given time
+- `halflife=nothing`: radioactive half life (optional)
+"""
 function evolve_concentration(C₀, A, B, tlist, source_history; halflife = nothing)
-# % Integrate forcing vector over time to compute the concentration history.
-# % Find propagator by analytical expression using eigen-methods.
 
     if isnothing(halflife)
         μ, V = eigen(A)
@@ -474,10 +523,48 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
     return real.(C) # Cut imaginary part which is zero to machine precision.
 end
 
+"""
+   timestep_initial_condition(C, μ, V, ti, tf)
+
+# Arguments
+- `C::DimArray`: tracer distribution at `ti`
+- `μ`: eigenvalue diagonal matrix
+- `V`: eigenvector matrix
+- `ti`: initial time
+- `tf`: final time
+# Returns
+- `Cf::DimArray`: tracer distribution at `tf`
+"""
 timestep_initial_condition(C, μ, V, ti, tf) = real.( V * exp(μ*(tf-ti)) / V * C )
 
+"""
+    forcing_integrand(t, tf, μ, V, B, source_history)
+
+Integrand for boundary condition term in equation 10 (Haine et al., 2024).
+
+# Arguments
+- `t`: time
+- `tf`: final time 
+- `μ`: eigenvalue diagonal matrix
+- `V`: eigenvector matrix
+- `B`: boundary condition matrix
+- `source_history::Function`: returns Dirichlet boundary condition at a given time
+"""
 forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(μ*(tf-t)) / V * B * source_history(t))
     
+"""
+    integrate_forcing(t0, tf, μ, V, B, source_history)
+
+Integrate boundary condition term in equation 10 (Haine et al., 2024).
+
+# Arguments
+- `t0`: initial time
+- `tf`: final time 
+- `μ`: eigenvalue diagonal matrix
+- `V`: eigenvector matrix
+- `B`: boundary condition matrix
+- `source_history::Function`: returns Dirichlet boundary condition at a given time
+"""
 function integrate_forcing(t0, tf, μ, V, B, source_history)
     forcing_func(t) = forcing_integrand(t, tf, μ, V, B, source_history)
 
@@ -486,6 +573,21 @@ function integrate_forcing(t0, tf, μ, V, B, source_history)
     (err < 1e-5) ? (return integral) : error("integration error too large")
 end
 
+"""
+    tracer_timeseries(tracername, A, B, tlist, mbox1, vbox1; BD=nothing, halflife=nothing)
+
+Simulate tracers and return tracer timeseries from one box.
+
+# Arguments
+- `tracername`: name of tracer
+- `A`: tracer transport matrix
+- `B`: boundary condition matrix
+- `tlist`: list of times to save tracer concentration
+- `mbox`: name of meridional box of interest
+- `vbox`: name of vertical box of interest
+- `BD=nothing`: Dirichlet boundary condition
+- `halflife=nothing`: radioactive half life
+"""
 function tracer_timeseries(tracername, A, B, tlist, mbox1, vbox1; BD=nothing, halflife=nothing)
 
     if isnothing(halflife) && !isnothing(BD)
@@ -497,6 +599,21 @@ function tracer_timeseries(tracername, A, B, tlist, mbox1, vbox1; BD=nothing, ha
     end
 end
 
+"""
+    transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1; halflife = nothing)
+
+Simulate transient tracers and return tracer timeseries from one box.
+
+# Arguments
+- `tracername`: name of tracer
+- `A`: tracer transport matrix
+- `B`: boundary condition matrix
+- `BD`: Dirichlet boundary condition
+- `tlist`: list of times to save tracer concentration
+- `mbox`: name of meridional box of interest
+- `vbox`: name of vertical box of interest
+- `halflife=nothing`: radioactive half life
+"""
 function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1; halflife = nothing)
 
     # fixed parameters for transient tracers
@@ -530,6 +647,21 @@ function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1; 
 
 end
 
+"""
+    steady_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
+
+Simulate non-transient tracers and return tracer timeseries from one box.
+
+# Arguments
+- `tracername`: name of tracer
+- `A`: tracer transport matrix
+- `B`: boundary condition matrix
+- `halflife`: radioactive half life
+- `BD`: Dirichlet boundary condition
+- `tlist`: list of times to save tracer concentration
+- `mbox`: name of meridional box of interest
+- `vbox`: name of vertical box of interest
+"""
 function steady_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
 
     C₀ = ones(model_dimensions()) # initial conditions: faster spinup
