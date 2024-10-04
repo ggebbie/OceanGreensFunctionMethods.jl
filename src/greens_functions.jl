@@ -1,10 +1,10 @@
-@doc raw"""
+"""
     greens_function(τ,A)
 
-Green's function for a box model (for steady transport given by the matrix 𝐀 for response at time t to a source at time t′ where τ = t - t′): the matrix exponential function of the elapsed time between the source time and field time.
-
-𝐆(t) = eᴬᵗ
-
+Green's function for a box model (for steady transport given by the matrix 𝐀 for response at time t to a source at time t′ where τ = t - t′): the matrix exponential function of the elapsed time between the source time and field time:
+```math
+{\\bf G}(\\tau) = e^{ {\\bf A} \\tau}
+```
 where 𝐆(t) is a  N × N matrix with the spatial locations of field points (boxes) down its N rows and source points (boxes) along its N columns. Thus, the element 𝐆{i,j}(τ) quantifies transfer from a source at time t′ in box j to receiver at time t in box i.
 """
 greens_function(τ,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*τ)
@@ -52,6 +52,23 @@ boundary_propagator_forward(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: Dim
 """
 boundary_propagator_adjoint(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
 
+"""
+    global_ttd(t, A, B; alg=:forward)
+
+Forward and adjoint global transit time distributions (TTDs).
+
+# Forward Global TTD
+
+The forward global (total) TTD is the sum of surface-to-interior TTDs (equation 90 of Haine et al., 2024): 
+```math
+{\\cal G} (t) = {\\bf G} (t) ~ {\\bf B} ~ {\\bf 1}_{N_S},
+```
+where the product with the Ns × 1 column vector of ones (i.e., last matrix in previous equation) computes the sum over surface boxes. This expression yields an N × 1 column vector that is normalized for each box.
+
+# Adjoint Global TTD
+
+The adjoint global (total) TTD is the sum of interior-to-surface TTDs. 
+"""
 function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
     if alg == :forward 
         return global_ttd_forward(t, A, B)
@@ -62,7 +79,14 @@ function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where D
     end
 end
 
+"""
+    global_ttd_forward(t, A, B)
+"""
 global_ttd_forward(t, A::DimMatrix{DM}, B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+
+"""
+    global_ttd_adjoint(t, A, B)
+"""
 function global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix
     ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
     tmp = ones_row_vector *  boundary_propagator_adjoint(t,A,B)
@@ -71,11 +95,26 @@ function global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: Di
     return DimArray(reshape(transpose(Matrix(tmp)),size(tmp)),dims(tmp))
 end
 
-# not normalized by number of boxes: consistent with manuscript?
+"""
+    residence_time(t, A, B)
+
+The surface-to-surface residence-time distribution (RTD) is (equations 94 and 95 of Haine et al., 2024):
+```math
+{\\bf R} (\\tau) = 
+\\frac{1}{N} \\int_{t - \\tau}^{t} {\\bf G}'^{\\dagger} (t^* + \\tau - t)  ~ {\\bf G}' (t - t^*) ~ d t ^*
+```
+or
+```math
+{\\bf R} (\\tau)  = \\frac{\\tau}{N} {\\bf B}^{T}  ~ {\\bf G} (\\tau) ~ {\\bf B},
+```
+where N is the number of boxes, G(τ) is the forward Green's function and B is the boundary matrix. 
+The Ns × Ns R(τ) matrix quantifies transfer from the Ns surface boxes back to the Ns surface boxes with residence time τ (element R{i,j}(τ) quantifies transfer from entry box j to exit box i).
+
+Note: not normalized by number of boxes in this code: consistent with manuscript?
+"""
 residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
 
-
-maximum_timescale(μ) = -1/real(last(last(μ)))
+maximum_timescale(μ) = -1/real(last(last(μ)))a
 
 function watermass_fraction(μ, V, B; alg=:forward)
     if alg == :forward
