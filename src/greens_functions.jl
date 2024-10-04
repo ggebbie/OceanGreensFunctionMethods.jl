@@ -140,9 +140,9 @@ The water mass fractions are (equation 89 of Haine et al., 2024)
 ```
 or
 ```math
-{\\bf a} = -{\\bf V} ~ \\mu^{-1} ~ {\\ V}^{-1} ~ {\\bf B} , 
+{\\bf a} = -{\\bf V} ~ \\mu^{-1} ~ {\\bf V}^{-1} ~ {\\bf B} , 
 ```
-which is an N \times Ns matrix with the interior boxes down the rows and the surface sources across the rows.
+which is an N × Ns matrix with the interior boxes down the rows and the surface sources across the rows.
 
 # Adjoint water-mass fraction
 
@@ -207,7 +207,7 @@ Mean age of the forward TTDs, adjoint TTDs, and residence-time distributions.
 
 The mean transit time 𝚪 (mean age) is (equation 92 of Haine et al., 2004),
 ```math
-𝚪 = {\\bf V} ~ \\mu^{-2} ~ {\\bf V}^{-1} ~ {\\bf B} ~ {\\bf 1}_{N_S},
+{\\bf \\Gamma} = {\\bf V} ~ \\mu^{-2} ~ {\\bf V}^{-1} ~ {\\bf B} ~ {\\bf 1}_{N_S},
 ```
 which is an N × 1 vector for each box (and which also equals the ideal age).
 
@@ -301,7 +301,7 @@ Width of the forward TTDs, adjoint TTDs, and residence-time distributions.
 
 The TTD width is given by (equation 92 of Haine et al., 2024),
 ```math
-2 𝚫^2  = -2 ~ {\\bf V} ~ \\mu^{-3} ~ {\\bf V}^{-1} ~ {\\bf B} ~ {\\bf 1}_{N_S}  - 𝚪^2,
+2 {\\bf \\Delta}^2  = -2 ~ {\\bf V} ~ \\mu^{-3} ~ {\\bf V}^{-1} ~ {\\bf B} ~ {\\bf 1}_{N_S}  - {\\bf \\Gamma}^2,
 ```
 which is a N × 1 vector for each box.
 
@@ -472,12 +472,12 @@ function ideal_age(A, B; alg= :forward)
 end
 
 """
-ideal_age_forward(A, B)
+    ideal_age_forward(A, B)
 """
 ideal_age_forward(A, B) = - A \ (B*zeros(boundary_dimensions())yr + ones(model_dimensions()))
 
 """
-ideal_age_adjoint(A, B)
+    ideal_age_adjoint(A, B)
 
 Note: doesn't work due to conflict with DimensionalData.transpose that I don't want to overload
 """
