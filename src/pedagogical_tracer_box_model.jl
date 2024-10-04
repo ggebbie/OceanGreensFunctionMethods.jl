@@ -242,7 +242,7 @@ Radioactive decay rate of tracer `C` with half life of `halflife`.
 radioactive_decay(C::DimArray, halflife::Number) = -(log(2)/halflife)*C 
 
 """
-   tracer_tendency(C, f, Fv, Fb, V)
+    tracer_tendency(C, f, Fv, Fb, V)
 
 Tracer tendency ∂C/∂t for a tracer `C`, especially useful for finding a tracer transport matrix. 
 
@@ -265,9 +265,8 @@ tracer_tendency(
     boundary_flux(f, C, Fb)) ./
     mass(V)) .|> yr^-1 
 
-
 """
-   tracer_tendency(f, C, Fv, Fb, V)
+    tracer_tendency(f, C, Fv, Fb, V)
 
 Tracer tendency ∂C/∂t for a boundary flux `f`, for use with finding B boundary matrix.
 
@@ -290,7 +289,7 @@ tracer_tendency(
 
 # for use with finding A perturbation with radioactive decay
 """
-   tracer_tendency(C)
+    tracer_tendency(C)
 
 Tracer tendency ∂C/∂t for the radioactive decay of a tracer `C` with half life `halflife`, for use with finding the radioactive contribution to a tracer transport matrix.
 
@@ -524,7 +523,7 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
 end
 
 """
-   timestep_initial_condition(C, μ, V, ti, tf)
+    timestep_initial_condition(C, μ, V, ti, tf)
 
 # Arguments
 - `C::DimArray`: tracer distribution at `ti`

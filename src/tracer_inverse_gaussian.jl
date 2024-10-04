@@ -20,7 +20,6 @@ shape(d)            # Get the shape parameter, i.e. Δ
 External links
 
 * [Compare to Inverse Gaussian distribution on Wikipedia](http://en.wikipedia.org/wiki/Inverse_Gaussian_distribution)
-
 """
 struct TracerInverseGaussian{T<:Number} <: ContinuousUnivariateDistribution
     Γ::T
