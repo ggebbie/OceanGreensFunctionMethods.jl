@@ -478,7 +478,5 @@ ideal_age_forward(A, B) = - A \ (B*zeros(boundary_dimensions())yr + ones(model_d
 
 """
     ideal_age_adjoint(A, B)
-
-Note: doesn't work due to conflict with DimensionalData.transpose that I don't want to overload
 """
 ideal_age_adjoint(A, B) = - transpose(A) \ (B*zeros(boundary_dimensions())yr + ones(model_dimensions()))
