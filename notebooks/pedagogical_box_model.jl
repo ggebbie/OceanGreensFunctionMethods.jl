@@ -63,7 +63,7 @@ Julia package to complement "A Review of Green's Function Methods in Ocean Circu
 # ╔═╡ 27b7af71-e396-45b3-8723-8b2fc804a77f
 md"""## Activate a reproducible project environment
 
-Uses Julia's built-in package manager `Pkg.jl`  """
+Uses Julia's built-in package manager `Pkg.jl` """
 
 # ╔═╡ 28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
 Pkg.instantiate()
@@ -510,7 +510,7 @@ md""" $(@bind mbox Select(meridional_names())) $(@bind vbox Select(vertical_name
 G(t) = greens_function(t,A) # a closure that captures A
 
 # ╔═╡ c122abb6-185c-4894-a2c4-8ab6224e83d2
-G′(t) = boundary_propagator(t,A,B,alg=:forward) # type G + \prime + TAB
+G′(t) = boundary_propagator(t,A,B,alg=:forward) # type G + \prime + TAB 
 
 # ╔═╡ 595fba3f-65ec-461f-a257-92456d4f94a0
 # global (or total) TTD

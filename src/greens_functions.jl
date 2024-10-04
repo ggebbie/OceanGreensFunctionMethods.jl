@@ -9,16 +9,47 @@ where 𝐆(t) is a  N × N matrix with the spatial locations of field points (bo
 """
 greens_function(τ,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*τ)
 
-function boundary_propagator(t,A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+"""
+    boundary_propagator(τ, A, B; alg=:forward)
+
+Forward and adjoint boundary propagators.
+
+# Forward boundary propagator
+
+    boundary_propagator(τ, A, B, alg=:forward)
+
+The (forward) boundary propagator is the box model surface-to-interior transit time distribution (TTD) over transit times τ = t - t′, as given by equation 88 of Haine et al. (2024):
+```math
+{\\bf G}' (\\tau) = {\\bf G} (\\tau) ~ {\\bf B}
+```
+The N × Nₛ 𝐆′(τ) matrix quantifies transfer from the Nₛ components of the surface forcing to the N boxes with transit time τ.
+
+# Adjoint boundary propagator
+
+    boundary_propagator(τ, A, B, alg=:adjoint)
+
+The box model adjoint boundary propagator (interior-to-surface TTD over transit time τ† = t″ - t, where t″ ≥ t is the time of the adjoint source; equation 93 of Haine et al., 2024) is
+```math
+{\\bf G}'^{\\dagger} (\\tau^{\\dagger} )  = {\\bf B}^{T}~ {\\bf G} (\\tau^{\\dagger}).
+```
+This Nₛ × N 𝐆′†(τ†) matrix quantifies transfer from the N interior boxes to the Nₛ surface boxes with transit time τ†.
+"""
+function boundary_propagator(τ, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
 if alg == :forward 
-    return boundary_propagator_forward(t, A, B)
+    return boundary_propagator_forward(τ, A, B)
 elseif alg == :adjoint
-    return boundary_propagator_adjoint(t, A, B)
+    return boundary_propagator_adjoint(τ, A, B)
 end
     error("boundary propagator method not implemented")
 end
 
+"""
+    boundary_propagator_forward(t,A,B)
+"""
 boundary_propagator_forward(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+"""
+    boundary_propagator_adjoint(t,A,B)
+"""
 boundary_propagator_adjoint(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
 
 function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
