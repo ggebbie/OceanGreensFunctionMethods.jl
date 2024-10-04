@@ -5,9 +5,9 @@
 [![Build Status](https://github.com/ggebbie/OceanGreensFunctionMethods.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/ggebbie/OceanGreensFunctionMethods.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/ggebbie/OceanGreensFunctionMethods.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/ggebbie/OceanGreensFunctionMethods.jl)
 
-Julia package to complement "A Review of Green's Function Methods in Ocean Circulation Models," by Haine et al. This package has two goals.
+Julia package to complement "A Review of Green's Function Methods in Ocean Circulation Models," by Haine et al.  ([`preprint`](https://essopenarchive.org/users/528978/articles/1215807-a-review-of-green-s-function-methods-for-tracer-timescales-and-pathways-in-ocean-models)). This package has two goals.
 
-1. One of the stated goals of the manuscript is to make Green's Function methods accessible for learning purposes. A computational notebook is provided with this package and detailed below.
+1. One of the stated goals of the manuscript is to make Green's Function methods accessible for learning purposes. A Julia computational notebook is provided with this package and detailed below. A MATLAB Live Script is also [`publicly available`](https://github.com/ThomasHaine/Pedagogical-Tracer-Box-Model).
 
 2. Here, we also aim to make a Julia package that is useful and computationally efficient for research purposes. The codes are contained in the source directory (`src`) and can be used and imported by other Julia projects. 
 
