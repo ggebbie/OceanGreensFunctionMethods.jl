@@ -6,7 +6,7 @@ using Distributions: @distr_support
 using DimensionalData
 using DimensionalData: @dim 
 using Unitful
-using MultipliableDimArrays
+using AlgebraicArrays
 using LinearAlgebra
 using Downloads
 using MAT
