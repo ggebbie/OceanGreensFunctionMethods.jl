@@ -1,10 +1,10 @@
 using Revise
 using OceanGreensFunctionMethods
+using AlgebraicArrays
 using Distributions
 using DimensionalData
 using DimensionalData: @dim
 using Unitful
-using MultipliableDimArrays
 using LinearAlgebra
 using Test
 
@@ -46,8 +46,9 @@ include("../src/config_units.jl")
         
         #Vol_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
         Vol_uniform = 300.0Sv*yr |> km^3 # uniform value of volume for all boxes
-        Vol = DimArray(fill(Vol_uniform, Ny, Nz), model_dims)
-
+        #Vol = DimArray(fill(Vol_uniform, Ny, Nz), model_dims)
+        Vol = VectorArray(fill(Vol_uniform, model_dims))
+ 
         Ψ_abyssal = 20Sv
         Fv_abyssal = abyssal_overturning(Ψ_abyssal, model_dims) # volume fluxes
 
@@ -59,7 +60,7 @@ include("../src/config_units.jl")
 
         Fv = Fv_abyssal + Fv_intermediate + Fv_diffusion
 
-        C = ones(model_dims)
+        C = VectorArray(ones(model_dims))
 
         J = advective_diffusive_flux(C, Fv)
         deldotJ = convergence(J)
@@ -127,16 +128,10 @@ include("../src/config_units.jl")
             # If f = 0, q = 0, then dC/dt  = Ac
             A =  linear_probe(tracer_tendency, Crand, f, Fv, Fb, Vol)
 
-            # view matrix in usual mathematical form
-            Matrix(A)
-
             # probe for B (boundary matrix)
             dCdt_boundary = tracer_tendency(f, Crand, Fb, Vol)
             B =  linear_probe(tracer_tendency, f, Crand, Fb, Vol)
             Aλ =  linear_probe(tracer_tendency, Crand, 269yr)
-            # Matrix(B)
-            # Matrix(Aλ)
-            mass(Vol)
 
             # Find eigenvalues of A. 
             # destructuring via iteration

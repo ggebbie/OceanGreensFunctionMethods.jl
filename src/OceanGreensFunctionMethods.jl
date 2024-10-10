@@ -18,6 +18,7 @@ import Distributions: mean, median, quantile, std, var, cov, cor, shape, params,
 import Base: +, alignment
 import DimensionalData: dims
 import LinearAlgebra: eigen
+#import AlgebraicArrays: MatrixDimArray, VectorDimArray
 
 export Fluxes
 export TracerInverseGaussian
@@ -50,6 +51,7 @@ export path_density
 export Tracer, Meridional, Vertical, Global 
 export tracer_timeseries
 export ideal_age
+export VectorDimArray, MatrixDimArray
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export # re-export from Distributions
@@ -61,6 +63,10 @@ export # re-export from DimensionalData
 export # re-export from LinearAlgebra
     eigen
 
+# originally defined in AlgebraicArrays.AlgebraicArraysDimensionalDataExt, but not exported
+MatrixDimArray = MatrixArray{T, M, N, R} where {M, T, N, R<:AbstractDimArray{T, M}}
+VectorDimArray = VectorArray{T, N, A} where {T, N, A <: DimensionalData.AbstractDimArray}
+    
 function projectdir()
     localproject = dirname(Base.active_project())
     if localproject[end-8:end] == "notebooks"

@@ -18,17 +18,22 @@ nmol = u"nmol"
 
 # define a structure for 2D fluxes in a yz domain
 struct Fluxes{T,N} 
-    poleward::DimArray{T,N}
-    equatorward::DimArray{T,N}
-    up::DimArray{T,N}
-    down::DimArray{T,N}
+    poleward::VectorDimArray{T,N}
+    equatorward::VectorDimArray{T,N}
+    up::VectorDimArray{T,N}
+    down::VectorDimArray{T,N}
 end
 
 +(F1::Fluxes, F2::Fluxes) = Fluxes(
-    F1.poleward .+ F2.poleward,
-    F1.equatorward .+ F2.equatorward,
-    F1.up .+ F2.up,
-    F1.down .+ F2.down)
+    F1.poleward + F2.poleward,
+    F1.equatorward + F2.equatorward,
+    F1.up + F2.up,
+    F1.down + F2.down)
+# +(F1::Fluxes, F2::Fluxes) = Fluxes(
+#     F1.poleward .+ F2.poleward,
+#     F1.equatorward .+ F2.equatorward,
+#     F1.up .+ F2.up,
+#     F1.down .+ F2.down)
 
 dims(F::Fluxes) = dims(F.poleward)
 
@@ -60,10 +65,10 @@ function abyssal_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
     Fv_units = unit(Ψ)
-    Fv_poleward = zeros(model_dims)*Fv_units
-    Fv_equatorward = zeros(model_dims)*Fv_units
-    Fv_up = zeros(model_dims)*Fv_units
-    Fv_down = zeros(model_dims)*Fv_units
+    Fv_poleward = VectorArray(zeros(model_dims)*Fv_units)
+    Fv_equatorward = VectorArray(zeros(model_dims)*Fv_units)
+    Fv_up = VectorArray(zeros(model_dims)*Fv_units)
+    Fv_down = VectorArray(zeros(model_dims)*Fv_units)
 
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
@@ -91,10 +96,10 @@ function intermediate_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
     Fv_units = unit(Ψ)
-    Fv_poleward = zeros(model_dims)*Fv_units
-    Fv_equatorward = zeros(model_dims)*Fv_units
-    Fv_up = zeros(model_dims)*Fv_units
-    Fv_down = zeros(model_dims)*Fv_units
+    Fv_poleward = VectorArray(zeros(model_dims)*Fv_units)
+    Fv_equatorward = VectorArray(zeros(model_dims)*Fv_units)
+    Fv_up = VectorArray(zeros(model_dims)*Fv_units)
+    Fv_down = VectorArray(zeros(model_dims)*Fv_units)
 
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
@@ -120,17 +125,19 @@ function vertical_diffusion(Fv_exchange,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
     Fv_units = unit(Fv_exchange)
-    Fv_poleward = zeros(model_dims)*Fv_units
-    Fv_equatorward = zeros(model_dims)*Fv_units
-    Fv_up = zeros(model_dims)*Fv_units
-    Fv_down = zeros(model_dims)*Fv_units
+    Fv_poleward = VectorArray(zeros(model_dims)*Fv_units)
+    Fv_equatorward = VectorArray(zeros(model_dims)*Fv_units)
+
 
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
+    # missing broadcast for VectorArray
+    Fv_up = zeros(model_dims)*Fv_units
+    Fv_down = zeros(model_dims)*Fv_units
     Fv_up[:,At(["Abyssal","Deep"])] .= Fv_exchange 
     Fv_down[:,At(["Thermocline","Deep"])] .= Fv_exchange 
-
-    return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
+    
+    return Fluxes(Fv_poleward, Fv_equatorward, VectorArray(Fv_up), VectorArray(Fv_down))
 end
 
 """
@@ -503,7 +510,7 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
     Cf = zeros(dims(C₀))
 
     # total
-    C = DimArray(Array{DimArray}(undef,size(tlist)),Ti(tlist))
+    C = DimArray(Array{VectorDimArray}(undef,size(tlist)),Ti(tlist))
     
     C[1] = Ci + Cf
     
@@ -534,7 +541,7 @@ end
 # Returns
 - `Cf::DimArray`: tracer distribution at `tf`
 """
-timestep_initial_condition(C, μ, V, ti, tf) = real.( V * exp(μ*(tf-ti)) / V * C )
+timestep_initial_condition(C, μ, V, ti, tf) = real.( V * exp(Diagonal(μ)*(tf-ti)) / V * C )
 
 """
     forcing_integrand(t, tf, μ, V, B, source_history)
@@ -549,7 +556,7 @@ Integrand for boundary condition term in equation 10 (Haine et al., 2024).
 - `B`: boundary condition matrix
 - `source_history::Function`: returns Dirichlet boundary condition at a given time
 """
-forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(μ*(tf-t)) / V * B * source_history(t))
+forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(Diagonal(μ)*(tf-t)) / V * B * source_history(t))
     
 """
     integrate_forcing(t0, tf, μ, V, B, source_history)
