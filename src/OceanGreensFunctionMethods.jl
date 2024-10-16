@@ -15,7 +15,7 @@ using QuadGK
 using CSV
 
 import Distributions: mean, median, quantile, std, var, cov, cor, shape, params, pdf, InverseGaussian
-import Base: +, alignment
+import Base: +, alignment, zeros
 import DimensionalData: dims
 import LinearAlgebra: eigen
 #import AlgebraicArrays: MatrixDimArray, VectorDimArray
@@ -57,7 +57,7 @@ export # re-export from Distributions
 export # re-export from Distributions
     InverseGaussian, pdf
 export # re-export from Base
-    +
+    +, zeros
 export # re-export from DimensionalData
     dims
 export # re-export from LinearAlgebra

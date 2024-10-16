@@ -17,11 +17,11 @@ nmol = u"nmol"
 @dim Global "global quantity"
 
 # define a structure for 2D fluxes in a yz domain
-struct Fluxes{T,N} 
-    poleward::VectorDimArray{T,N}
-    equatorward::VectorDimArray{T,N}
-    up::VectorDimArray{T,N}
-    down::VectorDimArray{T,N}
+struct Fluxes{T,A<:AbstractArray{T}} 
+    poleward::A
+    equatorward::A
+    up::A
+    down::A
 end
 
 +(F1::Fluxes, F2::Fluxes) = Fluxes(
@@ -29,11 +29,6 @@ end
     F1.equatorward + F2.equatorward,
     F1.up + F2.up,
     F1.down + F2.down)
-# +(F1::Fluxes, F2::Fluxes) = Fluxes(
-#     F1.poleward .+ F2.poleward,
-#     F1.equatorward .+ F2.equatorward,
-#     F1.up .+ F2.up,
-#     F1.down .+ F2.down)
 
 dims(F::Fluxes) = dims(F.poleward)
 
@@ -56,6 +51,15 @@ Define labels for the boundary's physical dimensions, as well as labels for the 
 boundary_dimensions() = (Meridional(meridional_names()[1:2]; order=DimensionalData.Unordered()),
     Vertical([vertical_names()[1]]; order=DimensionalData.Unordered())) 
 
+# function Base.zeros(model_dims, type::Symbol)
+#     if type == :Fluxes
+#         Fv_zeros = zeros(model_dims, :VectorArray)*Fv_units
+#         return Fluxes(Fv_zeros, Fv_zeros, Fv_zeros, Fv_zeros)
+#     else
+#         error("zeros not implemented for this type")
+#     end
+# end
+    
 """
     abyssal_overturning(Ψ,model_dims)
 
@@ -65,10 +69,10 @@ function abyssal_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
     Fv_units = unit(Ψ)
-    Fv_poleward = VectorArray(zeros(model_dims)*Fv_units)
-    Fv_equatorward = VectorArray(zeros(model_dims)*Fv_units)
-    Fv_up = VectorArray(zeros(model_dims)*Fv_units)
-    Fv_down = VectorArray(zeros(model_dims)*Fv_units)
+    Fv_poleward = zeros(model_dims, :VectorArray)*Fv_units
+    Fv_equatorward = zeros(model_dims, :VectorArray)*Fv_units
+    Fv_up = zeros(model_dims, :VectorArray)*Fv_units
+    Fv_down = zeros(model_dims, :VectorArray)*Fv_units
 
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
@@ -96,10 +100,10 @@ function intermediate_overturning(Ψ,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
     Fv_units = unit(Ψ)
-    Fv_poleward = VectorArray(zeros(model_dims)*Fv_units)
-    Fv_equatorward = VectorArray(zeros(model_dims)*Fv_units)
-    Fv_up = VectorArray(zeros(model_dims)*Fv_units)
-    Fv_down = VectorArray(zeros(model_dims)*Fv_units)
+    Fv_poleward = zeros(model_dims, :VectorArray)*Fv_units
+    Fv_equatorward = zeros(model_dims, :VectorArray)*Fv_units
+    Fv_up = zeros(model_dims, :VectorArray)*Fv_units
+    Fv_down = zeros(model_dims, :VectorArray)*Fv_units
 
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
@@ -125,19 +129,20 @@ function vertical_diffusion(Fv_exchange,model_dims)
 
     # pre-allocate volume fluxes with zeros with the right units
     Fv_units = unit(Fv_exchange)
-    Fv_poleward = VectorArray(zeros(model_dims)*Fv_units)
-    Fv_equatorward = VectorArray(zeros(model_dims)*Fv_units)
-
+    Fv_poleward = zeros(model_dims, :VectorArray)*Fv_units
+    Fv_equatorward = zeros(model_dims, :VectorArray)*Fv_units
+    Fv_up = zeros(model_dims, :VectorArray)*Fv_units
+    Fv_down = zeros(model_dims, :VectorArray)*Fv_units
 
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
-    # missing broadcast for VectorArray
-    Fv_up = zeros(model_dims)*Fv_units
-    Fv_down = zeros(model_dims)*Fv_units
+    # missing proper broadcast for VectorDimArray: add `parent` below
     Fv_up[:,At(["Abyssal","Deep"])] .= Fv_exchange 
     Fv_down[:,At(["Thermocline","Deep"])] .= Fv_exchange 
+    #parent(Fv_up)[:,At(["Abyssal","Deep"])] .= Fv_exchange 
+    #parent(Fv_down)[:,At(["Thermocline","Deep"])] .= Fv_exchange 
     
-    return Fluxes(Fv_poleward, Fv_equatorward, VectorArray(Fv_up), VectorArray(Fv_down))
+    return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
 
 """
@@ -152,7 +157,7 @@ Advective-diffusive flux of tracer `C` given volume fluxes `Fv` and optional den
 # Returns
 - `Fc::DimArray`: tracer flux
 """
-advective_diffusive_flux(C::DimArray, Fv::DimArray ; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
+advective_diffusive_flux(C::VectorDimArray, Fv::VectorDimArray ; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
 
 """
     advective_diffusive_flux(C, Fv; ρ)
@@ -166,7 +171,7 @@ Advective-diffusive flux of tracer `C` given volume fluxes `Fv` and optional den
 # Returns
 - `Fc::Fluxes`: tracer flux
 """
-advective_diffusive_flux(C::DimArray, Fv::Fluxes ; ρ = 1035kg/m^3) =
+advective_diffusive_flux(C::VectorDimArray, Fv::Fluxes ; ρ = 1035kg/m^3) =
     Fluxes(
         advective_diffusive_flux(C, Fv.poleward, ρ=ρ),
         advective_diffusive_flux(C, Fv.equatorward, ρ=ρ),
@@ -185,26 +190,28 @@ mass(V; ρ = 1035kg/m^3) = ρ * V .|> u"Zg"
     convergence(J)
 
 Convergence of fluxes `J` of type `Fluxes`.
+This is a computational methods that depends on proper slices and broadcasting
+and thus currently requires using `parent` on the left hand side below.
 """
-function convergence(J::Fluxes)
+function convergence(J::Fluxes{T,A}) where {T, A <: VectorDimArray{T}}
 
     # all the fluxes leaving a box
     deldotJ = -( J.poleward + J.equatorward + J.up + J.down)
 
     #poleward flux entering
-    deldotJ[At(["Mid-latitudes","High latitudes"]),:] .+=
-        J.poleward[At(["Low latitudes","Mid-latitudes"]),:]
+    parent(deldotJ)[At(["Mid-latitudes","High latitudes"]),:] .+=
+       J.poleward[At(["Low latitudes","Mid-latitudes"]),:]
 
     #equatorward flux entering
-    deldotJ[At(["Low latitudes","Mid-latitudes"]),:] .+=
+    parent(deldotJ)[At(["Low latitudes","Mid-latitudes"]),:] .+=
         J.equatorward[At(["Mid-latitudes","High latitudes"]),:]
 
     # upward flux entering
-    deldotJ[:,At(["Thermocline","Deep"])] .+=
+    parent(deldotJ)[:,At(["Thermocline","Deep"])] .+=
         J.up[:,At(["Deep","Abyssal"])]
 
     # downward flux entering
-    deldotJ[:,At(["Deep","Abyssal"])] .+=
+    parent(deldotJ)[:,At(["Deep","Abyssal"])] .+=
         J.down[:,At(["Thermocline","Deep"])]
 
     return deldotJ 
@@ -215,11 +222,14 @@ end
 
 Convergence of volume derived from a field of volume fluxes `Fv`, translated into a mass flux convergence with the assumption of uniform density.  
 """
-mass_convergence(Fv) = convergence(advective_diffusive_flux(ones(dims(Fv)), Fv))
+mass_convergence(Fv) = convergence(advective_diffusive_flux( ones(dims(Fv), :VectorArray), Fv))
 
-function local_boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
+function local_boundary_flux(f::VectorDimArray,
+    C::VectorDimArray,
+    Fb::VectorDimArray)
+    
     ΔC = f - C[DimSelectors(f)] # relevant interior tracer difference from boundary value
-    return Jb = advective_diffusive_flux(ΔC, Fb)
+    return advective_diffusive_flux(ΔC, Fb)
 end
 
 """
@@ -234,9 +244,9 @@ Convergence or net effect of boundary fluxes.
 # Returns
 - `Jb::Fluxes`: boundary tracer flux
 """
-function boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
+function boundary_flux(f::VectorDimArray, C::VectorDimArray, Fb::VectorDimArray)
     Jlocal = local_boundary_flux(f, C, Fb)
-    Jb = unit(first(Jlocal)) * zeros(dims(C)) # pre-allocate
+    Jb = unit(first(Jlocal)) * VectorArray(zeros(dims(C))) # pre-allocate
     Jb[DimSelectors(f)] += Jlocal # transfer J at boundary locations onto global grid
     return Jb
 end
@@ -246,7 +256,7 @@ end
 
 Radioactive decay rate of tracer `C` with half life of `halflife`.
 """
-radioactive_decay(C::DimArray, halflife::Number) = -(log(2)/halflife)*C 
+radioactive_decay(C::Union{VectorArray,DimArray}, halflife::Number) = -(log(2)/halflife)*C 
 
 """
     tracer_tendency(C, f, Fv, Fb, V)
@@ -254,23 +264,37 @@ radioactive_decay(C::DimArray, halflife::Number) = -(log(2)/halflife)*C
 Tracer tendency ∂C/∂t for a tracer `C`, especially useful for finding a tracer transport matrix. 
 
 # Arguments
-- `C::DimArray`: tracer distribution
-- `f::DimArray`: Dirichlet boundary condition
+- `C::VectorDimArray`: tracer distribution
+- `f::VectorDimArray`: Dirichlet boundary condition
 - `Fv::Fluxes`: volume fluxes
-- `Fb::Fluxes`: volume fluxes
-- `V::DimArray`: box volume
+- `Fb::VectorDimArray`: boundary flux convergence
+- `V::VectorDimArray`: box volume
 # Returns
-- `dCdt::DimArray`: tracer tendency
+- `dCdt::VectorDimArray`: tracer tendency
 """
 tracer_tendency(
-    C::DimArray{<:Number,N},
-    f::DimArray{<:Number,N},
-    Fv::Fluxes{<:Number,N},
-    Fb::DimArray{<:Number,N},
-    V::DimArray{<:Number,N}) where N = 
+    C::VDA1,
+    f::VDA2,
+    Fv::Fluxes{T,VDA3},
+    Fb::VDA4,
+    V::VDA5) where {T, VDA1 <: VectorDimArray,
+        VDA2 <: VectorDimArray,
+        VDA3 <: VectorDimArray,
+        VDA4 <: VectorDimArray,
+        VDA5 <: VectorDimArray} =
     ((convergence(advective_diffusive_flux(C, Fv)) +
-    boundary_flux(f, C, Fb)) ./
-    mass(V)) .|> yr^-1 
+                  boundary_flux(f, C, Fb)) ./
+                  mass(V)) .|> yr^-1 
+# computationally fast version of tracer tendency
+tracer_tendency(
+    C::DimArray{T},
+    f::DimArray{T},
+    Fv::Fluxes{T},
+    Fb::DimArray{T},
+    V::DimArray{T}) where T <: Number = 
+    ((convergence(advective_diffusive_flux(C, Fv)) +
+                  boundary_flux(f, C, Fb)) ./
+                  mass(V)) .|> yr^-1 
 
 """
     tracer_tendency(f, C, Fv, Fb, V)
@@ -287,10 +311,17 @@ Tracer tendency ∂C/∂t for a boundary flux `f`, for use with finding B bounda
 - `dCdt::DimArray`: tracer tendency
 """
 tracer_tendency(
-    f::DimArray{<:Number,N},
-    C::DimArray{<:Number,N},
-    Fb::DimArray{<:Number,N},
-    V::DimArray{<:Number,N}) where N = 
+    # f::DimArray{<:Number,N},
+    # C::DimArray{<:Number,N},
+    # Fb::DimArray{<:Number,N},
+    # V::DimArray{<:Number,N}) where N = 
+    f::VDA2,
+    C::VDA1,
+    Fb::VDA4,
+    V::VDA5) where {T, VDA1 <: VectorDimArray,
+        VDA2 <: VectorDimArray,
+        VDA4 <: VectorDimArray,
+        VDA5 <: VectorDimArray} =
     (boundary_flux(f, C, Fb) ./
     mass(V)) .|> yr^-1 
 
@@ -306,8 +337,8 @@ Tracer tendency ∂C/∂t for the radioactive decay of a tracer `C` with half li
 # Returns
 - `dCdt::DimArray`: tracer tendency
 """
-tracer_tendency(C::DimArray{<:Number,N},
-    halflife::Number) where N =
+tracer_tendency(C::Union{VectorDimArray{T,N},DimArray{T,N}},
+    halflife::T) where {T,N} =
     radioactive_decay(C, halflife) .|> yr^-1 
 
 """
@@ -337,6 +368,10 @@ function linear_probe(funk::Function,C::DimArray{T,N},args...) where T <: Number
         C[i] -= 1.0*unit(first(C)) # necessary?
     end
     return DimArray(A, dims(C))
+end
+
+function linear_probe(funk::Function, C::VectorDimArray, args...)
+    return MatrixArray(linear_probe(funk,parent(C),parent.(args...)))
 end
 
 allequal(x) = all(y -> y == first(x), x)

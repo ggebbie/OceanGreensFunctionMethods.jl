@@ -47,7 +47,8 @@ include("../src/config_units.jl")
         #Vol_uniform = 1e16m^3 |> km^3 # uniform value of volume for all boxes
         Vol_uniform = 300.0Sv*yr |> km^3 # uniform value of volume for all boxes
         #Vol = DimArray(fill(Vol_uniform, Ny, Nz), model_dims)
-        Vol = VectorArray(fill(Vol_uniform, model_dims))
+        #Vol = VectorArray(fill(Vol_uniform, model_dims))
+        Vol = fill(Vol_uniform, model_dims, :VectorArray)
  
         Ψ_abyssal = 20Sv
         Fv_abyssal = abyssal_overturning(Ψ_abyssal, model_dims) # volume fluxes
@@ -97,15 +98,14 @@ include("../src/config_units.jl")
         J_intermediate = advective_diffusive_flux(C, Fv_intermediate)
         deldotJ_intermediate = convergence(J_intermediate)
 
-        #@testset "surface boundary" begin 
-
         # boundary exchange: define the locations affected by boundary fluxes
         boundary_dims = boundary_dimensions()
-           
-        Fb = DimArray(hcat([20Sv, 10Sv]), boundary_dims) # boundary flux
-        f = ones(boundary_dims) # boundary tracer values
 
-        C0 = zeros(model_dims) # zero interior tracer to identify boundary source
+        # Would be nice to have a constructor here
+        Fb = VectorArray(DimArray(hcat([20Sv, 10Sv]), boundary_dims)) # boundary flux
+        f = VectorArray(ones(boundary_dims)) # boundary tracer values
+
+        C0 = VectorArray(zeros(model_dims)) # zero interior tracer to identify boundary source
         Jb_local = local_boundary_flux( f, C0, Fb)
         Jb = boundary_flux( f, C0, Fb)
 
@@ -114,7 +114,7 @@ include("../src/config_units.jl")
 
         @testset "construct transport matrix" begin 
             # given Cb and mass circulation, solve for dC/dt
-            Crand = rand(model_dims)
+            Crand = VectorArray(rand(model_dims))
 
             # boundary flux is already expressed as a convergence        
             deldotJ = convergence(
