@@ -137,10 +137,8 @@ function vertical_diffusion(Fv_exchange,model_dims)
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
     # missing proper broadcast for VectorDimArray: add `parent` below
-    Fv_up[:,At(["Abyssal","Deep"])] .= Fv_exchange 
-    Fv_down[:,At(["Thermocline","Deep"])] .= Fv_exchange 
-    #parent(Fv_up)[:,At(["Abyssal","Deep"])] .= Fv_exchange 
-    #parent(Fv_down)[:,At(["Thermocline","Deep"])] .= Fv_exchange 
+    parent(Fv_up)[:,At(["Abyssal","Deep"])] .= Fv_exchange 
+    parent(Fv_down)[:,At(["Thermocline","Deep"])] .= Fv_exchange 
     
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
@@ -198,6 +196,8 @@ function convergence(J::Fluxes{T,A}) where {T, A <: VectorDimArray{T}}
     # all the fluxes leaving a box
     deldotJ = -( J.poleward + J.equatorward + J.up + J.down)
 
+    # add `parent` to handle proper broadcasting
+    
     #poleward flux entering
     parent(deldotJ)[At(["Mid-latitudes","High latitudes"]),:] .+=
        J.poleward[At(["Low latitudes","Mid-latitudes"]),:]

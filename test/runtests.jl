@@ -60,8 +60,7 @@ include("../src/config_units.jl")
         Fv_diffusion = vertical_diffusion(Fv_exchange, model_dims) # volume fluxes
 
         Fv = Fv_abyssal + Fv_intermediate + Fv_diffusion
-
-        C = VectorArray(ones(model_dims))
+        C = ones(model_dims, :VectorArray)
 
         J = advective_diffusive_flux(C, Fv)
         deldotJ = convergence(J)
