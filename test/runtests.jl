@@ -100,11 +100,11 @@ include("../src/config_units.jl")
         # boundary exchange: define the locations affected by boundary fluxes
         boundary_dims = boundary_dimensions()
 
-        # Would be nice to have a constructor here
-        Fb = VectorArray(DimArray(hcat([20Sv, 10Sv]), boundary_dims)) # boundary flux
-        f = VectorArray(ones(boundary_dims)) # boundary tracer values
+        # AlgebraicArray takes a vector and makes it a VectorArray
+        Fb = AlgebraicArray([20Sv, 10Sv], boundary_dims) # boundary flux
+        f = ones(boundary_dims, :VectorArray) # boundary tracer values
 
-        C0 = VectorArray(zeros(model_dims)) # zero interior tracer to identify boundary source
+        C0 = zeros(model_dims, :VectorArray) # zero interior tracer to identify boundary source
         Jb_local = local_boundary_flux( f, C0, Fb)
         Jb = boundary_flux( f, C0, Fb)
 
@@ -113,19 +113,17 @@ include("../src/config_units.jl")
 
         @testset "construct transport matrix" begin 
             # given Cb and mass circulation, solve for dC/dt
-            Crand = VectorArray(rand(model_dims))
-
             # boundary flux is already expressed as a convergence        
             deldotJ = convergence(
-                advective_diffusive_flux(Crand, Fv))
-            + boundary_flux(f, Crand, Fb)
+                advective_diffusive_flux(C0, Fv))
+            + boundary_flux(f, C0, Fb)
 
             # ease the programming with a top-level driver function
-            dCdt = tracer_tendency(Crand, f, Fv, Fb, Vol)
+            dCdt = tracer_tendency(C0, f, Fv, Fb, Vol)
         
             # find A matrix.
             # If f = 0, q = 0, then dC/dt  = Ac
-            A =  linear_probe(tracer_tendency, Crand, f, Fv, Fb, Vol)
+            A =  linear_probe(tracer_tendency, C0, f, Fv, Fb, Vol)
 
             # probe for B (boundary matrix)
             dCdt_boundary = tracer_tendency(f, Crand, Fb, Vol)
