@@ -100,7 +100,7 @@ include("../src/config_units.jl")
         # boundary exchange: define the locations affected by boundary fluxes
         boundary_dims = boundary_dimensions()
 
-        # AlgebraicArray takes a vector and makes it a VectorArray
+        # AlgebraicArray takes an object with dimensional info and makes it a VectorArray or MatrixArray
         Fb = AlgebraicArray([20Sv, 10Sv], boundary_dims) # boundary flux
         f = ones(boundary_dims, :VectorArray) # boundary tracer values
 
@@ -118,17 +118,26 @@ include("../src/config_units.jl")
                 advective_diffusive_flux(C0, Fv))
             + boundary_flux(f, C0, Fb)
 
-            # ease the programming with a top-level driver function
+            # ease the programming with a top-level driver functions
             dCdt = tracer_tendency(C0, f, Fv, Fb, Vol)
-        
+            dCdt_boundary = tracer_tendency(f, C0, Fb, Vol)
+            dCdt = tracer_tendency(C0, 269yr)
+            
             # find A matrix.
             # If f = 0, q = 0, then dC/dt  = Ac
+
+            typeof(C0)
+            C1 = deepcopy(C0)
+            C1[1] += 1.0 #*unit(first(C))
+
+            #ttt = tracer_tendency(C1, f, Fv, Fb, Vol) - tracer_tendency(C0, f, Fv, Fb, Vol) 
             A =  linear_probe(tracer_tendency, C0, f, Fv, Fb, Vol)
 
             # probe for B (boundary matrix)
-            dCdt_boundary = tracer_tendency(f, Crand, Fb, Vol)
-            B =  linear_probe(tracer_tendency, f, Crand, Fb, Vol)
-            Aλ =  linear_probe(tracer_tendency, Crand, 269yr)
+            B =  linear_probe(tracer_tendency, f, C0, Fb, Vol)
+
+            # probe for radioactive adjustment to matrix
+            Aλ =  linear_probe(tracer_tendency, C0, 269yr)
 
             # Find eigenvalues of A. 
             # destructuring via iteration

@@ -137,10 +137,12 @@ function vertical_diffusion(Fv_exchange,model_dims)
     # set fluxes manually
     # fluxes organized according to (upwind) source of flux
     # missing proper broadcast for VectorDimArray: add `parent` below
-    parent(Fv_up)[:,At(["Abyssal","Deep"])] .= Fv_exchange 
-    parent(Fv_down)[:,At(["Thermocline","Deep"])] .= Fv_exchange 
-    # Fv_up[:,At(["Abyssal","Deep"])] .= Fv_exchange 
-    # Fv_down[:,At(["Thermocline","Deep"])] .= Fv_exchange 
+    #parent(Fv_up)[:,At(["Abyssal","Deep"])] .= Fv_exchange 
+    #parent(Fv_down)[:,At(["Thermocline","Deep"])] .= Fv_exchange 
+    Fv_up[:,At(["Abyssal","Deep"])] =
+             Fv_up[:,At(["Abyssal","Deep"])] .+ Fv_exchange 
+    Fv_down[:,At(["Thermocline","Deep"])] =
+        Fv_down[:,At(["Thermocline","Deep"])] .+ Fv_exchange 
     
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
@@ -200,21 +202,44 @@ function convergence(J::Fluxes{T,A}) where {T, A <: VectorDimArray{T}}
 
     # add `parent` to handle proper broadcasting
     
-    #poleward flux entering
-    parent(deldotJ)[At(["Mid-latitudes","High latitudes"]),:] .+=
+    # #poleward flux entering
+    # parent(deldotJ)[At(["Mid-latitudes","High latitudes"]),:] .+=
+    #    J.poleward[At(["Low latitudes","Mid-latitudes"]),:]
+
+    # #equatorward flux entering
+    # parent(deldotJ)[At(["Low latitudes","Mid-latitudes"]),:] .+=
+    #     J.equatorward[At(["Mid-latitudes","High latitudes"]),:]
+
+    # # upward flux entering
+    # parent(deldotJ)[:,At(["Thermocline","Deep"])] .+=
+    #     J.up[:,At(["Deep","Abyssal"])]
+
+    # # downward flux entering
+    # parent(deldotJ)[:,At(["Deep","Abyssal"])] .+=
+    #     J.down[:,At(["Thermocline","Deep"])]
+
+    #alternatively, could write
+    deldotJ[At(["Mid-latitudes","High latitudes"]),:] =
+       deldotJ[At(["Mid-latitudes","High latitudes"]),:] .+
        J.poleward[At(["Low latitudes","Mid-latitudes"]),:]
 
-    #equatorward flux entering
-    parent(deldotJ)[At(["Low latitudes","Mid-latitudes"]),:] .+=
+    deldotJ[At(["Low latitudes","Mid-latitudes"]),:] =
+        deldotJ[At(["Low latitudes","Mid-latitudes"]),:] .+
         J.equatorward[At(["Mid-latitudes","High latitudes"]),:]
 
     # upward flux entering
-    parent(deldotJ)[:,At(["Thermocline","Deep"])] .+=
+    deldotJ[:,At(["Thermocline","Deep"])] =
+        deldotJ[:,At(["Thermocline","Deep"])] .+
         J.up[:,At(["Deep","Abyssal"])]
 
     # downward flux entering
-    parent(deldotJ)[:,At(["Deep","Abyssal"])] .+=
+    deldotJ[:,At(["Deep","Abyssal"])] =
+        deldotJ[:,At(["Deep","Abyssal"])] .+
         J.down[:,At(["Thermocline","Deep"])]
+       
+    # this fails, but is a goal to make this work
+    #deldotJ[At(["Mid-latitudes","High latitudes"]),:] .+=
+    #    J.poleward[At(["Low latitudes","Mid-latitudes"]),:]
 
     return deldotJ 
 end
@@ -275,25 +300,11 @@ Tracer tendency ∂C/∂t for a tracer `C`, especially useful for finding a trac
 - `dCdt::VectorDimArray`: tracer tendency
 """
 tracer_tendency(
-    C::VDA1,
-    f::VDA2,
-    Fv::Fluxes{T,VDA3},
-    Fb::VDA4,
-    V::VDA5) where {T, VDA1 <: VectorDimArray,
-        VDA2 <: VectorDimArray,
-        VDA3 <: VectorDimArray,
-        VDA4 <: VectorDimArray,
-        VDA5 <: VectorDimArray} =
-    ((convergence(advective_diffusive_flux(C, Fv)) +
-                  boundary_flux(f, C, Fb)) ./
-                  mass(V)) .|> yr^-1 
-# computationally fast version of tracer tendency
-tracer_tendency(
-    C::DimArray{T},
-    f::DimArray{T},
-    Fv::Fluxes{T},
-    Fb::DimArray{T},
-    V::DimArray{T}) where T <: Number = 
+    C::VectorDimArray,
+    f::VectorDimArray,
+    Fv::Fluxes{T,<:VectorDimArray},
+    Fb::VectorDimArray,
+    V::VectorDimArray) where T =
     ((convergence(advective_diffusive_flux(C, Fv)) +
                   boundary_flux(f, C, Fb)) ./
                   mass(V)) .|> yr^-1 
@@ -313,17 +324,10 @@ Tracer tendency ∂C/∂t for a boundary flux `f`, for use with finding B bounda
 - `dCdt::DimArray`: tracer tendency
 """
 tracer_tendency(
-    # f::DimArray{<:Number,N},
-    # C::DimArray{<:Number,N},
-    # Fb::DimArray{<:Number,N},
-    # V::DimArray{<:Number,N}) where N = 
-    f::VDA2,
-    C::VDA1,
-    Fb::VDA4,
-    V::VDA5) where {T, VDA1 <: VectorDimArray,
-        VDA2 <: VectorDimArray,
-        VDA4 <: VectorDimArray,
-        VDA5 <: VectorDimArray} =
+    f::VectorDimArray,
+    C::VectorDimArray,
+    Fb::VectorDimArray,
+    V::VectorDimArray) =
     (boundary_flux(f, C, Fb) ./
     mass(V)) .|> yr^-1 
 
@@ -339,8 +343,8 @@ Tracer tendency ∂C/∂t for the radioactive decay of a tracer `C` with half li
 # Returns
 - `dCdt::DimArray`: tracer tendency
 """
-tracer_tendency(C::Union{VectorDimArray{T,N},DimArray{T,N}},
-    halflife::T) where {T,N} =
+#tracer_tendency(C::Union{VectorDimArray{T,N},DimArray{T,N}},
+tracer_tendency(C::VectorDimArray, halflife::Number) =
     radioactive_decay(C, halflife) .|> yr^-1 
 
 """
@@ -354,41 +358,36 @@ Probe a function to determine its linear response in matrix form. Assumes units 
 - `halflife::Number`: radioactive half life
 - `args`: the arguments that follow `x` in `funk`
 # Returns
-- `A::DimArray{DimArray}`: labeled transport information used in matrix operations 
+- `A::MatrixDimArray`: labeled transport information used in matrix operations 
 """
 function linear_probe(funk::Function,C::VectorArray{T, N, DA}, args...) where {T, N, DA <: DimensionalData.AbstractDimArray} #where T <: Number # where N
 
-    println("T")
-    println(T)
-    dCdt0 = parent(funk(C, args...))
-    Trow = typeof(dCdt0)
-    println("Trow")
-    println(Trow)
-    println("N")
-    println(N)
-    println("DA")
-    println(DA)
+    dCdt0 = funk(C, args...)
+
+    # meta data for VectorArray changes
+    Trow = typeof(parent(dCdt0-dCdt0))
+
+    # would prefer to use parameterized type rather than Trow
     A = Array{Trow}(undef,size(C))
+    #A = Array{Any}(undef,size(C))
 
     for i in eachindex(C)
-        C[i] += 1.0*unit(first(C))
+        C[i] += 1.0 *unit(first(C))
+        
         # remove baseline if not zero
+        Δ = funk(C, args...) - dCdt0
+        
         # not strictly necessary for linear system
+        # error: can't convert, units issue?
         #A[i] = parent(funk(C, args...) - dCdt0)
+        A[i] = parent(Δ)
 
-        A[i] = parent(funk(C, args...)) # - dCdt0)
-        C[i] -= 1.0*unit(first(C)) # necessary?
+        #A[i] = parent(funk(C, args...))
+        C[i] -= 1.0  *unit(first(C)) # yes, necessary
     end
-    return DimArray(A, dims(C))
-     #   return AlgebraicArray(A, dims(C))
+    return MatrixArray(DimArray(A, dims(C)))
+    #return AlgebraicArray(A, dims(C))
 end
-
-# function linear_probe(funk::Function, C::VectorDimArray, args...)
-#     return MatrixArray(linear_probe(funk,parent(C),parent.(args...)))
-# end
-# function linear_probe(funk::Function, C::VectorDimArray, args::Vararg)
-#     return MatrixArray(linear_probe(funk,parent(C),parent.(args)))
-# end
 
 allequal(x) = all(y -> y == first(x), x)
 
