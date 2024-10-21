@@ -139,6 +139,8 @@ function vertical_diffusion(Fv_exchange,model_dims)
     # missing proper broadcast for VectorDimArray: add `parent` below
     parent(Fv_up)[:,At(["Abyssal","Deep"])] .= Fv_exchange 
     parent(Fv_down)[:,At(["Thermocline","Deep"])] .= Fv_exchange 
+    # Fv_up[:,At(["Abyssal","Deep"])] .= Fv_exchange 
+    # Fv_down[:,At(["Thermocline","Deep"])] .= Fv_exchange 
     
     return Fluxes(Fv_poleward, Fv_equatorward, Fv_up, Fv_down)
 end
@@ -188,7 +190,7 @@ mass(V; ρ = 1035kg/m^3) = ρ * V .|> u"Zg"
     convergence(J)
 
 Convergence of fluxes `J` of type `Fluxes`.
-This is a computational methods that depends on proper slices and broadcasting
+This is a computational method that depends on proper slices and broadcasting
 and thus currently requires using `parent` on the left hand side below.
 """
 function convergence(J::Fluxes{T,A}) where {T, A <: VectorDimArray{T}}
@@ -354,25 +356,39 @@ Probe a function to determine its linear response in matrix form. Assumes units 
 # Returns
 - `A::DimArray{DimArray}`: labeled transport information used in matrix operations 
 """
-function linear_probe(funk::Function,C::DimArray{T,N},args...) where T <: Number where N
+function linear_probe(funk::Function,C::VectorArray{T, N, DA}, args...) where {T, N, DA <: DimensionalData.AbstractDimArray} #where T <: Number # where N
 
-    dCdt0 = funk(C, args...)
+    println("T")
+    println(T)
+    dCdt0 = parent(funk(C, args...))
     Trow = typeof(dCdt0)
+    println("Trow")
+    println(Trow)
+    println("N")
+    println(N)
+    println("DA")
+    println(DA)
     A = Array{Trow}(undef,size(C))
 
     for i in eachindex(C)
         C[i] += 1.0*unit(first(C))
         # remove baseline if not zero
-        # not strictly necessary for linear system 
-        A[i] = funk(C, args...) - dCdt0
+        # not strictly necessary for linear system
+        #A[i] = parent(funk(C, args...) - dCdt0)
+
+        A[i] = parent(funk(C, args...)) # - dCdt0)
         C[i] -= 1.0*unit(first(C)) # necessary?
     end
     return DimArray(A, dims(C))
+     #   return AlgebraicArray(A, dims(C))
 end
 
-function linear_probe(funk::Function, C::VectorDimArray, args...)
-    return MatrixArray(linear_probe(funk,parent(C),parent.(args...)))
-end
+# function linear_probe(funk::Function, C::VectorDimArray, args...)
+#     return MatrixArray(linear_probe(funk,parent(C),parent.(args...)))
+# end
+# function linear_probe(funk::Function, C::VectorDimArray, args::Vararg)
+#     return MatrixArray(linear_probe(funk,parent(C),parent.(args)))
+# end
 
 allequal(x) = all(y -> y == first(x), x)
 
