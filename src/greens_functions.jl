@@ -442,13 +442,9 @@ function phi_function(t, μ)
     
     #μvals = diag(μ)
     for rr in 1:N
-        println("rr",rr)
         for cc in 1:N
-            println("rr",rr)
             μ_rr = μ[rr]
             μ_cc = μ[cc]
-            # μ_rr = μvals[rr]
-            # μ_cc = μvals[cc]
             if μ_rr ≠ μ_cc
                 ϕ[cc][rr] = (exp(μ_cc*t) - exp(μ_rr*t))/(μ_cc - μ_rr)
             else

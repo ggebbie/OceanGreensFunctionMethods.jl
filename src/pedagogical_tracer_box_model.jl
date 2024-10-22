@@ -528,7 +528,8 @@ function tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
     
     # replace this section with a function call.
     boundary_dims = boundary_dimensions()
-    return DimArray(hcat([box1,box2]),boundary_dims)
+    #return DimArray(hcat([box1,box2]),boundary_dims)
+    return AlgebraicArray([box1,box2],boundary_dims)
 end
 
 """
@@ -557,7 +558,7 @@ function evolve_concentration(C₀, A, B, tlist, source_history; halflife = noth
     Ci = deepcopy(C₀)
 
     # forcing contribution
-    Cf = zeros(dims(C₀))
+    Cf = zeros(dims(C₀), :VectorArray)
 
     # total
     C = DimArray(Array{VectorDimArray}(undef,size(tlist)),Ti(tlist))
@@ -606,7 +607,8 @@ Integrand for boundary condition term in equation 10 (Haine et al., 2024).
 - `B`: boundary condition matrix
 - `source_history::Function`: returns Dirichlet boundary condition at a given time
 """
-forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(Diagonal(μ)*(tf-t)) / V * B * source_history(t))
+forcing_integrand(t, tf, μ, V, B, source_history) = real( V * exp(Diagonal(μ)*(tf-t)) / V * B * source_history(t))
+#forcing_integrand(t, tf, μ, V, B, source_history) = real.( V * exp(Diagonal(μ)*(tf-t)) / V * B * source_history(t))
     
 """
     integrate_forcing(t0, tf, μ, V, B, source_history)

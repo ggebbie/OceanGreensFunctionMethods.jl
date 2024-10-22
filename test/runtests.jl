@@ -242,6 +242,8 @@ include("../src/config_units.jl")
                 Matrix(Φ(10yr))
                 # missing test for proper normalization
 
+                RTD(t) = residence_time(t, A, B)
+                RTD(1yr)
                 
             end
 
@@ -251,42 +253,42 @@ include("../src/config_units.jl")
                 tracername = :CFC11NH
                 box2_box1_ratio = 0.75
 
-                tracer_source_history(1990yr,
+                @test tracer_source_history(1990yr,
                     tracername,
                     box2_box1_ratio,
-                    BD)
+                    BD) isa VectorDimArray
                     
-                source_history_func(t) =  tracer_source_history(t,
+                source_history_func1(t) =  tracer_source_history(t,
                     tracername,
                     box2_box1_ratio,
                     BD,
                 )
                     
                 tt = 1973.0yr
-                source_history_func(tt)
+                source_history_func1(tt)
 
                 ti = 1980.0yr
                 tf = 1981.0yr
-                source_history_func(tf)
-                func_test(t) = OceanGreensFunctionMethods.forcing_integrand(t, tf, μ, V, B, source_history_func)
-                tester = integrate_forcing(ti, tf, μ, V, B, source_history_func) # does it run?
+                source_history_func1(tf)
+                func_test(t) = OceanGreensFunctionMethods.forcing_integrand(t, tf, μ, V, B, source_history_func1)
+                tester = integrate_forcing(ti, tf, μ, V, B, source_history_func1) # does it run?
 
-                C₀ = zeros(model_dims)
+                C₀ = zeros(model_dims, :VectorArray)
                 tlist = (1980.0:1981.0)yr
-                Cevolve = evolve_concentration(C₀, A, B, tlist, source_history_func; halflife = nothing)
+                Cevolve = evolve_concentration(C₀, A, B, tlist, source_history_func1; halflife = nothing)
                 Ct =  [Cevolve[t][3,1] for t in eachindex(tlist)]
                 @test Ct[end] > Ct[begin] 
 
                 # argon-39
                 tracername = :argon39
                 box2_box1_ratio = 1 
-                source_history_func(t) =  tracer_source_history(t,
+                source_history_func2(t) =  tracer_source_history(t,
                     tracername,
                     box2_box1_ratio,
                 )
                 tt = 1973.0yr
                 # always returns 1 
-                @test isequal(first(source_history_func(2000yr*randn())),1.0)
+                @test isequal(first(source_history_func2(2000yr*randn())),1.0)
 
                 # iodine-129
                 BD_iodine129 = read_iodine129_history()
@@ -298,14 +300,14 @@ include("../src/config_units.jl")
                     box2_box1_ratio,
                     BD_iodine129)
                     
-                source_history_func(t) =  tracer_source_history(t,
+                source_history_func3(t) =  tracer_source_history(t,
                     tracername,
                     box2_box1_ratio,
                     BD_iodine129,
                 )
                     
                 tt = 1873.0yr
-                source_history_func(tt)
+                @test source_history_func3(tt) isa VectorDimArray
                     
             end
 
