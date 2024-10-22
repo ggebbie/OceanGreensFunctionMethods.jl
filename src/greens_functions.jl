@@ -352,21 +352,18 @@ end
     ttd_width_residence(μ, V, B)
 """
 function ttd_width_residence(μ, V, B)
-# MATLAB: sqrt(([1, 1]*real( 6.*B'*V/(D.^4)/V*B)*[1; 1]./boxModel.no_boxes - Solution.RTD_mean_rt^2)/2) ;
-
-    # μ_diag = diag(μ)
-    # μ4_diag = μ_diag.^4 
-    # μ4 = DiagonalDimArray(μ4_diag,dims(μ))
+    # MATLAB: sqrt(([1, 1]*real( 6.*B'*V/(D.^4)/V*B)*[1; 1]./boxModel.no_boxes - Solution.RTD_mean_rt^2)/2) ;
     D4 = Diagonal(μ.^4)
+    boundary_dims = domainsize(B)
+    Nb = length(V) # number of boxes
 
-    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
-    ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
+    Δ2 = (6 / Nb) *
+        transpose(ones(boundary_dims, :VectorArray)) *
+        real(transpose(B) * V / D4 / V * B) *
+        ones(boundary_dims, :VectorArray)
 
-    Nb = size(V) # number of boxes
-    tmp = (6 ./ Nb) .* ones_row_vector * real(transpose(B) * V / D4 / V * B) * transpose(ones_row_vector) 
     Γ = mean_age(μ, V, B, alg=:residence)
-
-    return .√((1//2) .* (first(first(tmp)) - Γ^2 ))
+    return .√((1//2) .* (Δ2 - Γ^2 ))
 end
 
 """
