@@ -173,24 +173,21 @@ end
 """
     watermass_fraction_forward(μ, V, B)
 """
-watermass_fraction_forward(μ, V, B) = - real.(V / μ / V * B)
+watermass_fraction_forward(μ, V, B) = - real(V/ Diagonal(μ) / V * B)
 
 """
     watermass_fraction_adjoint(μ, V, B)
 """
-watermass_fraction_adjoint(μ, V, B) = - real.(transpose(B) * V / μ / V)
+watermass_fraction_adjoint(μ, V, B) = - real(transpose(B) * V / Diagonal(μ) / V)
 
 """
     watermass_fraction_residence(μ, V, B)
 """
 function watermass_fraction_residence(μ, V, B)
     # MATLAB: real(    B'*V/(D.^2)/V*B)
-    μ_diag = diag(μ)
-    μ2_diag = μ_diag.^2
-    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
-
-    Nb = size(V) # number of boxes
-    return real.( transpose(B) * V / μ2 / V * B) ./ Nb
+    D2 = Diagonal(μ.^2)
+    Nb = length(V) # number of boxes
+    return real( transpose(B) * V / D2 / V * B) / Nb
 end
 
 """
@@ -245,7 +242,7 @@ function mean_age_forward(μ, V, B)
     # use  real to get rid of very small complex parts
     # ideally, would check that complex parts are small
     boundary_dims = dims(B)
-    return real.(V / D / V * B) * ones(boundary_dims)
+    return real(V / D / V * B) * ones(boundary_dims)
 end
 
 """
@@ -253,16 +250,12 @@ end
 """
 function mean_age_adjoint(μ, V, B)
     # MATLAB: [1, 1]*real(    B'*V/(D.^2)/V)
-    # μ_diag = diag(μ)
-    # μ2_diag = μ_diag.^2
-    # μ2 = DiagonalDimArray(μ2_diag,dims(μ))
-
     D2 = Diagonal(μ.^2)
 
     # use a 1 x 2 matrix to avoid ambiguity with transpose operator
     ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
     
-    a_tmp = ones_row_vector * real.(transpose(B) * V / D2 / V) 
+    a_tmp = ones_row_vector * real(transpose(B) * V / D2 / V) 
 
     # undo the extra complication of a Global dimension
     return transpose(a_tmp)
@@ -283,7 +276,7 @@ function mean_age_residence(μ, V, B)
 
     # use a 1 x 2 matrix to avoid ambiguity with transpose operator
     ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
-    tmp = -2 .* ones_row_vector * real.(transpose(B) * V / D3 / V * B) * transpose(ones_row_vector) 
+    tmp = -2 .* ones_row_vector * real(transpose(B) * V / D3 / V * B) * transpose(ones_row_vector) 
 
     Nb = length(V) # number of boxes
 
@@ -345,7 +338,7 @@ function ttd_width_forward(μ, V, B)
     # μ3 = DiagonalDimArray(μ3_diag,dims(μ))
     D3 = Diagonal(μ.^3)
 
-    Δ² =  -real.(V / D3 / V * B) * ones(dims(B))
+    Δ² =  -real(V / D3 / V * B) * ones(dims(B), :VectorArray)
     Γ = mean_age(μ, V, B, alg=:forward)
     Δ² -= ((1//2) .* Γ.^2)
     return .√(Δ²)
@@ -364,7 +357,7 @@ function ttd_width_adjoint(μ, V, B)
     # use a 1 x 2 matrix to avoid ambiguity with transpose operator
     ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
     
-    Δ_tmp = -2 .* ones_row_vector * real.(transpose(B) * V / D3 / V) 
+    Δ_tmp = -2 .* ones_row_vector * real(transpose(B) * V / D3 / V) 
 
     # just a transpose?
     #Δ2 =  DimArray(reshape(transpose(Matrix(Δ_tmp)),size(Δ_tmp)),dims(Δ_tmp))
@@ -393,7 +386,7 @@ function ttd_width_residence(μ, V, B)
     ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
 
     Nb = size(V) # number of boxes
-    tmp = (6 ./ Nb) .* ones_row_vector * real.(transpose(B) * V / D4 / V * B) * transpose(ones_row_vector) 
+    tmp = (6 ./ Nb) .* ones_row_vector * real(transpose(B) * V / D4 / V * B) * transpose(ones_row_vector) 
     Γ = mean_age(μ, V, B, alg=:residence)
 
     return .√((1//2) .* (first(first(tmp)) - Γ^2 ))
@@ -448,8 +441,7 @@ function path_density(μ, V, B, t, mbox, vbox)
         dims(D_mat_overline), dims(D_mat_overline))
 
     #return real.( transpose(B) * V * (D_mat_overline .* Φ(t)) / V * B)
-    # warning: may need to remove broadcast of real
-    return real.( transpose(B) * V * elemental_product / V * B)
+    return real( transpose(B) * V * elemental_product / V * B)
 end
 
 """

@@ -121,16 +121,15 @@ include("../src/config_units.jl")
             # ease the programming with a top-level driver functions
             dCdt = tracer_tendency(C0, f, Fv, Fb, Vol)
             dCdt_boundary = tracer_tendency(f, C0, Fb, Vol)
-            dCdt = tracer_tendency(C0, 269yr)
-            
+            dCdt_radioactive = tracer_tendency(C0, 269yr)
+
+            # should be true
+            typeof(tracer_tendency(C0, f, Fv, Fb, Vol) - tracer_tendency(C0, f, Fv, Fb, Vol)) ==
+            typeof(tracer_tendency(C0, f, Fv, Fb, Vol))
+
             # find A matrix.
             # If f = 0, q = 0, then dC/dt  = Ac
 
-            typeof(C0)
-            C1 = deepcopy(C0)
-            C1[1] += 1.0 #*unit(first(C))
-
-            #ttt = tracer_tendency(C1, f, Fv, Fb, Vol) - tracer_tendency(C0, f, Fv, Fb, Vol) 
             A =  linear_probe(tracer_tendency, C0, f, Fv, Fb, Vol)
 
             # probe for B (boundary matrix)
@@ -147,21 +146,9 @@ include("../src/config_units.jl")
 
             @testset "matrix exponential" begin
                 dt = 0.1yr
-                # (μ)
-                # Matrix(μ*dt)
-                # exp(Matrix(μ*dt))
-                # Matrix(A)
-                # matexp = MultipliableDimArray( exp(Matrix(μ*dt)), dims(μ), dims(μ))
-                # t1 =  real.( V * (matexp * (V\C))) # matlab code has right divide (?)
-
-                # mostly handled by MultipliableDimArrays 
-                #eAt = MultipliableDimArray(exp(Matrix(A*dt)),dims(A),dims(A))
                 eAt = exp(A*dt)
                 t2 = real.( eAt*C) # matlab code has right divide (?)
                 @test maximum(t2) ≤ 1.0
-                #t3 = vec(t1) - vec(t2)
-                #@test maximum(abs.(t3)) < 1e-8
-
             end
 
             @testset "water masses" begin
