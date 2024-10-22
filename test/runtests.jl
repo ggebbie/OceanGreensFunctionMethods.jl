@@ -168,20 +168,6 @@ include("../src/config_units.jl")
 
             end
 
-            @testset "TTD width" begin
-
-                Δ = ttd_width(μ, V, B)
-                @test 90yr < Δ[2,2] < 91yr # compare to MATLAB point value
-                @test all(Δ .≥ 0.0yr)
-
-                Δ_adjoint = ttd_width(μ, V, B, alg=:adjoint)
-                @test 90yr < Δ_adjoint[2,2] < 91yr # compare to MATLAB point value
-                @test all(Δ_adjoint .≥ 0.0yr)
-
-                Δ_residence = ttd_width(μ, V, B, alg=:residence)
-                @test 129yr < Δ_residence < 130yr # compare to MATLAB point value
-
-            end
 
             @testset "mean and ideal ages" begin
             
@@ -204,6 +190,21 @@ include("../src/config_units.jl")
                 jtest = rand(1:Nz)
                 @test isapprox(Γ_ideal[itest,jtest], Γ[itest,jtest], rtol = 1e-3)
                 @test isapprox(Γ_ideal_adjoint[itest,jtest], Γ_adjoint[itest,jtest], rtol = 1e-3)
+            end
+
+            @testset "TTD width" begin
+
+                Δ = ttd_width(μ, V, B)
+                @test 90yr < Δ[2,2] < 91yr # compare to MATLAB point value
+                @test all(Δ .≥ 0.0yr)
+
+                Δ_adjoint = ttd_width(μ, V, B, alg=:adjoint)
+                @test 90yr < Δ_adjoint[2,2] < 91yr # compare to MATLAB point value
+                @test all(Δ_adjoint .≥ 0.0yr)
+
+                Δ_residence = ttd_width(μ, V, B, alg=:residence)
+                @test 129yr < Δ_residence < 130yr # compare to MATLAB point value
+
             end
 
             @testset "green's function" begin

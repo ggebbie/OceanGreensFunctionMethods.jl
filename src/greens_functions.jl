@@ -237,12 +237,12 @@ function mean_age_forward(μ, V, B)
     # μ_diag = diag(μ)
     # μ2_diag = μ_diag.^2
     # μ2 = DiagonalDimArray(μ2_diag,dims(μ))
-    D = Diagonal(μ)
+    D2 = Diagonal(μ.^2)
     
     # use  real to get rid of very small complex parts
     # ideally, would check that complex parts are small
-    boundary_dims = dims(B)
-    return real(V / D / V * B) * ones(boundary_dims)
+    boundary_dims = domainsize(B)
+    return real(V / D2 / V ) * B * ones(boundary_dims, :VectorArray)
 end
 
 """
@@ -253,14 +253,13 @@ function mean_age_adjoint(μ, V, B)
     D2 = Diagonal(μ.^2)
 
     # use a 1 x 2 matrix to avoid ambiguity with transpose operator
-    ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
-    
-    a_tmp = ones_row_vector * real(transpose(B) * V / D2 / V) 
+    # ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
+    # a_tmp = ones_row_vector * real(transpose(B) * V / D2 / V)
+    boundary_dims = domainsize(B)
+    Γ = transpose(ones(boundary_dims, :VectorArray))  * real(transpose(B) * V / D2 / V) 
 
     # undo the extra complication of a Global dimension
-    return transpose(a_tmp)
-    #return AlgebraicArray(transpose(Matrix(a_tmp)),dims(a_tmp))
-    #return VectorArray(DimArray(reshape(transpose(Matrix(a_tmp)),size(a_tmp)),dims(a_tmp)))
+    return transpose(Γ)
 end
 
 """
@@ -268,20 +267,15 @@ end
 """
 function mean_age_residence(μ, V, B)
     # MATLAB: [1, 1]*real(-2.*B'*V/(D.^3)/V*B)*[1; 1]./boxModel.no_boxes
-    # μ_diag = diag(μ)
-    # μ3_diag = μ_diag.^3 
-    # μ3 = DiagonalDimArray(μ3_diag,dims(μ))
-
     D3 = Diagonal(μ.^3)
+    boundary_dims = domainsize(B)
 
-    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
-    ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
-    tmp = -2 .* ones_row_vector * real(transpose(B) * V / D3 / V * B) * transpose(ones_row_vector) 
+    Γ = -2 * transpose(ones(boundary_dims, :VectorArray))*
+        real(transpose(B) * V / D3 / V * B) *
+        ones(boundary_dims, :VectorArray)
 
     Nb = length(V) # number of boxes
-
-    # get rid of DimArrays for this global quantity (think about improving code design here)
-    return first(first(tmp)) / Nb
+    return Γ / Nb
 end
 
 """
@@ -331,14 +325,10 @@ end
     ttd_width_forward(μ, V, B)
 """
 function ttd_width_forward(μ, V, B)
-
     # MATLAB: sqrt((real(-2.*V/(D.^3)/V*B)*[1; 1] - (Solution.fwd_mean_ages).^2)./2) ;
-    # μ_diag = diag(μ)
-    # μ3_diag = μ_diag.^3 
-    # μ3 = DiagonalDimArray(μ3_diag,dims(μ))
     D3 = Diagonal(μ.^3)
 
-    Δ² =  -real(V / D3 / V * B) * ones(dims(B), :VectorArray)
+    Δ² =  - real(V / D3 / V * B) * ones(domainsize(B), :VectorArray)
     Γ = mean_age(μ, V, B, alg=:forward)
     Δ² -= ((1//2) .* Γ.^2)
     return .√(Δ²)
@@ -349,26 +339,13 @@ end
 """
 function ttd_width_adjoint(μ, V, B)
     # MATLAB: sqrt(([1, 1]*real(-2.*B'*V/(D.^3)/V) - (Solution.adj_mean_ages).^2)./2)
-    # μ_diag = diag(μ)
-    # μ3_diag = μ_diag.^3 
-    # μ3 = DiagonalDimArray(μ3_diag,dims(μ))
     D3 = Diagonal(μ.^3)
-
-    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
-    ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
-    
-    Δ_tmp = -2 .* ones_row_vector * real(transpose(B) * V / D3 / V) 
-
-    # just a transpose?
-    #Δ2 =  DimArray(reshape(transpose(Matrix(Δ_tmp)),size(Δ_tmp)),dims(Δ_tmp))
-    #Δ2 = AlgebraicArray(transpose(Matrix(Δ_tmp)),dims(Δ_tmp))
-    Δ2 = transpose(Δ_tmp)
-    
+    boundary_dims = domainsize(B)
+    Δ = -2 * transpose( transpose(ones(boundary_dims, :VectorArray)) * real(transpose(B) * V / D3 / V) )
     Γ = mean_age(μ, V, B, alg=:adjoint)
-    Δ2 .-= Γ.^2 
-   
-    Δ² = (1//2) .* Δ2
-    return .√(Δ²)
+    Δ .-= Γ.^2 
+    Δ .*= (1//2) 
+    return .√(Δ)
 end
 
 """
@@ -485,9 +462,9 @@ end
 """
     ideal_age_forward(A, B)
 """
-ideal_age_forward(A, B) = - A \ (B*zeros(boundary_dimensions())yr + ones(model_dimensions()))
+ideal_age_forward(A, B) = - A \ (B*zeros(domainsize(B),:VectorArray)yr + ones(domainsize(A),:VectorArray))
 
 """
     ideal_age_adjoint(A, B)
 """
-ideal_age_adjoint(A, B) = - transpose(A) \ (B*zeros(boundary_dimensions())yr + ones(model_dimensions()))
+ideal_age_adjoint(A, B) = - transpose(A) \ (B*zeros(domainsize(B), :VectorArray)yr + ones(domainsize(A), :VectorArray))
