@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.45
+# v0.20.1
 
 using Markdown
 using InteractiveUtils
@@ -47,6 +47,10 @@ using Plots
 # ╔═╡ cc363185-cdc4-47be-a926-5178e1535f0d
 using Distributions
 
+# ╔═╡ 01f84c5f-8881-401f-a0a8-8ae69385f9fe
+# this package defines a `VectorArray`, an N-dimensional array that acts like a vector in linear algebra operations. It also defines a `MatrixArray`
+using AlgebraicArrays
+
 # ╔═╡ 5d30be92-5266-4700-ba7b-ac88a7f066e3
 # define our own unit: the sverdrup
 module UnitfulOcean; using Unitful; 
@@ -71,9 +75,6 @@ Pkg.instantiate()
 # ╔═╡ 07f01269-cfd8-4d3d-8d85-0b1132ff2005
 md""" ## Load some helpful packages """
 
-
-# ╔═╡ 01f84c5f-8881-401f-a0a8-8ae69385f9fe
-#using MultipliableDimArrays
 
 # ╔═╡ 39045ccd-fd9a-4d87-a2d9-79171a3366dc
 plotly()
@@ -153,10 +154,10 @@ md""" mid-latitude boundary exchange $(@bind Fb_mid Slider((1:40)Sv,show_value =
 Vol0 = 300.0Sv*yr |> km^3 # use MATLAB value not manuscript value (5% difference)
 
 # ╔═╡ c9c96f53-3fab-4591-91cd-911ba4c26329
-Vol = fill(Vol0, model_dims)
+Vol = fill(Vol0, model_dims, :VectorArray)
 
 # ╔═╡ 51d0e115-5859-4eab-8a91-b8193afd52b5
-Vol' # take transpose or complex conjugate transpose to view more intuitively
+parent(Vol)' # take transpose or complex conjugate transpose of parent object to view more intuitively
 
 # ╔═╡ cd6dc878-4442-430b-a263-3651719f2f11
 # abyssal volume flux
@@ -194,7 +195,7 @@ deldotFm[Meridional=At("Mid-latitudes")]
 # ╔═╡ 08464a04-7652-4f24-978d-cd329e7fe0a7
 # Given a tracer distribution C and volume fluxes Fv, find the tracer fluxes
 # As an example, consider a randomly generated tracer field
-C = rand(model_dims) # first generate a uniform U(0,1) tracer distribution
+C = randn(model_dims, :VectorArray) # first generate a uniform U(0,1) tracer distribution
 
 # ╔═╡ 100e928b-679b-48a3-b817-ac0dae73476b
  # extract tracer value by using geographic indices
@@ -205,7 +206,7 @@ C = rand(model_dims) # first generate a uniform U(0,1) tracer distribution
 C[Meridional=At("Mid-latitudes")]
 
 # ╔═╡ df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
-Plots.heatmap(transpose(C),xflip=true)
+Plots.heatmap(transpose(parent(C)),xflip=true)
 
 # ╔═╡ 5dfddc9c-6313-4679-a994-15a771ee4a90
 # then solve for tracer fluxes
@@ -213,8 +214,8 @@ J = advective_diffusive_flux(C, Fv)
 
 # ╔═╡ e325d781-ae5c-4f64-a608-170b4df77882
 # fluxes are stored in a structure that is organized by directionality
-# again, use transpose to see the screen output in a reasonable order
-J.poleward' 
+# again, use parent + transpose to see the screen output in a reasonable order
+parent(J.poleward)' 
 
 # ╔═╡ 1e92642c-396f-4353-aa5c-8849cf26af1d
 # greatest poleward fluxes in Thermocline
@@ -232,14 +233,14 @@ boundary_dims = boundary_dimensions()
 
 # ╔═╡ 378e4e6c-d399-458d-85a9-23c8ceda2b43
 # prescribe boundary volume fluxes
-Fb = DimArray(hcat([Fb_high, Fb_mid]), boundary_dims) # boundary flux
+Fb = AlgebraicArray([Fb_high, Fb_mid], boundary_dims) # boundary flux
 
 # ╔═╡ d344750e-e335-4e3c-baaa-a2937c2497df
 # example: set B_D (Dirichlet boundary conditions) to 1
-f = ones(boundary_dims) # boundary tracer values
+f = ones(boundary_dims, :VectorArray) # boundary tracer values
 
 # ╔═╡ ba4789f3-7576-423b-9e94-abf4c3259eb4
-C0 = zeros(model_dims) # zero interior tracer, will help identify boundary source in example
+C0 = zeros(model_dims, :VectorArray) # zero interior tracer, will help identify boundary source in example
 
 # ╔═╡ f51bfbed-0c3b-415c-9aef-80574b905b17
 # boundary flux (already posed as a convergence or net effect in each box) 
@@ -250,21 +251,17 @@ md""" ## Construct transport matrix """
 
 # ╔═╡ 6897f4af-ca8e-43a7-b741-5f2dd48c97cb
 # example: find the tracer tendency for a given box-model state
-dCdt = tracer_tendency(C, f, Fv, Fb, Vol)
+dCdt = tracer_tendency(C0, f, Fv, Fb, Vol)
 
 # ╔═╡ 9656a0f3-59ff-4bf2-85aa-33a5b29fd7d9
 # find A matrix.
 # If f = 0, q = 0, then dC/dt  = Ac
-A =  linear_probe(tracer_tendency, C, f, Fv, Fb, Vol)
+A =  linear_probe(tracer_tendency, C0, f, Fv, Fb, Vol)
 
 # ╔═╡ 15e6cead-7de1-4cdd-ae84-f7537e789900
 # A is stored with box labels for both the rows and columns
 # Instead, to view matrix in usual mathematical form, use `Matrix`
 Matrix(A)
-
-# ╔═╡ 6a25a144-0ccc-4604-85a7-b724eaa4cfed
-# select of column of A corresponding to a tracer location
-A[Vertical=At("Abyssal"),Meridional=At("Mid-latitudes")] # still displayed with info about spatial-locations even if out of order
 
 # ╔═╡ 382db56a-d39b-4835-bf13-6dd0088b0b39
 # select an entry of A, caution: first index=column, second index=row
@@ -272,7 +269,7 @@ A[5][5]
 
 # ╔═╡ 1312b135-a267-4736-8e56-ff44bc7be59b
 # or get the same information about one element using labels, but it gets long
-A[Vertical=At("Deep"),Meridional=At("Mid-latitudes")][Vertical=At("Deep"),Meridional=At("Mid-latitudes")] 
+A[At("Mid-latitudes"),At("Deep")][At("Mid-latitudes"),At("Deep")] 
 
 # ╔═╡ 59b47e9c-784a-4ed5-aeb6-79b5c756fff6
 md""" ## Construct boundary matrix """
@@ -293,15 +290,10 @@ md""" ## Eigenstructure """
 # destructuring via iteration
 μ, V = eigen(A)  # type \mu + TAB
 
-# ╔═╡ e63dfd51-6d85-47ad-9e07-d5164506ea91
-# for stability, all eigenvalues must be non-positive
-
-# ╔═╡ d9f77a6e-dada-476c-9e7a-25676c34518a
-diag(μ)
-
 # ╔═╡ c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # real part of all eigenvalues is negative
-plot(real.(diag(μ)),xlabel="eigenvalue i",ylabel="μᵢ",legend=false)
+# for stability, all eigenvalues must be non-positive
+plot(real.(μ),xlabel="eigenvalue i",ylabel="μᵢ",legend=false)
 
 # ╔═╡ 1e3f4bd2-94cf-43a1-af98-11373a4d8561
 # maximum timescale is related to the smallest negative eigenvalue
@@ -452,12 +444,12 @@ a
 begin
 	msource1 = "High latitudes"
 	vsource1 = "Thermocline"
-	Plots.heatmap(transpose(a[At(msource1),At(vsource1)]),
+	Plots.heatmap(transpose(parent(a)[At(msource1),At(vsource1)]),
 		title="Water mass fraction: "*msource1*" "*vsource1,
 		titlefontsize=6,
 		xflip=true,
 		color=:heat,
-		clims=(0.25,0.75))
+		clims=(0,1))
 end
 
 # ╔═╡ 0b804941-fed3-4830-980b-8d383d473858
@@ -467,19 +459,19 @@ end
 begin
 	msource2 = "Mid-latitudes"
 	vsource2 = "Thermocline"
-	Plots.heatmap(transpose(a[At(msource2),At(vsource2)]),
+	Plots.heatmap(transpose(parent(a)[At(msource2),At(vsource2)]),
 		title="Water mass fraction: "*msource2*" "*vsource2,
 		titlefontsize=6,
 		xflip=true,
 		color=:heat,
-		clims=(0.25,0.75))
+		clims=(0,1))
 end
 
 # ╔═╡ cf5bb364-5336-4dd1-8bb6-6e3f944673bf
 begin
 	Γ = mean_age(μ, V, B)
 	
-	Plots.heatmap(transpose(Γ),
+	Plots.heatmap(transpose(parent(Γ)),
 		title="Mean Age ["*string(unit(first(Γ)))*"]",
 		titlefontsize=6,
 		xflip=true,
@@ -518,14 +510,14 @@ G′(t) = boundary_propagator(t,A,B,alg=:forward) # type G + \prime + TAB
 
 # ╔═╡ 00902450-ceb7-4c33-be7e-906502990813
 # a list comprehension
-ttd1 = [G′(τ[i])[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)]
+ttd1 = [G′(τ[i])[At("High latitudes"),At("Thermocline")][At(mbox),At(vbox)] for i in eachindex(τ)]
 
 # ╔═╡ c2a38bc2-ef10-4fe5-8642-857f9acdadd7
 # could be written as a for loop instead
-ttd2 = [G′(τ[i])[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)] 
+ttd2 = [G′(τ[i])[At("Mid-latitudes"),At("Thermocline")][At(mbox),At(vbox)] for i in eachindex(τ)] 
 
 # ╔═╡ 8d69c375-6a0c-400e-af85-3013a364fa1d
-ttd_global = [𝒢(τ[i])[Meridional=At(mbox),Vertical=At(vbox)] for i in eachindex(τ)] 
+ttd_global = [𝒢(τ[i])[At(mbox),At(vbox)] for i in eachindex(τ)] 
 
 # ╔═╡ 09a85965-d1dc-47a3-9eba-dd1dc129db36
 Γ_ = Γ[Meridional=At(mbox),Vertical=At(vbox)] 
@@ -534,10 +526,10 @@ ttd_global = [𝒢(τ[i])[Meridional=At(mbox),Vertical=At(vbox)] for i in eachin
 Δ_ = Δ[Meridional=At(mbox),Vertical=At(vbox)]
 
 # ╔═╡ a183e31d-8bab-46e0-a6b1-0a181c5f0f69
-a1 = a[Meridional=At("High latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
+a1 = a[At("High latitudes"),At("Thermocline")][At(mbox),At(vbox)]
 
 # ╔═╡ 9537166f-054f-441e-a001-3ba59a4b59e0
-a2 = a[Meridional=At("Mid-latitudes"),Vertical=At("Thermocline")][Meridional=At(mbox),Vertical=At(vbox)]
+a2 = a[At("Mid-latitudes"),At("Thermocline")][At(mbox),At(vbox)]
 
 # ╔═╡ fd907198-8e2e-4296-b640-c0aebbd0a796
 G_inversegaussian = TracerInverseGaussian(Γ_, Δ_)
@@ -834,7 +826,6 @@ end
 # ╠═6897f4af-ca8e-43a7-b741-5f2dd48c97cb
 # ╠═9656a0f3-59ff-4bf2-85aa-33a5b29fd7d9
 # ╠═15e6cead-7de1-4cdd-ae84-f7537e789900
-# ╠═6a25a144-0ccc-4604-85a7-b724eaa4cfed
 # ╠═382db56a-d39b-4835-bf13-6dd0088b0b39
 # ╠═1312b135-a267-4736-8e56-ff44bc7be59b
 # ╟─59b47e9c-784a-4ed5-aeb6-79b5c756fff6
@@ -842,8 +833,6 @@ end
 # ╠═769d63db-36d1-437a-a3da-0bc9f6e14b69
 # ╟─34e0f62a-9e14-4b9d-bad3-e6b23eb86c59
 # ╠═3a777fc4-4770-4fb3-8074-2f66881a78ee
-# ╠═e63dfd51-6d85-47ad-9e07-d5164506ea91
-# ╠═d9f77a6e-dada-476c-9e7a-25676c34518a
 # ╠═c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # ╠═1e3f4bd2-94cf-43a1-af98-11373a4d8561
 # ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
