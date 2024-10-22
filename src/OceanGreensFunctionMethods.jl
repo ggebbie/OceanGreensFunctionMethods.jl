@@ -64,6 +64,7 @@ export # re-export from LinearAlgebra
     eigen
 
 # originally defined in AlgebraicArrays.AlgebraicArraysDimensionalDataExt, but not exported
+@dim Eigenmode "eigenmode"
 MatrixDimArray = MatrixArray{T, M, N, R} where {M, T, N, R<:AbstractDimArray{T, M}}
 VectorDimArray = VectorArray{T, N, A} where {T, N, A <: DimensionalData.AbstractDimArray}
     

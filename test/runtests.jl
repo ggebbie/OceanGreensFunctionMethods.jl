@@ -211,36 +211,38 @@ include("../src/config_units.jl")
                 Δτ = 0.25yr
                 τ = 0yr:Δτ:2000yr
                 ttest = 1.0yr
-                G(t) = greens_function(t,A) # a closure that captures A
+                G(t) = greens_function(t, A) # a closure that captures A
                 @test all(Matrix(G(ttest)) .≥ 0.0)
 
-                # add test: normalization of Green's function
+                # missing test: normalization of Green's function
                     
-                G′(t) = boundary_propagator(t,A,B, alg=:forward)
+                G′(t) = boundary_propagator(t, A, B, alg=:forward)
                 @test all(Matrix(G′(ttest)) .≥ 0.0/yr)
 
                 # † is invalid in Julia as an identifier 
-                G′dagger(t) = boundary_propagator(t,A,B, alg=:adjoint)
+                G′dagger(t) = boundary_propagator(t, A, B, alg=:adjoint)
                 @test all(Matrix(G′dagger(ttest)) .≥ 0.0/yr)
 
-                𝒢(t) = global_ttd(t,A,B,alg=:forward)
+                𝒢(t) = global_ttd(t, A, B, alg=:forward)
 
-                𝒢dagger(t) = global_ttd(t,A,B,alg=:adjoint)
+                𝒢dagger(t) = global_ttd(t, A, B, alg=:adjoint)
                 𝒢dagger(1yr)
 
                 RTD(t) = residence_time(t,A,B)
                 RTD(1yr)
                     
                 # residence times
-                # numerical values quite different from MATLAB
+                # check: numerical values different from MATLAB?
                 a_residence = watermass_fraction(μ, V, B, alg=:residence)
                 @test isapprox(sum(Matrix(a_residence)),1.0) 
             end
 
             @testset "path density" begin
-                Φ(τ) = OceanGreensFunctionMethods.phi_function(μ, τ) # a useful closure
+                Φ(τ) = OceanGreensFunctionMethods.phi_function(τ, μ) # a useful closure
                 Matrix(Φ(10yr))
-                # add test that they are properly normalized 
+                # missing test for proper normalization
+
+                
             end
 
             @testset "read tracer histories" begin

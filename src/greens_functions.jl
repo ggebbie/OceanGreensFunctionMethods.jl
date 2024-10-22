@@ -7,7 +7,9 @@ Green's function for a box model (for steady transport given by the matrix 𝐀 
 ```
 where 𝐆(t) is a  N × N matrix with the spatial locations of field points (boxes) down its N rows and source points (boxes) along its N columns. Thus, the element 𝐆{i,j}(τ) quantifies transfer from a source at time t′ in box j to receiver at time t in box i.
 """
-greens_function(τ,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*τ)
+greens_function(τ,A::AbstractMatrix) = exp(A*τ)
+# is specialized code (below) necessary?
+#greens_function(τ,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*τ)
 
 """
     boundary_propagator(τ, A, B; alg=:forward)
@@ -34,7 +36,8 @@ The box model adjoint boundary propagator (interior-to-surface TTD over transit 
 ```
 This Nₛ × N 𝐆′†(τ†) matrix quantifies transfer from the N interior boxes to the Nₛ surface boxes with transit time τ†.
 """
-function boundary_propagator(τ, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+function boundary_propagator(τ, A::AbstractMatrix, B::AbstractMatrix; alg=:forward) 
+#function boundary_propagator(τ, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
 if alg == :forward 
     return boundary_propagator_forward(τ, A, B)
 elseif alg == :adjoint
@@ -46,11 +49,14 @@ end
 """
     boundary_propagator_forward(t,A,B)
 """
-boundary_propagator_forward(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+boundary_propagator_forward(t,A::AbstractMatrix, B::AbstractMatrix) = greens_function(t,A)*B
+#boundary_propagator_forward(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+
 """
     boundary_propagator_adjoint(t,A,B)
 """
-boundary_propagator_adjoint(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
+boundary_propagator_adjoint(t, A::AbstractMatrix, B::AbstractMatrix) = transpose(B)*greens_function(t,A)
+#boundary_propagator_adjoint(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
 
 """
     global_ttd(t, A, B; alg=:forward)
@@ -69,7 +75,8 @@ where the product with the Ns × 1 column vector of ones (i.e., last matrix in p
 
 The adjoint global (total) TTD is the sum of interior-to-surface TTDs. 
 """
-function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+function global_ttd(t, A::AbstractMatrix, B::AbstractMatrix; alg=:forward) 
+#function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
     if alg == :forward 
         return global_ttd_forward(t, A, B)
     elseif alg == :adjoint
@@ -82,19 +89,24 @@ end
 """
     global_ttd_forward(t, A, B)
 """
-global_ttd_forward(t, A::DimMatrix{DM}, B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+global_ttd_forward(t, A::AbstractMatrix, B::AbstractMatrix) = greens_function(t,A)*B*ones(dims(B))
+#global_ttd_forward(t, A::DimMatrix{DM}, B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
 
 """
     global_ttd_adjoint(t, A, B)
 """
-function global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix
-    ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
-    tmp = ones_row_vector *  boundary_propagator_adjoint(t,A,B)
+function global_ttd_adjoint(t, A::AbstractMatrix, B::AbstractMatrix)
+    #function global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix
+    boundary_dims = domainsize(B)
 
+    # ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
+    # tmp = ones_row_vector *  boundary_propagator_adjoint(t,A,B)
+    return transpose( transpose(ones(boundary_dims, :VectorArray)) * boundary_propagator_adjoint(t,A,B) )
+    
     # undo the extra complication of a Global dimension
     #return AlgebraicArray(transpose(Matrix(tmp)),dims(tmp))
     #return VectorArray(DimArray(reshape(transpose(Matrix(tmp)),size(tmp)),dims(tmp)))
-    return transpose(tmp)
+    #return transpose(tmp)
 end
 
 """
@@ -114,7 +126,8 @@ The Ns × Ns R(τ) matrix quantifies transfer from the Ns surface boxes back to 
 
 Note: not normalized by number of boxes in this code: consistent with manuscript?
 """
-residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
+residence_time(t, A::AbstractMatrix, B::AbstractMatrix) = t*transpose(B)*greens_function(t,A)*B
+#residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
 
 """
     maximum_timescale(μ)
@@ -356,7 +369,6 @@ function ttd_width_residence(μ, V, B)
     D4 = Diagonal(μ.^4)
     boundary_dims = domainsize(B)
     Nb = length(V) # number of boxes
-
     Δ2 = (6 / Nb) *
         transpose(ones(boundary_dims, :VectorArray)) *
         real(transpose(B) * V / D4 / V * B) *
@@ -405,7 +417,7 @@ and
 where ϕ is defined in equation 100 of Haine et al. (2024). For a particular interior box i, 𝐄_i(τ) is the density of pathways between all combinations of surface entry and surface exit boxes over total residence time τ.
 """
 function path_density(μ, V, B, t, mbox, vbox)
-    Φ(τ) = phi_function(μ, τ) # a useful closure
+    Φ(τ) = phi_function(τ, μ) # a useful closure
     D_mat = AlgebraicArray(zeros(length(V), length(V)),model_dimensions(),model_dimensions())
     D_mat[At(mbox),At(vbox)][At(mbox),At(vbox)] = 1 
     D_mat_overline = V \ D_mat * V
@@ -419,16 +431,20 @@ function path_density(μ, V, B, t, mbox, vbox)
 end
 
 """
-    phi_function(μ, t)
+    phi_function(t, μ)
 """
-function phi_function(μ, t)
-    #N = length(μ)
-    N = (length(μ))^2 # correct translation for eigenvalue vector?
-    eigen_dims = AlgebraicArrays.Eigenmode(1:N)
+function phi_function(t, μ)
+    N = length(μ) # correct translation for eigenvalue vector?
+    #N = (length(μ))^2 # correct translation for eigenvalue vector?
+    #eigen_dims = AlgebraicArrays.Eigenmode(1:N)
+    eigen_dims = Eigenmode(1:N)
     ϕ = AlgebraicArray(zeros(ComplexF64, N, N)yr, eigen_dims, eigen_dims)
+    
     #μvals = diag(μ)
     for rr in 1:N
+        println("rr",rr)
         for cc in 1:N
+            println("rr",rr)
             μ_rr = μ[rr]
             μ_cc = μ[cc]
             # μ_rr = μvals[rr]
