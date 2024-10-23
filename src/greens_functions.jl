@@ -89,24 +89,14 @@ end
 """
     global_ttd_forward(t, A, B)
 """
-global_ttd_forward(t, A::AbstractMatrix, B::AbstractMatrix) = greens_function(t,A)*B*ones(dims(B))
-#global_ttd_forward(t, A::DimMatrix{DM}, B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+global_ttd_forward(t, A::AbstractMatrix, B::AbstractMatrix) = greens_function(t,A)*B*ones(domainsize(B),:VectorArray)
 
 """
     global_ttd_adjoint(t, A, B)
 """
 function global_ttd_adjoint(t, A::AbstractMatrix, B::AbstractMatrix)
-    #function global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix
     boundary_dims = domainsize(B)
-
-    # ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
-    # tmp = ones_row_vector *  boundary_propagator_adjoint(t,A,B)
     return transpose( transpose(ones(boundary_dims, :VectorArray)) * boundary_propagator_adjoint(t,A,B) )
-    
-    # undo the extra complication of a Global dimension
-    #return AlgebraicArray(transpose(Matrix(tmp)),dims(tmp))
-    #return VectorArray(DimArray(reshape(transpose(Matrix(tmp)),size(tmp)),dims(tmp)))
-    #return transpose(tmp)
 end
 
 """
@@ -414,7 +404,7 @@ and
 ```math
 {\\bf E}_i (\\tau) = \\frac{1}{N}{\\bf B}^{T} ~ {\\bf V} \\left( \\overline{\\bf D}_i \\circ \\Phi (t) \\right) {\\bf V}^{-1} ~ {\\bf B}
 ```
-where ϕ is defined in equation 100 of Haine et al. (2024). For a particular interior box i, 𝐄_i(τ) is the density of pathways between all combinations of surface entry and surface exit boxes over total residence time τ.
+where ϕ is defined in equation (100) of Haine et al. (2024). For a particular interior box i, 𝐄_i(τ) is the density of pathways between all combinations of surface entry and surface exit boxes over total residence time τ.
 """
 function path_density(μ, V, B, t, mbox, vbox)
     Φ(τ) = phi_function(τ, μ) # a useful closure
@@ -423,12 +413,18 @@ function path_density(μ, V, B, t, mbox, vbox)
     D_mat_overline = V \ D_mat * V
 
     # check for element-by-element product to simplify 
-    elemental_product = AlgebraicArray(Matrix(D_mat_overline).*Matrix(Φ(t)),
-        dims(D_mat_overline), dims(D_mat_overline))
+    elemental_product = hadamard(D_mat_overline,Φ(t))
+        # AlgebraicArray(Matrix(D_mat_overline).*Matrix(Φ(t)),
+        # rangesize(D_mat_overline), domainsize(D_mat_overline))
 
     #return real.( transpose(B) * V * (D_mat_overline .* Φ(t)) / V * B)
-    return real( transpose(B) * V * elemental_product / V * B)
+    # Note: strangely requires extra parentheses
+    return real( transpose(B) * (V * elemental_product / V * B))
 end
+
+# element-by-element multiplication
+# special function because MatrixArrays cannot be broadcasted (easily)
+hadamard(A::MatrixArray, B::MatrixArray) = AlgebraicArray(Matrix(A).*Matrix(B),rangesize(A), domainsize(A))
 
 """
     phi_function(t, μ)

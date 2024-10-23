@@ -726,7 +726,7 @@ md""" ## Path density """
 md""" $(@bind mbox_pdensity Select(meridional_names())) $(@bind vbox_pdensity Select(vertical_names())) """
 
 # ╔═╡ 175e67c2-c458-4bde-87a1-1fdf49e923c5
-path_density_11 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("High latitudes"),At("Thermocline")][At("High latitudes"),At("Thermocline")] for i in eachindex(τ)]
+path_density_11 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("High latitudes"),At("Thermocline")][At("High latitudes"),At("Thermocline")] for i in eachindex(τ)] 
 
 # ╔═╡ 00ded914-2b67-42e8-a913-d936f4442da8
 path_density_12 = [path_density(μ, V, B, τ[i], mbox_pdensity, vbox_pdensity)[At("High latitudes"),At("Thermocline")][At("Mid-latitudes"),At("Thermocline")] for i in eachindex(τ)]

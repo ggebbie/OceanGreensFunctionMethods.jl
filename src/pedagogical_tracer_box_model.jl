@@ -686,7 +686,7 @@ function transient_tracer_timeseries(tracername, A, B, BD, tlist, mbox1, vbox1; 
     end
 
     # all tracers start with zero boundary conditions
-    C₀ = zeros(model_dimensions())
+    C₀ = zeros(model_dimensions(), :VectorArray)
 	
     source_history_func(t) =  tracer_source_history(t,
 	tracername,
@@ -722,7 +722,7 @@ Simulate non-transient tracers and return tracer timeseries from one box.
 """
 function steady_tracer_timeseries(tracername, A, B, halflife, tlist, mbox1, vbox1)
 
-    C₀ = ones(model_dimensions()) # initial conditions: faster spinup
+    C₀ = ones(model_dimensions(), :VectorArray) # initial conditions: faster spinup
 
     if tracername == :argon39
         box2_box1_ratio = 1 

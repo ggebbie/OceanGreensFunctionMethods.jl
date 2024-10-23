@@ -123,7 +123,7 @@ include("../src/config_units.jl")
             dCdt_boundary = tracer_tendency(f, C0, Fb, Vol)
             dCdt_radioactive = tracer_tendency(C0, 269yr)
 
-            # should be true
+            # should be true, but is not
             typeof(tracer_tendency(C0, f, Fv, Fb, Vol) - tracer_tendency(C0, f, Fv, Fb, Vol)) ==
             typeof(tracer_tendency(C0, f, Fv, Fb, Vol))
 
@@ -151,6 +151,12 @@ include("../src/config_units.jl")
                 @test maximum(t2) ≤ 1.0
             end
 
+            @testset "global TTD" begin
+                𝒢(t) = global_ttd(t,A,B) # type \scr + G + TAB
+                ttd_global = 𝒢(1yr)[At("High latitudes"),At("Thermocline")]
+                @test ttd_global ≥ 0.0/yr
+            end
+            
             @testset "water masses" begin
 
                 # water-mass fractions
@@ -242,9 +248,16 @@ include("../src/config_units.jl")
                 Matrix(Φ(10yr))
                 # missing test for proper normalization
 
-                RTD(t) = residence_time(t, A, B)
-                RTD(1yr)
-                
+                mbox = "High latitudes"
+                vbox = "Thermocline"
+                D_mat = AlgebraicArray(zeros(length(V), length(V)),model_dimensions(),model_dimensions())
+                D_mat[At(mbox),At(vbox)][At(mbox),At(vbox)] = 1 
+                D_mat_overline = V \ D_mat * V
+
+                # check for element-by-element product to simplify 
+                elemental_product = OceanGreensFunctionMethods.hadamard(D_mat_overline,Φ(1yr))
+                pd = path_density(μ, V, B, 1yr, mbox, vbox)
+                @test all( Matrix(pd) .≥ 0.0/yr)
             end
 
             @testset "read tracer histories" begin
