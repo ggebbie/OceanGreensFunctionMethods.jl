@@ -153,11 +153,11 @@ end
 Advective-diffusive flux of tracer `C` given volume fluxes `Fv` and optional density `ρ`.
 
 # Arguments
-- `C::DimArray`: tracer distribution
-- `Fv::DimArray`: volume fluxes
+- `C::VectorDimArray`: tracer distribution
+- `Fv::VectorDimArray`: volume fluxes
 - `ρ::Number=1035kg/m^3`: uniform density
 # Returns
-- `Fc::DimArray`: tracer flux
+- `Fc::VectorDimArray`: tracer flux
 """
 advective_diffusive_flux(C::VectorDimArray, Fv::VectorDimArray ; ρ = 1035kg/m^3) = ρ * (Fv .* C) .|> Tg/s
 
@@ -167,7 +167,7 @@ advective_diffusive_flux(C::VectorDimArray, Fv::VectorDimArray ; ρ = 1035kg/m^3
 Advective-diffusive flux of tracer `C` given volume fluxes `Fv` and optional density `ρ`.
 
 # Arguments
-- `C::DimArray`: tracer distribution
+- `C::VectorDimArray`: tracer distribution
 - `Fv::Fluxes`: volume fluxes
 - `ρ::Number=1035kg/m^3`: uniform density
 # Returns
@@ -260,14 +260,14 @@ function local_boundary_flux(f::VectorDimArray,
 end
 
 """
-    boundary_flux(f::DimArray, C::DimArray, Fb::DimArray)
+    boundary_flux(f::VectorDimArray, C::VectorDimArray, Fb::VectorDimArray)
 
 Convergence or net effect of boundary fluxes.
 
 # Arguments
-- `f::DimArray`: Dirichlet boundary condition
-- `C::DimArray`: tracer distribution 
-- `Fb::DimArray`: boundary exchange volume flux
+- `f::VectorDimArray`: Dirichlet boundary condition
+- `C::VectorDimArray`: tracer distribution 
+- `Fb::VectorDimArray`: boundary exchange volume flux
 # Returns
 - `Jb::Fluxes`: boundary tracer flux
 """
@@ -283,7 +283,7 @@ end
 
 Radioactive decay rate of tracer `C` with half life of `halflife`.
 """
-radioactive_decay(C::Union{VectorArray,DimArray}, halflife::Number) = -(log(2)/halflife)*C 
+radioactive_decay(C::VectorArray, halflife::Number) = -(log(2)/halflife)*C 
 
 """
     tracer_tendency(C, f, Fv, Fb, V)
@@ -315,13 +315,13 @@ tracer_tendency(
 Tracer tendency ∂C/∂t for a boundary flux `f`, for use with finding B boundary matrix.
 
 # Arguments
-- `f::DimArray`: Dirichlet boundary condition
-- `C::DimArray`: tracer distribution
+- `f::VectorDimArray`: Dirichlet boundary condition
+- `C::VectorDimArray`: tracer distribution
 - `Fv::Fluxes`: volume fluxes
 - `Fb::Fluxes`: volume fluxes
-- `V::DimArray`: box volume
+- `V::VectorDimArray`: box volume
 # Returns
-- `dCdt::DimArray`: tracer tendency
+- `dCdt::VectorDimArray`: tracer tendency
 """
 tracer_tendency(
     f::VectorDimArray,
@@ -338,12 +338,11 @@ tracer_tendency(
 Tracer tendency ∂C/∂t for the radioactive decay of a tracer `C` with half life `halflife`, for use with finding the radioactive contribution to a tracer transport matrix.
 
 # Arguments
-- `C::DimArray`: tracer distribution
+- `C::VectorDimArray`: tracer distribution
 - `halflife::Number`: radioactive half life
 # Returns
-- `dCdt::DimArray`: tracer tendency
+- `dCdt::VectorDimArray`: tracer tendency
 """
-#tracer_tendency(C::Union{VectorDimArray{T,N},DimArray{T,N}},
 tracer_tendency(C::VectorDimArray, halflife::Number) =
     radioactive_decay(C, halflife) .|> yr^-1 
 
@@ -528,7 +527,7 @@ function tracer_source_history(t, tracername, box2_box1_ratio, BD = nothing)
     
     # replace this section with a function call.
     boundary_dims = boundary_dimensions()
-    #return DimArray(hcat([box1,box2]),boundary_dims)
+
     return AlgebraicArray([box1,box2],boundary_dims)
 end
 
@@ -584,13 +583,13 @@ end
     timestep_initial_condition(C, μ, V, ti, tf)
 
 # Arguments
-- `C::DimArray`: tracer distribution at `ti`
+- `C::VectorDimArray`: tracer distribution at `ti`
 - `μ`: eigenvalue diagonal matrix
 - `V`: eigenvector matrix
 - `ti`: initial time
 - `tf`: final time
 # Returns
-- `Cf::DimArray`: tracer distribution at `tf`
+- `Cf::VectorDimArray`: tracer distribution at `tf`
 """
 timestep_initial_condition(C, μ, V, ti, tf) = real.( V * exp(Diagonal(μ)*(tf-ti)) / V * C )
 

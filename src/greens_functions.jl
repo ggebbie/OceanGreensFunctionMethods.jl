@@ -8,8 +8,6 @@ Green's function for a box model (for steady transport given by the matrix 𝐀 
 where 𝐆(t) is a  N × N matrix with the spatial locations of field points (boxes) down its N rows and source points (boxes) along its N columns. Thus, the element 𝐆{i,j}(τ) quantifies transfer from a source at time t′ in box j to receiver at time t in box i.
 """
 greens_function(τ,A::AbstractMatrix) = exp(A*τ)
-# is specialized code (below) necessary?
-#greens_function(τ,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*τ)
 
 """
     boundary_propagator(τ, A, B; alg=:forward)
@@ -37,26 +35,26 @@ The box model adjoint boundary propagator (interior-to-surface TTD over transit 
 This Nₛ × N 𝐆′†(τ†) matrix quantifies transfer from the N interior boxes to the Nₛ surface boxes with transit time τ†.
 """
 function boundary_propagator(τ, A::AbstractMatrix, B::AbstractMatrix; alg=:forward) 
-#function boundary_propagator(τ, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
-if alg == :forward 
-    return boundary_propagator_forward(τ, A, B)
-elseif alg == :adjoint
-    return boundary_propagator_adjoint(τ, A, B)
-end
-    error("boundary propagator method not implemented")
+
+    if alg == :forward 
+        return boundary_propagator_forward(τ, A, B)
+    elseif alg == :adjoint
+        return boundary_propagator_adjoint(τ, A, B)
+    else
+        error("boundary propagator method not implemented")
+    end
+    
 end
 
 """
     boundary_propagator_forward(t,A,B)
 """
 boundary_propagator_forward(t,A::AbstractMatrix, B::AbstractMatrix) = greens_function(t,A)*B
-#boundary_propagator_forward(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
 
 """
     boundary_propagator_adjoint(t,A,B)
 """
 boundary_propagator_adjoint(t, A::AbstractMatrix, B::AbstractMatrix) = transpose(B)*greens_function(t,A)
-#boundary_propagator_adjoint(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
 
 """
     global_ttd(t, A, B; alg=:forward)
@@ -76,7 +74,7 @@ where the product with the Ns × 1 column vector of ones (i.e., last matrix in p
 The adjoint global (total) TTD is the sum of interior-to-surface TTDs. 
 """
 function global_ttd(t, A::AbstractMatrix, B::AbstractMatrix; alg=:forward) 
-#function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+
     if alg == :forward 
         return global_ttd_forward(t, A, B)
     elseif alg == :adjoint
@@ -117,7 +115,6 @@ The Ns × Ns R(τ) matrix quantifies transfer from the Ns surface boxes back to 
 Note: not normalized by number of boxes in this code: consistent with manuscript?
 """
 residence_time(t, A::AbstractMatrix, B::AbstractMatrix) = t*transpose(B)*greens_function(t,A)*B
-#residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
 
 """
     maximum_timescale(μ)
@@ -237,9 +234,6 @@ end
     mean_age_forward(μ, V, B)
 """
 function mean_age_forward(μ, V, B)
-    # μ_diag = diag(μ)
-    # μ2_diag = μ_diag.^2
-    # μ2 = DiagonalDimArray(μ2_diag,dims(μ))
     D2 = Diagonal(μ.^2)
     
     # use  real to get rid of very small complex parts
