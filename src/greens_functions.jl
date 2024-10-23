@@ -7,7 +7,9 @@ Green's function for a box model (for steady transport given by the matrix 𝐀 
 ```
 where 𝐆(t) is a  N × N matrix with the spatial locations of field points (boxes) down its N rows and source points (boxes) along its N columns. Thus, the element 𝐆{i,j}(τ) quantifies transfer from a source at time t′ in box j to receiver at time t in box i.
 """
-greens_function(τ,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*τ)
+greens_function(τ,A::AbstractMatrix) = exp(A*τ)
+# is specialized code (below) necessary?
+#greens_function(τ,A::DimMatrix{DM}) where DM <: DimMatrix{Q} where Q <: Quantity = exp(A*τ)
 
 """
     boundary_propagator(τ, A, B; alg=:forward)
@@ -34,7 +36,8 @@ The box model adjoint boundary propagator (interior-to-surface TTD over transit 
 ```
 This Nₛ × N 𝐆′†(τ†) matrix quantifies transfer from the N interior boxes to the Nₛ surface boxes with transit time τ†.
 """
-function boundary_propagator(τ, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+function boundary_propagator(τ, A::AbstractMatrix, B::AbstractMatrix; alg=:forward) 
+#function boundary_propagator(τ, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
 if alg == :forward 
     return boundary_propagator_forward(τ, A, B)
 elseif alg == :adjoint
@@ -46,11 +49,14 @@ end
 """
     boundary_propagator_forward(t,A,B)
 """
-boundary_propagator_forward(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+boundary_propagator_forward(t,A::AbstractMatrix, B::AbstractMatrix) = greens_function(t,A)*B
+#boundary_propagator_forward(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B
+
 """
     boundary_propagator_adjoint(t,A,B)
 """
-boundary_propagator_adjoint(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
+boundary_propagator_adjoint(t, A::AbstractMatrix, B::AbstractMatrix) = transpose(B)*greens_function(t,A)
+#boundary_propagator_adjoint(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = transpose(B)*greens_function(t,A)
 
 """
     global_ttd(t, A, B; alg=:forward)
@@ -69,7 +75,8 @@ where the product with the Ns × 1 column vector of ones (i.e., last matrix in p
 
 The adjoint global (total) TTD is the sum of interior-to-surface TTDs. 
 """
-function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
+function global_ttd(t, A::AbstractMatrix, B::AbstractMatrix; alg=:forward) 
+#function global_ttd(t, A::DimMatrix{DM}, B::DimMatrix{DM}; alg=:forward) where DM <: DimMatrix
     if alg == :forward 
         return global_ttd_forward(t, A, B)
     elseif alg == :adjoint
@@ -82,17 +89,14 @@ end
 """
     global_ttd_forward(t, A, B)
 """
-global_ttd_forward(t, A::DimMatrix{DM}, B::DimMatrix{DM}) where DM <: DimMatrix = greens_function(t,A)*B*ones(dims(B))
+global_ttd_forward(t, A::AbstractMatrix, B::AbstractMatrix) = greens_function(t,A)*B*ones(domainsize(B),:VectorArray)
 
 """
     global_ttd_adjoint(t, A, B)
 """
-function global_ttd_adjoint(t, A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix
-    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
-    tmp = ones_row_vector *  boundary_propagator_adjoint(t,A,B)
-
-    # undo the extra complication of a Global dimension
-    return DimArray(reshape(transpose(Matrix(tmp)),size(tmp)),dims(tmp))
+function global_ttd_adjoint(t, A::AbstractMatrix, B::AbstractMatrix)
+    boundary_dims = domainsize(B)
+    return transpose( transpose(ones(boundary_dims, :VectorArray)) * boundary_propagator_adjoint(t,A,B) )
 end
 
 """
@@ -112,18 +116,19 @@ The Ns × Ns R(τ) matrix quantifies transfer from the Ns surface boxes back to 
 
 Note: not normalized by number of boxes in this code: consistent with manuscript?
 """
-residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
+residence_time(t, A::AbstractMatrix, B::AbstractMatrix) = t*transpose(B)*greens_function(t,A)*B
+#residence_time(t,A::DimMatrix{DM},B::DimMatrix{DM}) where DM <: DimMatrix = t * transpose(B)*greens_function(t,A)*B
 
 """
     maximum_timescale(μ)
 
-Return `Tmax` for the eigenvalue matrix μ. The matrix exponential of 𝐀τ has asymptotic properties because G(t) must eventually decay exponentially with timescale 
+Return `Tmax` for the eigenvalues μ. The matrix exponential of 𝐀τ has asymptotic properties because G(t) must eventually decay exponentially with timescale 
 ```math
 T_{max} = -1/\\mu_{min},        
 ```
 where μmin is the eigenvalue with smallest real part. Thus, the Green's function has a maximum timescale of Tmax which is larger than all other transport timescales.
 """
-maximum_timescale(μ) = -1/real(last(last(μ)))
+maximum_timescale(μ) = -1/real(last(μ))
 
 """
     watermass_fraction(μ, V, B; alg=:forward)
@@ -171,24 +176,21 @@ end
 """
     watermass_fraction_forward(μ, V, B)
 """
-watermass_fraction_forward(μ, V, B) = - real.(V / μ / V * B)
+watermass_fraction_forward(μ, V, B) = - real(V/ Diagonal(μ) / V * B)
 
 """
     watermass_fraction_adjoint(μ, V, B)
 """
-watermass_fraction_adjoint(μ, V, B) = - real.(transpose(B) * V / μ / V)
+watermass_fraction_adjoint(μ, V, B) = - real(transpose(B) * V / Diagonal(μ) / V)
 
 """
     watermass_fraction_residence(μ, V, B)
 """
 function watermass_fraction_residence(μ, V, B)
     # MATLAB: real(    B'*V/(D.^2)/V*B)
-    μ_diag = diag(μ)
-    μ2_diag = μ_diag.^2
-    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
-
-    Nb = size(V) # number of boxes
-    return real.( transpose(B) * V / μ2 / V * B) ./ Nb
+    D2 = Diagonal(μ.^2)
+    Nb = length(V) # number of boxes
+    return real( transpose(B) * V / D2 / V * B) / Nb
 end
 
 """
@@ -196,7 +198,7 @@ end
 
 Mean age of the forward TTDs, adjoint TTDs, and residence-time distributions.
 # Arguments
-- `μ`: eigenvalue diagonal matrix
+- `μ`: eigenvalues vector
 - `V`: eigenvector matrix
 - `B`: boundary matrix
 - `alg=:forward`: algorithm (optional)
@@ -235,14 +237,15 @@ end
     mean_age_forward(μ, V, B)
 """
 function mean_age_forward(μ, V, B)
-    μ_diag = diag(μ)
-    μ2_diag = μ_diag.^2
-    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
-
+    # μ_diag = diag(μ)
+    # μ2_diag = μ_diag.^2
+    # μ2 = DiagonalDimArray(μ2_diag,dims(μ))
+    D2 = Diagonal(μ.^2)
+    
     # use  real to get rid of very small complex parts
     # ideally, would check that complex parts are small
-    boundary_dims = dims(B)
-    return real.(V / μ2 / V * B) * ones(boundary_dims)
+    boundary_dims = domainsize(B)
+    return real(V / D2 / V ) * B * ones(boundary_dims, :VectorArray)
 end
 
 """
@@ -250,17 +253,16 @@ end
 """
 function mean_age_adjoint(μ, V, B)
     # MATLAB: [1, 1]*real(    B'*V/(D.^2)/V)
-    μ_diag = diag(μ)
-    μ2_diag = μ_diag.^2
-    μ2 = DiagonalDimArray(μ2_diag,dims(μ))
+    D2 = Diagonal(μ.^2)
 
     # use a 1 x 2 matrix to avoid ambiguity with transpose operator
-    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
-    
-    a_tmp = ones_row_vector * real.(transpose(B) * V / μ2 / V) 
+    # ones_row_vector = AlgebraicArray(ones(1,2),Global(["mean age"]),dims(B))
+    # a_tmp = ones_row_vector * real(transpose(B) * V / D2 / V)
+    boundary_dims = domainsize(B)
+    Γ = transpose(ones(boundary_dims, :VectorArray))  * real(transpose(B) * V / D2 / V) 
 
     # undo the extra complication of a Global dimension
-    return DimArray(reshape(transpose(Matrix(a_tmp)),size(a_tmp)),dims(a_tmp))
+    return transpose(Γ)
 end
 
 """
@@ -268,18 +270,15 @@ end
 """
 function mean_age_residence(μ, V, B)
     # MATLAB: [1, 1]*real(-2.*B'*V/(D.^3)/V*B)*[1; 1]./boxModel.no_boxes
-    μ_diag = diag(μ)
-    μ3_diag = μ_diag.^3 
-    μ3 = DiagonalDimArray(μ3_diag,dims(μ))
+    D3 = Diagonal(μ.^3)
+    boundary_dims = domainsize(B)
 
-    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
-    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
-    tmp = -2 .* ones_row_vector * real.(transpose(B) * V / μ3 / V * B) * transpose(ones_row_vector) 
+    Γ = -2 * transpose(ones(boundary_dims, :VectorArray))*
+        real(transpose(B) * V / D3 / V * B) *
+        ones(boundary_dims, :VectorArray)
 
     Nb = length(V) # number of boxes
-
-    # get rid of DimArrays for this global quantity (think about improving code design here)
-    return first(first(tmp)) / Nb
+    return Γ / Nb
 end
 
 """
@@ -293,7 +292,7 @@ Width of the forward TTDs, adjoint TTDs, and residence-time distributions.
 - `B`: boundary matrix
 - `alg=:forward`: algorithm (optional)
 # Returns
-- `𝚫`: TTD width
+- `Δ`: TTD width
 
 # Width of forward TTD
 
@@ -329,13 +328,10 @@ end
     ttd_width_forward(μ, V, B)
 """
 function ttd_width_forward(μ, V, B)
-
     # MATLAB: sqrt((real(-2.*V/(D.^3)/V*B)*[1; 1] - (Solution.fwd_mean_ages).^2)./2) ;
-    μ_diag = diag(μ)
-    μ3_diag = μ_diag.^3 
-    μ3 = DiagonalDimArray(μ3_diag,dims(μ))
-    
-    Δ² =  -real.(V / μ3 / V * B) * ones(dims(B))
+    D3 = Diagonal(μ.^3)
+
+    Δ² =  - real(V / D3 / V * B) * ones(domainsize(B), :VectorArray)
     Γ = mean_age(μ, V, B, alg=:forward)
     Δ² -= ((1//2) .* Γ.^2)
     return .√(Δ²)
@@ -346,42 +342,30 @@ end
 """
 function ttd_width_adjoint(μ, V, B)
     # MATLAB: sqrt(([1, 1]*real(-2.*B'*V/(D.^3)/V) - (Solution.adj_mean_ages).^2)./2)
-    μ_diag = diag(μ)
-    μ3_diag = μ_diag.^3 
-    μ3 = DiagonalDimArray(μ3_diag,dims(μ))
-
-    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
-    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
-    
-    Δ_tmp = -2 .* ones_row_vector * real.(transpose(B) * V / μ3 / V) 
-
-    Δ2 =  DimArray(reshape(transpose(Matrix(Δ_tmp)),size(Δ_tmp)),dims(Δ_tmp))
-
+    D3 = Diagonal(μ.^3)
+    boundary_dims = domainsize(B)
+    Δ = -2 * transpose( transpose(ones(boundary_dims, :VectorArray)) * real(transpose(B) * V / D3 / V) )
     Γ = mean_age(μ, V, B, alg=:adjoint)
-    Δ2 .-= Γ.^2 
-   
-    Δ² = (1//2) .* Δ2
-    return .√(Δ²)
+    Δ .-= Γ.^2 
+    Δ .*= (1//2) 
+    return .√(Δ)
 end
 
 """
     ttd_width_residence(μ, V, B)
 """
 function ttd_width_residence(μ, V, B)
-# MATLAB: sqrt(([1, 1]*real( 6.*B'*V/(D.^4)/V*B)*[1; 1]./boxModel.no_boxes - Solution.RTD_mean_rt^2)/2) ;
+    # MATLAB: sqrt(([1, 1]*real( 6.*B'*V/(D.^4)/V*B)*[1; 1]./boxModel.no_boxes - Solution.RTD_mean_rt^2)/2) ;
+    D4 = Diagonal(μ.^4)
+    boundary_dims = domainsize(B)
+    Nb = length(V) # number of boxes
+    Δ2 = (6 / Nb) *
+        transpose(ones(boundary_dims, :VectorArray)) *
+        real(transpose(B) * V / D4 / V * B) *
+        ones(boundary_dims, :VectorArray)
 
-    μ_diag = diag(μ)
-    μ4_diag = μ_diag.^4 
-    μ4 = DiagonalDimArray(μ4_diag,dims(μ))
-
-    # use a 1 x 2 matrix to avoid ambiguity with transpose operator
-    ones_row_vector = MultipliableDimArray(ones(1,2),Global(["mean age"]),dims(B))
-
-    Nb = size(V) # number of boxes
-    tmp = (6 ./ Nb) .* ones_row_vector * real.(transpose(B) * V / μ4 / V * B) * transpose(ones_row_vector) 
     Γ = mean_age(μ, V, B, alg=:residence)
-
-    return .√((1//2) .* (first(first(tmp)) - Γ^2 ))
+    return .√((1//2) .* (Δ2 - Γ^2 ))
 end
 
 """
@@ -420,34 +404,43 @@ and
 ```math
 {\\bf E}_i (\\tau) = \\frac{1}{N}{\\bf B}^{T} ~ {\\bf V} \\left( \\overline{\\bf D}_i \\circ \\Phi (t) \\right) {\\bf V}^{-1} ~ {\\bf B}
 ```
-where ϕ is defined in equation 100 of Haine et al. (2024). For a particular interior box i, 𝐄_i(τ) is the density of pathways between all combinations of surface entry and surface exit boxes over total residence time τ.
+where ϕ is defined in equation (100) of Haine et al. (2024). For a particular interior box i, 𝐄_i(τ) is the density of pathways between all combinations of surface entry and surface exit boxes over total residence time τ.
 """
 function path_density(μ, V, B, t, mbox, vbox)
-    Φ(τ) = phi_function(μ, τ) # a useful closure
-    D_mat = MultipliableDimArray(zeros(length(V), length(V)),model_dimensions(),model_dimensions())
+    Φ(τ) = phi_function(τ, μ) # a useful closure
+    D_mat = AlgebraicArray(zeros(length(V), length(V)),model_dimensions(),model_dimensions())
     D_mat[At(mbox),At(vbox)][At(mbox),At(vbox)] = 1 
     D_mat_overline = V \ D_mat * V
 
-    # need to define element-by-element product for MultipliableDimArrays
-    elemental_product = MultipliableDimArray(Matrix(D_mat_overline).*Matrix(Φ(t)),
-        dims(D_mat_overline), dims(D_mat_overline))
+    # check for element-by-element product to simplify 
+    elemental_product = hadamard(D_mat_overline,Φ(t))
+        # AlgebraicArray(Matrix(D_mat_overline).*Matrix(Φ(t)),
+        # rangesize(D_mat_overline), domainsize(D_mat_overline))
 
     #return real.( transpose(B) * V * (D_mat_overline .* Φ(t)) / V * B)
-    return real.( transpose(B) * V * elemental_product / V * B)
+    # Note: strangely requires extra parentheses
+    return real( transpose(B) * (V * elemental_product / V * B))
 end
 
+# element-by-element multiplication
+# special function because MatrixArrays cannot be broadcasted (easily)
+hadamard(A::MatrixArray, B::MatrixArray) = AlgebraicArray(Matrix(A).*Matrix(B),rangesize(A), domainsize(A))
+
 """
-    phi_function(μ, t)
+    phi_function(t, μ)
 """
-function phi_function(μ, t)
-    N = length(μ)
-    eigen_dims = MultipliableDimArrays.Eigenmode(1:N)
-    ϕ = MultipliableDimArray(zeros(ComplexF64, N, N)yr, eigen_dims, eigen_dims)
-    μvals = diag(μ)
+function phi_function(t, μ)
+    N = length(μ) # correct translation for eigenvalue vector?
+    #N = (length(μ))^2 # correct translation for eigenvalue vector?
+    #eigen_dims = AlgebraicArrays.Eigenmode(1:N)
+    eigen_dims = Eigenmode(1:N)
+    ϕ = AlgebraicArray(zeros(ComplexF64, N, N)yr, eigen_dims, eigen_dims)
+    
+    #μvals = diag(μ)
     for rr in 1:N
         for cc in 1:N
-            μ_rr = μvals[rr]
-            μ_cc = μvals[cc]
+            μ_rr = μ[rr]
+            μ_cc = μ[cc]
             if μ_rr ≠ μ_cc
                 ϕ[cc][rr] = (exp(μ_cc*t) - exp(μ_rr*t))/(μ_cc - μ_rr)
             else
@@ -474,9 +467,9 @@ end
 """
     ideal_age_forward(A, B)
 """
-ideal_age_forward(A, B) = - A \ (B*zeros(boundary_dimensions())yr + ones(model_dimensions()))
+ideal_age_forward(A, B) = - A \ (B*zeros(domainsize(B),:VectorArray)yr + ones(domainsize(A),:VectorArray))
 
 """
     ideal_age_adjoint(A, B)
 """
-ideal_age_adjoint(A, B) = - transpose(A) \ (B*zeros(boundary_dimensions())yr + ones(model_dimensions()))
+ideal_age_adjoint(A, B) = - transpose(A) \ (B*zeros(domainsize(B), :VectorArray)yr + ones(domainsize(A), :VectorArray))

@@ -6,7 +6,7 @@ using Distributions: @distr_support
 using DimensionalData
 using DimensionalData: @dim 
 using Unitful
-using MultipliableDimArrays
+using AlgebraicArrays
 using LinearAlgebra
 using Downloads
 using MAT
@@ -15,9 +15,10 @@ using QuadGK
 using CSV
 
 import Distributions: mean, median, quantile, std, var, cov, cor, shape, params, pdf, InverseGaussian
-import Base: +, alignment
+import Base: +, alignment, zeros
 import DimensionalData: dims
 import LinearAlgebra: eigen
+#import AlgebraicArrays: MatrixDimArray, VectorDimArray
 
 export Fluxes
 export TracerInverseGaussian
@@ -50,17 +51,29 @@ export path_density
 export Tracer, Meridional, Vertical, Global 
 export tracer_timeseries
 export ideal_age
+export VectorDimArray, MatrixDimArray
 export # re-export from Distributions
     mean, median, quantile, std, var, cov, cor, shape, params
 export # re-export from Distributions
     InverseGaussian, pdf
 export # re-export from Base
-    +
+    +, zeros
 export # re-export from DimensionalData
     dims
 export # re-export from LinearAlgebra
     eigen
 
+# originally defined in AlgebraicArrays.AlgebraicArraysDimensionalDataExt, but not exported
+#@dim Eigenmode "eigenmode"
+
+ext = Base.get_extension(AlgebraicArrays, :AlgebraicArraysDimensionalDataExt)
+if !isnothing(ext)
+    Eigenmode = ext.Eigenmode
+end
+
+MatrixDimArray = MatrixArray{T, M, N, R} where {M, T, N, R<:AbstractDimArray{T, M}}
+VectorDimArray = VectorArray{T, N, A} where {T, N, A <: DimensionalData.AbstractDimArray}
+    
 function projectdir()
     localproject = dirname(Base.active_project())
     if localproject[end-8:end] == "notebooks"
