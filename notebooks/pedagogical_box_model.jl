@@ -205,8 +205,12 @@ C = randn(model_dims, :VectorArray) # first generate a uniform U(0,1) tracer dis
 # or extracer tracer using dimensional labels
 C[Meridional=At("Mid-latitudes")]
 
-# ╔═╡ df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
-Plots.heatmap(transpose(parent(C)),xflip=true)
+# ╔═╡ 47ffbab9-6ef1-44e7-93b2-feb2689bf866
+# custom plotting function for our data type
+Plots.heatmap(C::VectorDimArray) = Plots.heatmap(transpose(parent(C)),xflip=true)
+
+# ╔═╡ 9dd28fbf-064b-4d18-9486-ad5903a8682b
+heatmap(C)
 
 # ╔═╡ 5dfddc9c-6313-4679-a994-15a771ee4a90
 # then solve for tracer fluxes
@@ -440,17 +444,8 @@ Matrix(a) # all water-mass information concatenated
 # ╔═╡ e5841ad8-dfb9-47d5-bcb0-0f7448f43645
 a
 
-# ╔═╡ 0071aa97-27c3-469f-b1bb-e07337489f0e
-begin
-	msource1 = "High latitudes"
-	vsource1 = "Thermocline"
-	Plots.heatmap(transpose(parent(a)[At(msource1),At(vsource1)]),
-		title="Water mass fraction: "*msource1*" "*vsource1,
-		titlefontsize=6,
-		xflip=true,
-		color=:heat,
-		clims=(0,1))
-end
+# ╔═╡ 22f64cf1-74f3-4129-b7ce-39a48340eca3
+typeof(a)
 
 # ╔═╡ 0b804941-fed3-4830-980b-8d383d473858
  a[At(msource1),At(vsource1)]
@@ -758,6 +753,33 @@ begin
 	plot!(τ,path_density_22,label=boxname[2]*" to "*boxname[2],width=2, linestyle= :dash)
 end
 
+# ╔═╡ e39809bc-b68d-4a4b-a2f5-d8bf5237a087
+begin
+	msource1 = "High latitudes"
+	vsource1 = "Thermocline"
+	Plots.heatmap(a[At(msource1),At(vsource1)],
+		title="Water mass fraction: "*msource1*" "*vsource1,
+		titlefontsize=6,
+		xflip=true,
+		color=:heat,
+		clims=(0,1))
+end
+
+# ╔═╡ 0071aa97-27c3-469f-b1bb-e07337489f0e
+# ╠═╡ disabled = true
+#=╠═╡
+begin
+	msource1 = "High latitudes"
+	vsource1 = "Thermocline"
+	Plots.heatmap(transpose(parent(a)[At(msource1),At(vsource1)]),
+		title="Water mass fraction: "*msource1*" "*vsource1,
+		titlefontsize=6,
+		xflip=true,
+		color=:heat,
+		clims=(0,1))
+end
+  ╠═╡ =#
+
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
 # ╠═27b7af71-e396-45b3-8723-8b2fc804a77f
@@ -811,7 +833,8 @@ end
 # ╠═08464a04-7652-4f24-978d-cd329e7fe0a7
 # ╠═100e928b-679b-48a3-b817-ac0dae73476b
 # ╠═18f8bdce-9ce9-4e27-bf8e-53be37dc3fd0
-# ╠═df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
+# ╠═47ffbab9-6ef1-44e7-93b2-feb2689bf866
+# ╠═9dd28fbf-064b-4d18-9486-ad5903a8682b
 # ╠═5dfddc9c-6313-4679-a994-15a771ee4a90
 # ╠═e325d781-ae5c-4f64-a608-170b4df77882
 # ╠═1e92642c-396f-4353-aa5c-8849cf26af1d
@@ -854,6 +877,8 @@ end
 # ╠═c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
 # ╠═e5841ad8-dfb9-47d5-bcb0-0f7448f43645
 # ╠═0071aa97-27c3-469f-b1bb-e07337489f0e
+# ╠═e39809bc-b68d-4a4b-a2f5-d8bf5237a087
+# ╠═22f64cf1-74f3-4129-b7ce-39a48340eca3
 # ╠═0b804941-fed3-4830-980b-8d383d473858
 # ╠═5786b2d4-d049-4119-8e1c-5ecf8e8c683e
 # ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
