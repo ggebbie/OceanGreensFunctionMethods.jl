@@ -61,7 +61,7 @@ end
 md"""
 # Pedagogical Box Model 
 
-Julia package to complement "A Review of Green's Function Methods in Ocean Circulation Models," by Haine et al. This package goes toward one of the stated goals of the manuscript, namely to make Green's Function methods accessible for learning purposes. Here, we also aim to make a Julia package that is useful and computationally efficient for research purposes."""
+This computational notebook aims to complement ["A Review of Green's Function Methods in Ocean Circulation Models," by Haine et al. (2024)](https://essopenarchive.org/users/528978/articles/1215807-a-review-of-green-s-function-methods-for-tracer-timescales-and-pathways-in-ocean-models). This notebook goes toward one of the stated goals of the manuscript, namely to make Green's Function methods accessible for learning purposes. Here, we also aim to make a Julia package  [OceanGreensFunctionMethods.jl](https://github.com/ggebbie/OceanGreensFunctionMethods.jl) that is useful and computationally efficient for research purposes."""
 
 
 # ╔═╡ 27b7af71-e396-45b3-8723-8b2fc804a77f
