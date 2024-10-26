@@ -48,7 +48,6 @@ using Plots
 using Distributions
 
 # ╔═╡ 01f84c5f-8881-401f-a0a8-8ae69385f9fe
-# this package defines a `VectorArray`, an N-dimensional array that acts like a vector in linear algebra operations. It also defines a `MatrixArray`
 using AlgebraicArrays
 
 # ╔═╡ 5d30be92-5266-4700-ba7b-ac88a7f066e3
@@ -61,7 +60,7 @@ end
 md"""
 # Pedagogical Box Model 
 
-Julia package to complement "A Review of Green's Function Methods in Ocean Circulation Models," by Haine et al. This package goes toward one of the stated goals of the manuscript, namely to make Green's Function methods accessible for learning purposes. Here, we also aim to make a Julia package that is useful and computationally efficient for research purposes."""
+This computational notebook aims to complement ["A Review of Green's Function Methods in Ocean Circulation Models," by Haine et al. (2024)](https://essopenarchive.org/users/528978/articles/1215807-a-review-of-green-s-function-methods-for-tracer-timescales-and-pathways-in-ocean-models). This notebook goes toward one of the stated goals of the manuscript, namely to make Green's Function methods accessible for learning purposes. Here, we also aim to make a Julia package  [OceanGreensFunctionMethods.jl](https://github.com/ggebbie/OceanGreensFunctionMethods.jl) that is useful and computationally efficient for research purposes."""
 
 
 # ╔═╡ 27b7af71-e396-45b3-8723-8b2fc804a77f
@@ -75,6 +74,9 @@ Pkg.instantiate()
 # ╔═╡ 07f01269-cfd8-4d3d-8d85-0b1132ff2005
 md""" ## Load some helpful packages """
 
+
+# ╔═╡ 5298b5a7-30ab-4472-886e-c61c63f67fd2
+md""" Here we intoduce a helper package called [AlgebraicArrays.jl](https://github.com/ggebbie/AlgebraicArrays.jl#algebraicarrays) that defines a `VectorArray`, an N-dimensional array that acts like a vector in linear algebra operations. It also defines a `MatrixArray` which is a nested N-dimensional array that acts like a matrix. """
 
 # ╔═╡ 39045ccd-fd9a-4d87-a2d9-79171a3366dc
 plotly()
@@ -154,10 +156,14 @@ md""" mid-latitude boundary exchange $(@bind Fb_mid Slider((1:40)Sv,show_value =
 Vol0 = 300.0Sv*yr |> km^3 # use MATLAB value not manuscript value (5% difference)
 
 # ╔═╡ c9c96f53-3fab-4591-91cd-911ba4c26329
-Vol = fill(Vol0, model_dims, :VectorArray)
+Vol = fill(Vol0, model_dims, :VectorArray) # display (incl. undef values) is not correct
 
-# ╔═╡ 51d0e115-5859-4eab-8a91-b8193afd52b5
-parent(Vol)' # take transpose or complex conjugate transpose of parent object to view more intuitively
+# ╔═╡ 020251a9-4968-4921-9a2c-5f2b387a7261
+# define a one-line function to pretty print 
+prettyprint(b) = parent(b)'
+
+# ╔═╡ cfcf6c49-2db4-410d-a522-fc79db289430
+prettyprint(Vol)
 
 # ╔═╡ cd6dc878-4442-430b-a263-3651719f2f11
 # abyssal volume flux
@@ -205,8 +211,12 @@ C = randn(model_dims, :VectorArray) # first generate a uniform U(0,1) tracer dis
 # or extracer tracer using dimensional labels
 C[Meridional=At("Mid-latitudes")]
 
-# ╔═╡ df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
-Plots.heatmap(transpose(parent(C)),xflip=true)
+# ╔═╡ 47ffbab9-6ef1-44e7-93b2-feb2689bf866
+# custom plotting function for our data type
+sectionplot(C::VectorDimArray; kw...) = Plots.heatmap(transpose(parent(C)),xflip=true;kw...)
+
+# ╔═╡ 9dd28fbf-064b-4d18-9486-ad5903a8682b
+sectionplot(C, title="just a random variable", titlefontsize=8)
 
 # ╔═╡ 5dfddc9c-6313-4679-a994-15a771ee4a90
 # then solve for tracer fluxes
@@ -215,14 +225,14 @@ J = advective_diffusive_flux(C, Fv)
 # ╔═╡ e325d781-ae5c-4f64-a608-170b4df77882
 # fluxes are stored in a structure that is organized by directionality
 # again, use parent + transpose to see the screen output in a reasonable order
-parent(J.poleward)' 
+prettyprint(J.poleward)
 
 # ╔═╡ 1e92642c-396f-4353-aa5c-8849cf26af1d
 # greatest poleward fluxes in Thermocline
 J.poleward[Meridional=At("Mid-latitudes")] # hit rightward arrow above to see flux values
 
 # ╔═╡ 86076566-a96b-4faf-bdef-93b95733dcff
-deldotJ = convergence(J) # tracer flux convergence
+deldotJ = convergence(J); prettyprint(deldotJ) # tracer flux convergence
 
 # ╔═╡ c9abc24c-d3f2-4d64-8dfc-b0fdf42d1502
 md"""## Boundary conditions """
@@ -244,7 +254,7 @@ C0 = zeros(model_dims, :VectorArray) # zero interior tracer, will help identify 
 
 # ╔═╡ f51bfbed-0c3b-415c-9aef-80574b905b17
 # boundary flux (already posed as a convergence or net effect in each box) 
-Jb = boundary_flux( f, C0, Fb)
+Jb = boundary_flux( f, C0, Fb); prettyprint(Jb)
 
 # ╔═╡ f44447e3-5e8e-4fbc-b2cf-83176fb93c9f
 md""" ## Construct transport matrix """
@@ -289,6 +299,14 @@ md""" ## Eigenstructure """
 # Find eigenvalues of A. 
 # destructuring via iteration
 μ, V = eigen(A)  # type \mu + TAB
+
+# ╔═╡ 0f83a608-9f7d-4754-be89-6f39b7342e32
+# you may also store the eigen-decomposition in one object
+F = eigen(A)
+
+# ╔═╡ bf702aa7-0857-461a-8fea-f9a440e2918e
+# that permits a fast reconstruction of the underlying matrix or fast exponentiation
+real.(Matrix(F))
 
 # ╔═╡ c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # real part of all eigenvalues is negative
@@ -422,66 +440,55 @@ end
 # ╔═╡ 11eb59cf-de62-4fb4-9963-defe594e6b92
 md""" ## Transport matrix diagnostics """
 
+# ╔═╡ 16a28d1b-6584-44c6-9ef5-56c5569d8781
+md""" ### Water-mass fractions """
+
+# ╔═╡ eadc2c7d-b59e-4d08-a97a-8adb150b4297
+md""" Source of water mass $(@bind msource Select(meridional_names()[1:2])) $(@bind vsource Select([vertical_names()[1]]))""" 
+
+
 # ╔═╡ 3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # water-mass fractions
 a = watermass_fraction(μ, V, B)
 
+# ╔═╡ 64a307fa-3d8c-42c5-bcd0-086f2776025d
+begin
+	sectionplot(a[At(msource),At(vsource)],
+		title="Water mass fraction: Source "*msource*" "*vsource,
+		titlefontsize=6,
+		color=:heat,
+		clims=(0,1))
+end
+
 # ╔═╡ 2175673e-5232-4804-84cb-0d5b11f31413
 # see the water-mass fraction related to the first boundary of interest
-first(a)'
+prettyprint(a[At("High latitudes"),At("Thermocline")])
 
 # ╔═╡ 01484ca5-ed33-4b94-b188-780e9e3ef8c7
 # water-mass fraction from second source
-last(a)'
+prettyprint(a[At("Mid-latitudes"),At("Thermocline")])
 
 # ╔═╡ c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
 Matrix(a) # all water-mass information concatenated
 
-# ╔═╡ e5841ad8-dfb9-47d5-bcb0-0f7448f43645
-a
+# ╔═╡ 7e749500-df84-44bb-ba99-43fb2a72cdb8
+md""" ### Mean and width of age distribution """
 
-# ╔═╡ 0071aa97-27c3-469f-b1bb-e07337489f0e
-begin
-	msource1 = "High latitudes"
-	vsource1 = "Thermocline"
-	Plots.heatmap(transpose(parent(a)[At(msource1),At(vsource1)]),
-		title="Water mass fraction: "*msource1*" "*vsource1,
-		titlefontsize=6,
-		xflip=true,
-		color=:heat,
-		clims=(0,1))
-end
-
-# ╔═╡ 0b804941-fed3-4830-980b-8d383d473858
- a[At(msource1),At(vsource1)]
-
-# ╔═╡ 5786b2d4-d049-4119-8e1c-5ecf8e8c683e
-begin
-	msource2 = "Mid-latitudes"
-	vsource2 = "Thermocline"
-	Plots.heatmap(transpose(parent(a)[At(msource2),At(vsource2)]),
-		title="Water mass fraction: "*msource2*" "*vsource2,
-		titlefontsize=6,
-		xflip=true,
-		color=:heat,
-		clims=(0,1))
-end
-
-# ╔═╡ cf5bb364-5336-4dd1-8bb6-6e3f944673bf
+# ╔═╡ 55d9d91d-fdb9-4433-b62f-1a748605c206
 begin
 	Γ = mean_age(μ, V, B)
 	
-	Plots.heatmap(transpose(parent(Γ)),
+	sectionplot(Γ,
 		title="Mean Age ["*string(unit(first(Γ)))*"]",
-		titlefontsize=6,
+		titlefontsize=8,
 		xflip=true,
 		color=:heat,
 		clims=(0yr,200yr))
 end
 
 # ╔═╡ 4021feb1-36ac-42f6-a5f6-391c0f064dc7
-# very similar values - matches with MATLAB results
-Δ = ttd_width(μ, V, B)
+# Transit Time Distribution width
+Δ = ttd_width(μ, V, B); prettyprint(Δ)
 
 # ╔═╡ 93c9614e-70a1-49ef-933b-b86fec342597
 md"""### Green's functions """
@@ -629,7 +636,7 @@ begin
 		ylabel = "G′†",
 		xlabel = "τ",
 		label = "Tmax",
-		legend = :right,
+		legend = :topright,
 		titlefontsize = 6,
 		title = mbox_adj*", "*vbox_adj,
 		xlims = (0yr,400yr),
@@ -774,6 +781,7 @@ end
 # ╠═0a9a45e2-a561-4a21-afb9-b96ec884de4a
 # ╠═2fe46717-3f77-4afa-9e74-1ddb594e40ea
 # ╠═cc363185-cdc4-47be-a926-5178e1535f0d
+# ╟─5298b5a7-30ab-4472-886e-c61c63f67fd2
 # ╠═01f84c5f-8881-401f-a0a8-8ae69385f9fe
 # ╠═39045ccd-fd9a-4d87-a2d9-79171a3366dc
 # ╟─abe2697f-3bcd-49ae-bbcb-dd0a04c3f147
@@ -799,7 +807,8 @@ end
 # ╠═852f36b7-170b-4d20-bd31-af6ae5c716a5
 # ╠═8306d2c4-8d50-4309-add1-6d1eef56cd4a
 # ╠═c9c96f53-3fab-4591-91cd-911ba4c26329
-# ╠═51d0e115-5859-4eab-8a91-b8193afd52b5
+# ╠═020251a9-4968-4921-9a2c-5f2b387a7261
+# ╠═cfcf6c49-2db4-410d-a522-fc79db289430
 # ╠═cd6dc878-4442-430b-a263-3651719f2f11
 # ╠═ff24a30f-56ee-4095-8bb3-0c7e4a72fe87
 # ╠═4bc2c6b0-ad10-4035-be82-d02060d1b3d7
@@ -811,7 +820,8 @@ end
 # ╠═08464a04-7652-4f24-978d-cd329e7fe0a7
 # ╠═100e928b-679b-48a3-b817-ac0dae73476b
 # ╠═18f8bdce-9ce9-4e27-bf8e-53be37dc3fd0
-# ╠═df1cc59e-9e5f-48ea-b82f-65ab89b3e80a
+# ╠═47ffbab9-6ef1-44e7-93b2-feb2689bf866
+# ╠═9dd28fbf-064b-4d18-9486-ad5903a8682b
 # ╠═5dfddc9c-6313-4679-a994-15a771ee4a90
 # ╠═e325d781-ae5c-4f64-a608-170b4df77882
 # ╠═1e92642c-396f-4353-aa5c-8849cf26af1d
@@ -833,6 +843,8 @@ end
 # ╠═769d63db-36d1-437a-a3da-0bc9f6e14b69
 # ╟─34e0f62a-9e14-4b9d-bad3-e6b23eb86c59
 # ╠═3a777fc4-4770-4fb3-8074-2f66881a78ee
+# ╠═0f83a608-9f7d-4754-be89-6f39b7342e32
+# ╠═bf702aa7-0857-461a-8fea-f9a440e2918e
 # ╠═c191889e-b3eb-4839-b494-8fad1f0ed9ce
 # ╠═1e3f4bd2-94cf-43a1-af98-11373a4d8561
 # ╟─6eac27ef-647c-4884-aaf3-69f6705da3a8
@@ -848,16 +860,16 @@ end
 # ╟─1ecd9ce2-cea7-417e-b965-24784cd0f563
 # ╠═ec1439f9-7f02-439a-ac70-d67869cdae35
 # ╟─11eb59cf-de62-4fb4-9963-defe594e6b92
+# ╟─16a28d1b-6584-44c6-9ef5-56c5569d8781
+# ╟─eadc2c7d-b59e-4d08-a97a-8adb150b4297
+# ╠═64a307fa-3d8c-42c5-bcd0-086f2776025d
 # ╠═3628ccd7-38d8-45bc-a0b6-4d74c1cb7bd9
 # ╠═2175673e-5232-4804-84cb-0d5b11f31413
 # ╠═01484ca5-ed33-4b94-b188-780e9e3ef8c7
 # ╠═c33d09fb-fbf8-43c9-8d4b-345d90e7b40f
-# ╠═e5841ad8-dfb9-47d5-bcb0-0f7448f43645
-# ╠═0071aa97-27c3-469f-b1bb-e07337489f0e
-# ╠═0b804941-fed3-4830-980b-8d383d473858
-# ╠═5786b2d4-d049-4119-8e1c-5ecf8e8c683e
-# ╠═cf5bb364-5336-4dd1-8bb6-6e3f944673bf
-# ╟─4021feb1-36ac-42f6-a5f6-391c0f064dc7
+# ╟─7e749500-df84-44bb-ba99-43fb2a72cdb8
+# ╠═55d9d91d-fdb9-4433-b62f-1a748605c206
+# ╠═4021feb1-36ac-42f6-a5f6-391c0f064dc7
 # ╟─93c9614e-70a1-49ef-933b-b86fec342597
 # ╟─96240170-eacb-4d5a-9316-eb6615a78f0a
 # ╟─7a71a95a-8523-4cb8-9f69-00bf374acf67

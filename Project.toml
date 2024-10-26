@@ -1,7 +1,7 @@
 name = "OceanGreensFunctionMethods"
 uuid = "e3e8a769-591b-4840-946e-301c93ad313e"
 authors = ["G Jake Gebbie <ggebbie@whoi.edu>"]
-version = "1.0.15-DEV"
+version = "1.0.16-DEV"
 
 [deps]
 AlgebraicArrays = "8af735f6-f3e5-4048-bdaa-40a2355e9eea"
@@ -18,6 +18,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 julia = "1.10"
+DimensionalData = "0.28"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

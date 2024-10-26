@@ -74,7 +74,7 @@ Box models and other gridded datasets can be stored in concise arrays that are o
 
 2. Minimizing bookkeeping of obscure indices.
 
-N-dimensional gridded data is naturally stored in N-dimensional arrays, but N-dimensional arrays are not in the right format to perform linear algebra operations with matrices and vectors. The Julia package `MultipliableDimArrays.jl` does the right thing to permit these linear algebra operations and then returns the output in the same human-readable output that the investigator originally provided. Cryptic references to boxes by a given sequential number are minimized in the code, and instead values can be looked up from more easily-interpretable names.
+N-dimensional gridded data is naturally stored in N-dimensional arrays, but N-dimensional arrays are not in the right format to perform linear algebra operations with matrices and vectors. The Julia package `AlgebraicArrays.jl` does the right thing to permit these linear algebra operations and then returns the output in the same human-readable output that the investigator originally provided. Cryptic references to boxes by a given sequential number are minimized in the code, and instead values can be looked up from more easily-interpretable names.
 
 3. Embedding physical units with numerical quantities.
 
