@@ -2,7 +2,7 @@
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "399234c01c9de05a45d664f0b3a94cdc940ddd0c"
+project_hash = "41baa9988752e878505657c5ec84ce7c0ac8d305"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -15,12 +15,13 @@ weakdeps = ["StaticArrays"]
     AdaptStaticArraysExt = "StaticArrays"
 
 [[deps.AlgebraicArrays]]
-deps = ["ArraysOfArrays", "DimensionalData", "LinearAlgebra", "Revise", "Unitful"]
-git-tree-sha1 = "5dcb1ecb03b63f2f070ae0114c1417d7d63f8e16"
+deps = ["LinearAlgebra", "Revise"]
+git-tree-sha1 = "1861960eb2845e1d8221b3054d4c5a47d9a47ab4"
 repo-rev = "main"
 repo-url = "https://github.com/ggebbie/AlgebraicArrays.jl"
 uuid = "8af735f6-f3e5-4048-bdaa-40a2355e9eea"
-version = "1.0.3-DEV"
+version = "1.0.5-DEV"
+weakdeps = ["DimensionalData", "Unitful"]
 
     [deps.AlgebraicArrays.extensions]
     AlgebraicArraysDimensionalDataExt = ["DimensionalData"]
@@ -65,18 +66,6 @@ version = "7.16.0"
     SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
     StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
     Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
-
-[[deps.ArraysOfArrays]]
-deps = ["Statistics"]
-git-tree-sha1 = "ad745f4bc2cfc5fe58484e53e49c3e650103e4bd"
-uuid = "65a8f2f4-9b39-5baf-92e2-a9cc46fdf018"
-version = "0.6.5"
-weakdeps = ["Adapt", "ChainRulesCore", "StaticArraysCore"]
-
-    [deps.ArraysOfArrays.extensions]
-    ArraysOfArraysAdaptExt = "Adapt"
-    ArraysOfArraysChainRulesCoreExt = "ChainRulesCore"
-    ArraysOfArraysStaticArraysCoreExt = "StaticArraysCore"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
