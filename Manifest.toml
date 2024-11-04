@@ -2,7 +2,7 @@
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "399234c01c9de05a45d664f0b3a94cdc940ddd0c"
+project_hash = "41baa9988752e878505657c5ec84ce7c0ac8d305"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -15,12 +15,13 @@ weakdeps = ["StaticArrays"]
     AdaptStaticArraysExt = "StaticArrays"
 
 [[deps.AlgebraicArrays]]
-deps = ["ArraysOfArrays", "DimensionalData", "LinearAlgebra", "Revise", "Unitful"]
-git-tree-sha1 = "5dcb1ecb03b63f2f070ae0114c1417d7d63f8e16"
-repo-rev = "main"
+deps = ["ArraysOfArrays", "LinearAlgebra", "Revise"]
+git-tree-sha1 = "0c6d13b91d93166a4d766eb05d94983131f88abd"
+repo-rev = "fix-extensions"
 repo-url = "https://github.com/ggebbie/AlgebraicArrays.jl"
 uuid = "8af735f6-f3e5-4048-bdaa-40a2355e9eea"
-version = "1.0.3-DEV"
+version = "1.0.4-DEV"
+weakdeps = ["DimensionalData", "Unitful"]
 
     [deps.AlgebraicArrays.extensions]
     AlgebraicArraysDimensionalDataExt = ["DimensionalData"]
