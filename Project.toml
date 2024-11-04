@@ -1,7 +1,7 @@
 name = "OceanGreensFunctionMethods"
 uuid = "e3e8a769-591b-4840-946e-301c93ad313e"
 authors = ["G Jake Gebbie <ggebbie@whoi.edu>"]
-version = "1.0.16-DEV"
+version = "1.0.17-DEV"
 
 [deps]
 AlgebraicArrays = "8af735f6-f3e5-4048-bdaa-40a2355e9eea"
