@@ -210,7 +210,7 @@ C = randn(model_dims, :VectorArray) # first generate a uniform U(0,1) tracer dis
  C[2,2]
 
 # ╔═╡ 18f8bdce-9ce9-4e27-bf8e-53be37dc3fd0
-# or extracer tracer using dimensional labels
+# or extract tracer using dimensional labels
 C[Meridional=At("Mid-latitudes")]
 
 # ╔═╡ 47ffbab9-6ef1-44e7-93b2-feb2689bf866
