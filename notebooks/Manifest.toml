@@ -2,7 +2,7 @@
 
 julia_version = "1.11.1"
 manifest_format = "2.0"
-project_hash = "f0209d2ca944e999dc0aa2519731868934bbcfa4"
+project_hash = "08f7d52d8640325bca3e7ef88c5f118f226fd024"
 
 [[deps.AbstractPlutoDingetjes]]
 deps = ["Pkg"]
@@ -589,6 +589,12 @@ git-tree-sha1 = "2984284a8abcfcc4784d95a9e2ea4e352dd8ede7"
 uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
 version = "0.9.36"
 
+[[deps.Kaleido_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "43032da5832754f58d14a91ffbe86d5f176acda9"
+uuid = "f7e6163d-2fa5-5f23-b69c-1db539e41963"
+version = "0.2.1+0"
+
 [[deps.LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "170b660facf5df5de098d866564877e119141cbd"
@@ -988,6 +994,12 @@ deps = ["ColorSchemes", "Dates", "DelimitedFiles", "DocStringExtensions", "JSON"
 git-tree-sha1 = "56baf69781fc5e61607c3e46227ab17f7040ffa2"
 uuid = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
 version = "0.8.19"
+
+[[deps.PlotlyKaleido]]
+deps = ["Base64", "JSON", "Kaleido_jll"]
+git-tree-sha1 = "3210de4d88af7ca5de9e26305758a59aabc48aac"
+uuid = "f2990250-8cf9-495f-b13a-cce12b45703c"
+version = "2.2.5"
 
 [[deps.Plots]]
 deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "JLFzf", "JSON", "LaTeXStrings", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "Pkg", "PlotThemes", "PlotUtils", "PrecompileTools", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "RelocatableFolders", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "TOML", "UUIDs", "UnicodeFun", "UnitfulLatexify", "Unzip"]
