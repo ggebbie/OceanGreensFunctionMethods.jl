@@ -31,23 +31,14 @@ using OceanGreensFunctionMethods
 # ╔═╡ b85c6513-5a1a-4fdf-b4be-2efc3c1db830
 using PlutoUI
 
-# ╔═╡ bbc2b198-ca1f-461d-a72c-e37695de357c
-using LinearAlgebra
-
 # ╔═╡ 97df5706-1829-419a-b96b-5dbb4d704434
 using DimensionalData
-
-# ╔═╡ 157462cf-b6f9-4de3-80f6-a3f846b5ea1a
-using DimensionalData: @dim
 
 # ╔═╡ 0a9a45e2-a561-4a21-afb9-b96ec884de4a
 using Unitful
 
 # ╔═╡ 2fe46717-3f77-4afa-9e74-1ddb594e40ea
 using Plots
-
-# ╔═╡ cc363185-cdc4-47be-a926-5178e1535f0d
-using Distributions
 
 # ╔═╡ 01f84c5f-8881-401f-a0a8-8ae69385f9fe
 using AlgebraicArrays
@@ -89,7 +80,7 @@ md""" ## Suggested modifiable circulation inputs"""
 # ╔═╡ 6d11d809-9902-4a6a-b85e-18aed70e352f
 md""" ## Define and label the boxes 
 
-Using the outstanding [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl)"""
+Use the outstanding [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl)"""
 
 # ╔═╡ ccc6b783-6cca-4d03-8fca-f3c312316c34
 # define "dimensions" to be used with `DimensionalData.jl` 
@@ -231,7 +222,7 @@ prettyprint(J.poleward)
 
 # ╔═╡ 1e92642c-396f-4353-aa5c-8849cf26af1d
 # greatest poleward fluxes in Thermocline
-J.poleward[Meridional=At("Mid-latitudes")] # hit rightward arrow above to see flux values
+J.poleward[Meridional=At("Mid-latitudes")] # hit rightward triangle above to see flux values
 
 # ╔═╡ 86076566-a96b-4faf-bdef-93b95733dcff
 deldotJ = convergence(J); prettyprint(deldotJ) # tracer flux convergence
@@ -769,7 +760,7 @@ end
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
-# ╠═27b7af71-e396-45b3-8723-8b2fc804a77f
+# ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
 # ╠═8f520c8b-19d7-48a8-be9f-3f167f07d188
 # ╠═c536e9f3-0457-499e-958c-384d6e388ef9
 # ╠═28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
@@ -777,12 +768,9 @@ end
 # ╠═de3c6443-5ca1-4e97-82c8-5c4c9f204480
 # ╠═69147ae0-1c89-48a6-831b-ff325a984817
 # ╠═b85c6513-5a1a-4fdf-b4be-2efc3c1db830
-# ╠═bbc2b198-ca1f-461d-a72c-e37695de357c
 # ╠═97df5706-1829-419a-b96b-5dbb4d704434
-# ╠═157462cf-b6f9-4de3-80f6-a3f846b5ea1a
 # ╠═0a9a45e2-a561-4a21-afb9-b96ec884de4a
 # ╠═2fe46717-3f77-4afa-9e74-1ddb594e40ea
-# ╠═cc363185-cdc4-47be-a926-5178e1535f0d
 # ╟─5298b5a7-30ab-4472-886e-c61c63f67fd2
 # ╠═01f84c5f-8881-401f-a0a8-8ae69385f9fe
 # ╠═39045ccd-fd9a-4d87-a2d9-79171a3366dc
