@@ -1,4 +1,3 @@
-using Revise
 using OceanGreensFunctionMethods
 using AlgebraicArrays
 using Distributions
