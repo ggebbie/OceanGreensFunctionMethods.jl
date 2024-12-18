@@ -89,7 +89,7 @@ md""" ## Suggested modifiable circulation inputs"""
 # ╔═╡ 6d11d809-9902-4a6a-b85e-18aed70e352f
 md""" ## Define and label the boxes 
 
-Using the outstanding [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl)"""
+Use the outstanding [DimensionalData.jl](https://github.com/rafaqz/DimensionalData.jl)"""
 
 # ╔═╡ ccc6b783-6cca-4d03-8fca-f3c312316c34
 # define "dimensions" to be used with `DimensionalData.jl` 
@@ -231,7 +231,7 @@ prettyprint(J.poleward)
 
 # ╔═╡ 1e92642c-396f-4353-aa5c-8849cf26af1d
 # greatest poleward fluxes in Thermocline
-J.poleward[Meridional=At("Mid-latitudes")] # hit rightward arrow above to see flux values
+J.poleward[Meridional=At("Mid-latitudes")] # hit rightward triangle above to see flux values
 
 # ╔═╡ 86076566-a96b-4faf-bdef-93b95733dcff
 deldotJ = convergence(J); prettyprint(deldotJ) # tracer flux convergence
@@ -769,7 +769,7 @@ end
 
 # ╔═╡ Cell order:
 # ╟─10b07d8a-aee4-4b64-b9eb-f22f408877ba
-# ╠═27b7af71-e396-45b3-8723-8b2fc804a77f
+# ╟─27b7af71-e396-45b3-8723-8b2fc804a77f
 # ╠═8f520c8b-19d7-48a8-be9f-3f167f07d188
 # ╠═c536e9f3-0457-499e-958c-384d6e388ef9
 # ╠═28e6a6c1-4bdf-49aa-afdd-b27f1b88661b
